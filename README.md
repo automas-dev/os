@@ -93,7 +93,7 @@ from source, follow the instructions on the OS-Dev Wiki
 [GCC_Cross-Compiler](https://wiki.osdev.org/GCC_Cross-Compiler)
 
 ```sh
-git clone git@github.com:twh2898/os.git
+git clone git@github.com:automas-dev/os.git
 cd os
 make setup
 ```
