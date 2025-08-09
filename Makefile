@@ -19,7 +19,7 @@ setup:
 	cmake -S . -B build -GNinja -DCMAKE_BUILD_TYPE=Debug
 
 build:
-	cmake --build build
+	cmake --build build -j
 
 run:
 	$(QEMU) $(QEMUFLAGS)
