@@ -47,90 +47,58 @@ static void map_first_table(mmu_table_t * table);
 
 extern void jump_kernel_mode(void * fn);
 
+static void setup_physical_memory();
+static void setup_virtual_memory();
+static void setup_tss();
+static void setup_system_calls();
+
 static void idle_loop();
 static int  start_shell();
 
 void kernel_main() {
+    // 1. load vga driver
     init_vga(UINT2PTR(PADDR_VGA));
+    // 1.1 clear screen
     vga_clear();
 
+    // 2. setup memory
     kmemset(&__kernel, 0, sizeof(kernel_t));
 
-    boot_params_t * bparams = get_boot_params();
+    // 2.1 physical memory allocator
+    setup_physical_memory();
 
-    // Init RAM
-    __kernel.ram_table_addr = PADDR_RAM_TABLE;
-    ram_init((void *)__kernel.ram_table_addr, (void *)VADDR_RAM_BITMASKS);
+    // 2.2 virtual memory (paging)
+    setup_virtual_memory();
 
-    for (size_t i = 0; i < bparams->mem_entries_count; i++) {
-        upper_ram_t * entry = &bparams->mem_entries[i];
-
-        // End of second stage kernel
-        if (entry->base_addr <= 0x9fbff) {
-            continue;
-        }
-
-        if (entry->type == RAM_TYPE_USABLE || entry->type == RAM_TYPE_ACPI_RECLAIMABLE) {
-            ram_region_add_memory(entry->base_addr, entry->length);
-        }
-    }
-
-    // Init Page Dir
-    __kernel.cr3     = PADDR_KERNEL_DIR;
-    mmu_dir_t * pdir = (mmu_dir_t *)__kernel.cr3;
-    mmu_dir_clear(pdir);
-
-    // Init first table
-    uint32_t first_table_addr = ram_page_palloc();
-    mmu_dir_set(pdir, 0, first_table_addr, MMU_DIR_RW);
-
-    // Map first table
-    mmu_table_t * first_table = UINT2PTR(first_table_addr);
-    mmu_table_clear(first_table);
-    map_first_table(first_table);
-
-    // Map last table to dir for access to tables
-    mmu_dir_set(pdir, MMU_DIR_SIZE - 1, __kernel.cr3, MMU_DIR_RW);
-
-    // Enter Paging
+    // 3. enable paging
     mmu_enable_paging(__kernel.cr3);
 
-    // GDT & TSS
+    // 4. setup gdt (kernel + usr + tss)
     init_gdt();
-    init_tss();
 
-    // Kernel process used for memory allocation
-    __kernel.proc.next_heap_page = ADDR2PAGE(VADDR_RAM_BITMASKS) + ram_region_table_count();
-    __kernel.proc.cr3            = PADDR_KERNEL_DIR;
-    __kernel.proc.esp0           = VADDR_ISR_STACK;
-    __kernel.proc.state          = PROCESS_STATE_LOADED;
-    set_active_task(&__kernel.proc);
+    // 5. setup tss (empty)
+    setup_tss();
 
-    // Set initial ESP0 before first task switch
-    tss_set_esp0(VADDR_ISR_STACK);
-
+    // 6. setup isr and idt
     isr_install();
 
-    init_system_call(IRQ16);
-    system_call_register(SYS_INT_FAMILY_IO, sys_call_io_cb);
-    system_call_register(SYS_INT_FAMILY_MEM, sys_call_mem_cb);
-    system_call_register(SYS_INT_FAMILY_PROC, sys_call_proc_cb);
-    system_call_register(SYS_INT_FAMILY_STDIO, sys_call_tmp_stdio_cb);
-    system_call_register(SYS_INT_FAMILY_STDIO, sys_call_tmp_stdio_cb);
-    system_call_register(SYS_INT_FAMILY_IO_FILE, sys_call_io_file_cb);
-    system_call_register(SYS_INT_FAMILY_IO_DIR, sys_call_io_dir_cb);
+    // 7. setup system calls
+    setup_system_calls();
 
+    // TODO why should the kernel need system calls?
     // Init kernel memory after system calls are registered
     memory_init(&__kernel.proc.memory, kernel_alloc_page);
 
+    // 8. setup event bus
     // Create ebus for kernel (target of queue_event)
     if (ebus_create(&__kernel.event_queue, 4096)) {
         KPANIC("Failed to init ebus\n");
     }
 
-    // Create process manager
+    // 9. setup process manager
     pm_create(&__kernel.pm);
 
+    // 9.a create kernel process
     // Setup kernel process and add it to pm
     __kernel.pm.idle_task   = &__kernel.proc;
     __kernel.proc.next_proc = __kernel.pm.idle_task;
@@ -141,11 +109,14 @@ void kernel_main() {
         KPANIC("Failed to init ebus\n");
     }
 
+    // 10. setup irq
     // Init drivers and hardware interrupts
     irq_install();
 
+    // 11. print welcome message
     vga_puts("Welcome to kernel v" PROJECT_VERSION "\n");
 
+    // TODO is this needed here? Create it when it's needed
     ramdisk_create(4096);
 
     __kernel.disk = disk_open(0, DISK_DRIVER_ATA);
@@ -165,6 +136,69 @@ void kernel_main() {
     idle_loop();
 
     KPANIC("You shouldn't be here!");
+}
+
+static void setup_physical_memory() {
+    __kernel.ram_table_addr = PADDR_RAM_TABLE;
+    ram_init((void *)__kernel.ram_table_addr, (void *)VADDR_RAM_BITMASKS);
+
+    boot_params_t * bparams = get_boot_params();
+
+    for (size_t i = 0; i < bparams->mem_entries_count; i++) {
+        upper_ram_t * entry = &bparams->mem_entries[i];
+
+        // End of second stage kernel
+        if (entry->base_addr <= 0x9fbff) {
+            continue;
+        }
+
+        if (entry->type == RAM_TYPE_USABLE || entry->type == RAM_TYPE_ACPI_RECLAIMABLE) {
+            ram_region_add_memory(entry->base_addr, entry->length);
+        }
+    }
+}
+
+static void setup_virtual_memory() {
+    __kernel.cr3     = PADDR_KERNEL_DIR;
+    mmu_dir_t * pdir = (mmu_dir_t *)__kernel.cr3;
+    mmu_dir_clear(pdir);
+
+    // Init first table
+    uint32_t first_table_addr = ram_page_palloc();
+    mmu_dir_set(pdir, 0, first_table_addr, MMU_DIR_RW);
+
+    // Map first table
+    mmu_table_t * first_table = UINT2PTR(first_table_addr);
+    mmu_table_clear(first_table);
+    map_first_table(first_table);
+
+    // Map last table to dir for access to tables
+    mmu_dir_set(pdir, MMU_DIR_SIZE - 1, __kernel.cr3, MMU_DIR_RW);
+}
+
+static void setup_tss() {
+    init_tss();
+
+    // Kernel process used for memory allocation
+    __kernel.proc.next_heap_page = ADDR2PAGE(VADDR_RAM_BITMASKS) + ram_region_table_count();
+    __kernel.proc.cr3            = PADDR_KERNEL_DIR;
+    __kernel.proc.esp0           = VADDR_ISR_STACK;
+    __kernel.proc.state          = PROCESS_STATE_LOADED;
+    set_active_task(&__kernel.proc);
+
+    // Set initial ESP0 before first task switch
+    tss_set_esp0(VADDR_ISR_STACK);
+}
+
+static void setup_system_calls() {
+    init_system_call(IRQ16);
+    system_call_register(SYS_INT_FAMILY_IO, sys_call_io_cb);
+    system_call_register(SYS_INT_FAMILY_MEM, sys_call_mem_cb);
+    system_call_register(SYS_INT_FAMILY_PROC, sys_call_proc_cb);
+    system_call_register(SYS_INT_FAMILY_STDIO, sys_call_tmp_stdio_cb);
+    system_call_register(SYS_INT_FAMILY_STDIO, sys_call_tmp_stdio_cb);
+    system_call_register(SYS_INT_FAMILY_IO_FILE, sys_call_io_file_cb);
+    system_call_register(SYS_INT_FAMILY_IO_DIR, sys_call_io_dir_cb);
 }
 
 static void idle_loop() {
