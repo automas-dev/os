@@ -16,7 +16,7 @@ QEMUFLAGS = -m 1G -drive format=raw,file=build/os-image.bin,index=0,if=floppy -d
 #  LAUNCH & UTIL
 # ===============
 setup:
-	cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+	cmake -S . -B build -GNinja -DCMAKE_BUILD_TYPE=Debug
 
 build:
 	cmake --build build
