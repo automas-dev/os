@@ -6,14 +6,13 @@ work or require additional information. Those can be moved under the Completed
 section once they are finished.
 
 - [ ] Documentation
-  - [x] Add design doc for boot stages and move out of readme
-  - [x] Update boot stages to be more accurate
   - [ ] Filesystem documentation
-  - [x] Move doc files under design folder
-  - [x] Clean up goals in readme
-    - [x] Remove completed section (make checked boxes in list)
-    - [x] Cleanup Goals term lists
   - [ ] System call arch
+  - [ ] Signals
+  - [ ] Ebus
+  - [ ] Processes
+  - [ ] Scheduler
+  - [ ] All other components (like drivers, io, cpu, etc.)
 - [ ] mmu
   - [ ] free interior pages when malloc free's entire virtual page
 - [ ] tar
@@ -44,6 +43,36 @@ section once they are finished.
 - [ ] Test code
 - [ ] Move drivers and other os level code out of kernel (only keep essentials)
 
+## `init`
+
+Split kernel code such that everything running in the kernel process is moved to
+an init executable loaded by the kernel. The kernel should only hold data and
+functions to interact with the system, kernel data and other processes including
+scheduling. `init` will complete high level initialization, mount disks and load
+the first program (shell) through system calls to the kernel.
+
+> [!NOTE] Example
+> One example is configuring the scheduler. This should hopefully help reduce
+> the kernel complexity, making it more manageable to work on all the different
+> components.
+
+When the init process returns, the kernel should halt, as this is the end of
+execution / signal to shutdown.
+
+init will also help reduce the size of the kernel / how much memory the boot
+loader needs to read.
+
+### Tasks
+
+- [ ] Finish io / driver code to load executables from the kernel
+- [ ] Expose kernel functions for processes to use
+  - [ ] configure scheduler
+  - [ ] load and launch processes
+  - [ ] load drivers
+- [ ] (bonus) User space and process permissions
+- [ ] Remove process struct from kernel struct
+- [ ] Come up with a fun name other than `/sbin/init`
+
 ## Getting out of ebus
 
 I think ebus is slowing things down + it doesn't allow for any priority (as
@@ -71,6 +100,14 @@ a system call to launch a new process from it's filename and args.
 - [ ] PWD for shell
 - [ ] System call to launch program from filename and args
 
+## R/W Filesystem
+
+Implement drivers for a file system that supports read and write.
+
+### Tasks
+
+- [ ]
+
 ## Process End
 
 Add code to handle a process closing or crashing. It should stop and remove the
@@ -91,7 +128,8 @@ The exit modes are "natural" (return from main), "exit" (call to exit()),
 
 ## Task Scheduler
 
-Create a task scheduler and add a yield to most / all system calls.
+Create a task scheduler and add a yield to most / all system calls. This
+scheduler should also handle the idle state when all processes are waiting.
 
 ### Tasks
 
@@ -99,6 +137,19 @@ Create a task scheduler and add a yield to most / all system calls.
   - [ ] Resume process with all events in queue before switching task
   - [ ] Task priority
 - [ ] Yield for all system calls
+- [ ] Idle if all processes are waiting
+
+## Load Drivers
+
+Compile drivers into files on the disk, enable kernel to load and activate
+drivers from disk.
+
+### Tasks
+
+- [ ] Define driver types
+- [ ] Define driver interface
+- [ ] Where in memory to load drivers to (are they processes?)
+- [ ] Add driver "plugin" system to kernel
 
 ## _Template Task_
 
