@@ -8,19 +8,20 @@
 #include "drivers/disk.h"
 #include "drivers/tar.h"
 #include "ebus.h"
+#include "kernel/scheduler.h"
 #include "memory_alloc.h"
 #include "process.h"
 #include "process_manager.h"
 
 typedef struct _kernel {
-    uint32_t   ram_table_addr;
-    uint32_t   cr3;
-    process_t  proc;
-    proc_man_t pm;
-    // TODO scheduler
-    ebus_t     event_queue;
-    disk_t *   disk;
-    tar_fs_t * tar;
+    uint32_t    ram_table_addr;
+    uint32_t    cr3;
+    process_t   proc;
+    proc_man_t  pm;
+    scheduler_t scheduler;
+    ebus_t      event_queue;
+    disk_t *    disk;
+    tar_fs_t *  tar;
 } kernel_t;
 
 /**
@@ -71,7 +72,7 @@ typedef int (*_proc_call_t)(void * data);
 
 int kernel_call_as_proc(int pid, _proc_call_t fn, void * data);
 
-int kernel_switch_task(int next_pid);
+int kernel_switch_task();
 
 void * kmalloc(size_t size);
 void * krealloc(void * ptr, size_t size);

@@ -98,6 +98,8 @@ void kernel_main() {
     // 9. setup process manager
     pm_create(&__kernel.pm);
 
+    scheduler_init(&__kernel.scheduler, &__kernel.pm);
+
     // 9.a create kernel process
     // Setup kernel process and add it to pm
     __kernel.pm.idle_task   = &__kernel.proc;
@@ -294,8 +296,8 @@ void * kernel_alloc_page(size_t count) {
     return process_add_pages(get_active_task(), count);
 }
 
-int kernel_switch_task(int next_pid) {
-    return pm_resume_process(&__kernel.pm, next_pid, 0);
+int kernel_switch_task() {
+    return scheduler_run(&__kernel.scheduler);
 }
 
 mmu_dir_t * get_kernel_dir() {

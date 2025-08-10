@@ -48,9 +48,10 @@ section once they are finished.
 1. Scheduler
 2. io
 3. init
-4. load drivers & r/w filesystem (any order)
-5. process end & heap / stack growth (any order)
-6. Getting out of ebus
+4. kernel logging
+5. load drivers & r/w filesystem (any order)
+6. process end & heap / stack growth (any order)
+7. Getting out of ebus
 
 # Active
 
@@ -80,6 +81,8 @@ a system call to launch a new process from it's filename and args.
 - [ ] System call to list dir
 - [ ] PWD for shell
 - [ ] System call to launch program from filename and args
+- [ ] stdio
+- [ ] pipes
 
 ## 3. `init`
 
@@ -111,7 +114,23 @@ loader needs to read.
 - [ ] Remove process struct from kernel struct
 - [ ] Come up with a fun name other than `/sbin/init`
 
-## 4. R/W Filesystem
+## 4. Kernel Logging
+
+Add logging from kernel. This should be printed until init takes control. Just
+display messages to start, but long term this needs to safe messages to memory
+until a disk is available to save logs to.
+
+A fun name could be `klogs`.
+
+### Tasks
+
+- [ ] Add logging functions
+- [ ] Display logs
+- [ ] Add function for init to disable printing logs
+- [ ] Store logs in memory
+- [ ] Write logs to disk
+
+## R/W Filesystem
 
 Implement drivers for a file system that supports read and write.
 
@@ -119,7 +138,7 @@ Implement drivers for a file system that supports read and write.
 
 - [ ]
 
-## 4. Load Drivers
+## Load Drivers
 
 Compile drivers into files on the disk, enable kernel to load and activate
 drivers from disk.
@@ -131,7 +150,7 @@ drivers from disk.
 - [ ] Where in memory to load drivers to (are they processes?)
 - [ ] Add driver "plugin" system to kernel
 
-## 5. Heap and stack growth
+## Heap and stack growth
 
 Add pages to the heap and stack as they outgrow their current allocation. This
 should be handled through page faults when the next page is accessed. Also
@@ -146,7 +165,7 @@ set limits.
 - [ ] Allocate page and add to table
 - [ ] Return from interrupt so process can continue
 
-## 5. Process End
+## Process End
 
 Add code to handle a process closing or crashing. It should stop and remove the
 process from the process manager, free the memory and any ram pages allocated.
@@ -164,7 +183,7 @@ The exit modes are "natural" (return from main), "exit" (call to exit()),
 - [ ] Free process
 - [ ] Any signals that may be relevant
 
-## 6. Getting out of ebus
+## Getting out of ebus
 
 I think ebus is slowing things down + it doesn't allow for any priority (as
 written). Some calls could be way faster passing control directly to the kernel

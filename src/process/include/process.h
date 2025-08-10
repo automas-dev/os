@@ -59,7 +59,7 @@ typedef struct _process {
     enum PROCESS_STATE state;
 
     // TODO replace this with scheduler
-    struct _process *  next_proc;
+    struct _process * next_proc;
 } process_t;
 
 /**

@@ -34,7 +34,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             event.proc_close.status_code = args->code;
 
             queue_event(&event);
-            kernel_switch_task(get_kernel()->proc.pid);
+            kernel_switch_task();
             KPANIC("Unexpected return from kernel_close_process");
         } break;
 
@@ -56,7 +56,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             event.proc_close.status_code = args->code;
 
             queue_event(&event);
-            kernel_switch_task(get_kernel()->proc.pid);
+            kernel_switch_task();
             KPANIC("Unexpected return from kernel_close_process");
         } break;
 
