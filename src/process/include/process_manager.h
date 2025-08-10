@@ -24,6 +24,7 @@ int pm_remove_proc(proc_man_t * pm, int pid);
 
 int pm_resume_process(proc_man_t * pm, int pid, ebus_event_t * event);
 
+// TODO move to scheduler
 process_t * pm_get_next(proc_man_t * pm);
 
 int pm_push_event(proc_man_t * pm, ebus_event_t * event);

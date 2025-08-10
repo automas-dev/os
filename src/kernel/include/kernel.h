@@ -17,6 +17,7 @@ typedef struct _kernel {
     uint32_t   cr3;
     process_t  proc;
     proc_man_t pm;
+    // TODO scheduler
     ebus_t     event_queue;
     disk_t *   disk;
     tar_fs_t * tar;

@@ -43,7 +43,45 @@ section once they are finished.
 - [ ] Test code
 - [ ] Move drivers and other os level code out of kernel (only keep essentials)
 
-## `init`
+# Task Order
+
+1. Scheduler
+2. io
+3. init
+4. load drivers & r/w filesystem (any order)
+5. process end & heap / stack growth (any order)
+6. Getting out of ebus
+
+# Active
+
+## 1, Task Scheduler
+
+Create a task scheduler and add a yield to most / all system calls. This
+scheduler should also handle the idle state when all processes are waiting. The
+scheduler should not need to call the kernel to handle process loading /
+switching. This should be handled through the process manager.
+
+### Tasks
+
+- [ ] Choose what task to run next
+  - [ ] Resume process with all events in queue before switching task
+  - [ ] Task priority
+- [ ] Yield for all system calls
+- [ ] Idle if all processes are waiting
+
+## 2. IO
+
+Now that shell is working, it needs a way to load and execute programs. Start
+with a function that can list a directory, store a cwd in the shell and add
+a system call to launch a new process from it's filename and args.
+
+### Tasks
+
+- [ ] System call to list dir
+- [ ] PWD for shell
+- [ ] System call to launch program from filename and args
+
+## 3. `init`
 
 Split kernel code such that everything running in the kernel process is moved to
 an init executable loaded by the kernel. The kernel should only hold data and
@@ -73,34 +111,7 @@ loader needs to read.
 - [ ] Remove process struct from kernel struct
 - [ ] Come up with a fun name other than `/sbin/init`
 
-## Getting out of ebus
-
-I think ebus is slowing things down + it doesn't allow for any priority (as
-written). Some calls could be way faster passing control directly to the kernel
-or next / target process. Ebus could still be useful for cases where the event
-cannot be served and must buffer (io, key events, etc.) but exec should use
-system calls.
-
-### Tasks
-
-- [ ] Define and document boundary between and usage of
-  - [ ] ebus
-  - [ ] system call
-  - [ ] signals
-
-## IO
-
-Now that shell is working, it needs a way to load and execute programs. Start
-with a function that can list a directory, store a cwd in the shell and add
-a system call to launch a new process from it's filename and args.
-
-### Tasks
-
-- [ ] System call to list dir
-- [ ] PWD for shell
-- [ ] System call to launch program from filename and args
-
-## R/W Filesystem
+## 4. R/W Filesystem
 
 Implement drivers for a file system that supports read and write.
 
@@ -108,7 +119,34 @@ Implement drivers for a file system that supports read and write.
 
 - [ ]
 
-## Process End
+## 4. Load Drivers
+
+Compile drivers into files on the disk, enable kernel to load and activate
+drivers from disk.
+
+### Tasks
+
+- [ ] Define driver types
+- [ ] Define driver interface
+- [ ] Where in memory to load drivers to (are they processes?)
+- [ ] Add driver "plugin" system to kernel
+
+## 5. Heap and stack growth
+
+Add pages to the heap and stack as they outgrow their current allocation. This
+should be handled through page faults when the next page is accessed. Also
+include limits for heap and stack to prevent collision and provide the option to
+set limits.
+
+### Tasks
+
+- [ ] Handle page faults to add pages
+- [ ] Track stack and heap locations
+- [ ] Choose stack or heap depending on page that faulted
+- [ ] Allocate page and add to table
+- [ ] Return from interrupt so process can continue
+
+## 5. Process End
 
 Add code to handle a process closing or crashing. It should stop and remove the
 process from the process manager, free the memory and any ram pages allocated.
@@ -126,30 +164,20 @@ The exit modes are "natural" (return from main), "exit" (call to exit()),
 - [ ] Free process
 - [ ] Any signals that may be relevant
 
-## Task Scheduler
+## 6. Getting out of ebus
 
-Create a task scheduler and add a yield to most / all system calls. This
-scheduler should also handle the idle state when all processes are waiting.
-
-### Tasks
-
-- [ ] Choose what task to run next
-  - [ ] Resume process with all events in queue before switching task
-  - [ ] Task priority
-- [ ] Yield for all system calls
-- [ ] Idle if all processes are waiting
-
-## Load Drivers
-
-Compile drivers into files on the disk, enable kernel to load and activate
-drivers from disk.
+I think ebus is slowing things down + it doesn't allow for any priority (as
+written). Some calls could be way faster passing control directly to the kernel
+or next / target process. Ebus could still be useful for cases where the event
+cannot be served and must buffer (io, key events, etc.) but exec should use
+system calls.
 
 ### Tasks
 
-- [ ] Define driver types
-- [ ] Define driver interface
-- [ ] Where in memory to load drivers to (are they processes?)
-- [ ] Add driver "plugin" system to kernel
+- [ ] Define and document boundary between and usage of
+  - [ ] ebus
+  - [ ] system call
+  - [ ] signals
 
 ## _Template Task_
 
