@@ -17,6 +17,7 @@
 #include "exec.h"
 #include "io/file.h"
 #include "kernel/boot_params.h"
+#include "kernel/logs.h"
 #include "kernel/system_call_io.h"
 #include "kernel/system_call_io_dir.h"
 #include "kernel/system_call_io_file.h"
@@ -117,6 +118,15 @@ void kernel_main() {
 
     // 11. print welcome message
     vga_puts("Welcome to kernel v" PROJECT_VERSION "\n");
+
+    kernel_log("Hello World %d", 12);
+    kernel_service_log("Testing", "Hi World!");
+
+    for (size_t i = 0; i < 10; i++) {
+        while (get_time_s() < i);
+        kernel_log("Timer %u s %u ms %u us", get_time_s(), get_time_ms(),  get_time_us());
+        kernel_log("RTC   %u s %u ms %u us", time_s(), time_ms(), time_us());
+    }
 
     // TODO is this needed here? Create it when it's needed
     ramdisk_create(4096);
