@@ -41,69 +41,23 @@ section once they are finished.
   - [ ] setup tss
   - [x] kernel interrupts
 - [ ] Document code
-  - [ ] cpu/idt.h
-  - [ ] cpu/isr.h
-  - [ ] cpu/mmu.h
-  - [ ] cpu/ports.h
-  - [ ] ram.h
-  - [ ] drivers/timer.h
-  - [ ] drivers/ata.h
-  - [ ] drivers/keyboard.h
-  - [ ] drivers/ramdisk.h
-  - [ ] drivers/rtc.h
-  - [ ] drivers/tar.h
-  - [ ] drivers/vga.h
-  - [x] libc/circbuff.h
-  - [ ] libc/dir.h
-  - [ ] libc/file.h
-  - [ ] libc/memory.h
-  - [ ] libc/stdio.h
-  - [ ] libc/string.h
-  - [ ] commands.h
-  - [ ] debug.h
-  - [ ] defs.h
-  - [ ] disk.h
-  - [ ] kernel.h
-  - [ ] term.h
 - [ ] Test code
-  - [ ] cpu/idt.h
-  - [ ] cpu/isr.h
-  - [ ] cpu/mmu.h
-  - [ ] cpu/ports.h
-  - [ ] ram.h
-  - [ ] drivers/timer.h
-  - [ ] drivers/ata.h
-  - [ ] drivers/keyboard.h
-  - [ ] drivers/ramdisk.h
-  - [ ] drivers/rtc.h
-  - [ ] drivers/tar.h
-  - [ ] drivers/vga.h
-  - [x] libc/circbuff.h
-  - [ ] libc/dir.h
-  - [ ] libc/file.h
-  - [x] libc/memory.h
-  - [ ] libc/stdio.h
-  - [x] libc/string.h
-  - [ ] commands.h
-  - [ ] debug.h
-  - [ ] defs.h
-  - [ ] disk.h
-  - [ ] kernel.h
-  - [ ] term.h
-  - [x] sys_call.h
 - [ ] Move drivers and other os level code out of kernel (only keep essentials)
 
 ## Getting out of ebus
 
 I think ebus is slowing things down + it doesn't allow for any priority (as
 written). Some calls could be way faster passing control directly to the kernel
-or next / target process. Ebus could still be useful for cases where th event
+or next / target process. Ebus could still be useful for cases where the event
 cannot be served and must buffer (io, key events, etc.) but exec should use
 system calls.
 
 ### Tasks
 
-- [ ]
+- [ ] Define and document boundary between and usage of
+  - [ ] ebus
+  - [ ] system call
+  - [ ] signals
 
 ## IO
 
