@@ -8,6 +8,7 @@
 #include "drivers/disk.h"
 #include "drivers/tar.h"
 #include "ebus.h"
+#include "kernel/memory.h"
 #include "kernel/scheduler.h"
 #include "memory_alloc.h"
 #include "process.h"
@@ -73,10 +74,6 @@ typedef int (*_proc_call_t)(void * data);
 int kernel_call_as_proc(int pid, _proc_call_t fn, void * data);
 
 int kernel_switch_task();
-
-void * kmalloc(size_t size);
-void * krealloc(void * ptr, size_t size);
-void   kfree(void * ptr);
 
 #ifdef TESTING
 #define NO_RETURN
