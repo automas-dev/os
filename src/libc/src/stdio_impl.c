@@ -2,8 +2,6 @@
 
 #include "libc/string.h"
 
-static size_t vprintf_impl(puts_fn ps, putc_fn pc, const char * fmt, va_list params);
-
 static size_t int_width(int32_t n, uint8_t base);
 static size_t long_int_width(int64_t n, uint8_t base);
 static size_t uint_width(uint32_t n, uint8_t base);
@@ -126,10 +124,7 @@ size_t vputlu(puts_fn ps, putc_fn pc, uint64_t num, uint8_t base, bool upper) {
 size_t vprintf(puts_fn ps, putc_fn pc, const char * fmt, ...) {
     va_list params;
     va_start(params, fmt);
-    return vprintf_impl(ps, pc, fmt, params);
-}
 
-static size_t vprintf_impl(puts_fn ps, putc_fn pc, const char * fmt, va_list params) {
     size_t o_len = 0;
     while (*fmt) {
         if (*fmt == '%') {

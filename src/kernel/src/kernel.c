@@ -120,12 +120,17 @@ void kernel_main() {
     // 11. print welcome message
     vga_puts("Welcome to kernel v" PROJECT_VERSION "\n");
 
-    kernel_log("Hello World %d", 12);
-    kernel_service_log("Testing", "Hi World!");
+    KLOG_INFO("Hello World %d", 12);
+    KLOGS_INFO("Testing", "Hi World!");
+    KLOG_TRACE("Trace message");
+    KLOG_DEBUG("Debug message");
+    KLOG_INFO("Info message");
+    KLOG_WARNING("Warning message");
+    KLOG_ERROR("Error message");
 
     for (size_t i = 0; i < 10; i++) {
         sleep(1000);
-        kernel_log("Time %u s %u ms %u us %lu ns", time_s(), time_ms(), time_us(), time_ns());
+        KLOG_INFO("Time %u s %u ms %u us %lu ns", time_s(), time_ms(), time_us(), time_ns());
     }
 
     // TODO is this needed here? Create it when it's needed
