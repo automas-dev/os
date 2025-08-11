@@ -120,6 +120,8 @@ void kernel_main() {
     // 11. print welcome message
     vga_puts("Welcome to kernel v" PROJECT_VERSION "\n");
 
+    // kernel_log_set_level(KERNEL_LOG_LEVEL_DEBUG);
+
     KLOG_INFO("Hello World %d", 12);
     KLOGS_INFO("Testing", "Hi World!");
     KLOG_TRACE("Trace message");

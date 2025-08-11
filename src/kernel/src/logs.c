@@ -7,10 +7,30 @@
 #include "libc/stdio_impl.h"
 #include "libc/string.h"
 
+int __enabled;
+int __level;
+
 static void put_time();
 
+void init_kernel_logs() {
+    __enabled = 1;
+    __level   = 0;
+}
+
+void kernel_log_enable() {
+    __enabled = 1;
+}
+
+void kernel_log_disable() {
+    __enabled = 0;
+}
+
+void kernel_log_set_level(int level) {
+    __level = level;
+}
+
 void kernel_log(int level, const char * service, const char * fmt, ...) {
-    if (level < 0) {
+    if (level < __level) {
         return;
     }
 
