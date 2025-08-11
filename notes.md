@@ -128,8 +128,8 @@ A fun name could be `klogs`.
 
 ### Tasks
 
-- [ ] Add logging functions
-- [ ] Display logs
+- [x] Add logging functions
+- [x] Display logs
 - [ ] Add function for init to disable printing logs
 - [ ] Store logs in memory
 - [ ] Write logs to disk
