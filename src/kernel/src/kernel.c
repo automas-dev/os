@@ -122,14 +122,6 @@ void kernel_main() {
 
     // kernel_log_set_level(KERNEL_LOG_LEVEL_DEBUG);
 
-    KLOG_INFO("Hello World %d", 12);
-    KLOGS_INFO("Testing", "Hi World!");
-    KLOG_TRACE("Trace message");
-    KLOG_DEBUG("Debug message");
-    KLOG_INFO("Info message");
-    KLOG_WARNING("Warning message");
-    KLOG_ERROR("Error message");
-
     for (size_t i = 0; i < 10; i++) {
         sleep(1000);
         KLOGS_DEBUG("time", "Time %u s %u ms %u us %lu ns", time_s(), time_ms(), time_us(), time_ns());
@@ -158,6 +150,8 @@ void kernel_main() {
 }
 
 static void setup_physical_memory() {
+    KLOG_TRACE("Setup physical memory");
+
     __kernel.ram_table_addr = PADDR_RAM_TABLE;
     ram_init((void *)__kernel.ram_table_addr, (void *)VADDR_RAM_BITMASKS);
 
@@ -178,6 +172,8 @@ static void setup_physical_memory() {
 }
 
 static void setup_virtual_memory() {
+    KLOG_TRACE("Setup virtual memory");
+
     __kernel.cr3     = PADDR_KERNEL_DIR;
     mmu_dir_t * pdir = (mmu_dir_t *)__kernel.cr3;
     mmu_dir_clear(pdir);
@@ -196,6 +192,8 @@ static void setup_virtual_memory() {
 }
 
 static void setup_tss() {
+    KLOG_TRACE("Setup tss");
+
     init_tss();
 
     // Kernel process used for memory allocation
@@ -210,6 +208,8 @@ static void setup_tss() {
 }
 
 static void setup_system_calls() {
+    KLOG_TRACE("Setup system calls");
+
     init_system_call(IRQ16);
     system_call_register(SYS_INT_FAMILY_IO, sys_call_io_cb);
     system_call_register(SYS_INT_FAMILY_MEM, sys_call_mem_cb);
@@ -419,6 +419,8 @@ static void cursor() {
 }
 
 static void irq_install() {
+    KLOG_DEBUG("Setup IRQs");
+
     enable_interrupts();
     /* IRQ0: timer */
     init_time(TIMER_FREQ_MS); // milliseconds

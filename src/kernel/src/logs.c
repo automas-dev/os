@@ -45,10 +45,8 @@ void kernel_log(int level, const char * service, const char * fmt, ...) {
 
     // Message color
     switch (level) {
-        case KERNEL_LOG_LEVEL_TRACE:
-            vga_color(VGA_FG_CYAN | VGA_BG_BLACK);
-            break;
         default:
+        case KERNEL_LOG_LEVEL_TRACE:
         case KERNEL_LOG_LEVEL_DEBUG:
             vga_color(VGA_FG_LIGHT_GRAY | VGA_BG_BLACK);
             break;
