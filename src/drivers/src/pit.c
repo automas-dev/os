@@ -12,9 +12,9 @@
 
 // bits 7 and 6
 enum PIT_CHANNEL {
-    PIT_CHANNEL_0         = 0x00,
-    PIT_CHANNEL_1         = 0x40,
-    PIT_CHANNEL_2         = 0x80,
+    PIT_CHANNEL_0 = 0x00,
+    PIT_CHANNEL_1 = 0x40,
+    PIT_CHANNEL_2 = 0x80,
     // PIT_CHANNEL_READ_BACK = 0xc0,
 };
 

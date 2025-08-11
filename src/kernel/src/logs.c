@@ -2,8 +2,8 @@
 
 #include <stdarg.h>
 
-#include "drivers/timer.h"
 #include "drivers/vga.h"
+#include "kernel/time.h"
 #include "libc/stdio.h"
 #include "libc/string.h"
 
@@ -66,15 +66,14 @@ void kernel_service_log(const char * service, const char * fmt, ...) {
 }
 
 static void put_time() {
-    uint32_t us = get_time_us();
-    uint32_t s = us / 1e6;
-    us %= 1000000;
+    uint32_t ms = time_ms();
+    uint32_t s  = ms / 1e3;
+    ms %= 1000;
 
     vga_putc('[');
-    // putlu(ns, 10, false);
     padded_uint(S_WIDTH, false, s, 10, false, false);
     vga_putc('.');
-    padded_uint(6, false, us, 10, false, true);
+    padded_uint(MS_WIDTH, false, ms, 10, false, true);
     vga_puts("] ");
 }
 

@@ -9,11 +9,11 @@
 #include "drivers/disk.h"
 #include "drivers/rtc.h"
 #include "drivers/tar.h"
-#include "drivers/timer.h"
 #include "drivers/vga.h"
 #include "ebus.h"
 #include "exec.h"
 #include "kernel.h"
+#include "kernel/time.h"
 #include "libc/datastruct/array.h"
 #include "libc/memory.h"
 #include "libc/proc.h"
@@ -146,10 +146,10 @@ static int port_in_cmd(size_t argc, char ** argv) {
 }
 
 static int time_cmd(size_t argc, char ** argv) {
-    uint32_t ticks = get_ticks();
-    uint32_t s     = get_time_s();
-    uint32_t ms    = get_time_ms();
-    uint32_t ns    = get_time_ns();
+    uint32_t ticks = time_ticks();
+    uint32_t s     = time_s();
+    uint32_t ms    = time_ms();
+    uint32_t ns    = time_ns();
     printf("System ticks: %u ~= %u ns ~= %u ms ~= %u s\n", ticks, ns, ms, s);
     printf("RTC time: %u us = %u ms = %u s\n", time_us(), time_ms(), time_s());
     return 0;

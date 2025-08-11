@@ -10,9 +10,9 @@
 #include "defs.h"
 #include "drivers/ata.h"
 #include "drivers/keyboard.h"
+#include "drivers/pit.h"
 #include "drivers/ramdisk.h"
 #include "drivers/rtc.h"
-#include "drivers/timer.h"
 #include "drivers/vga.h"
 #include "exec.h"
 #include "io/file.h"
@@ -24,6 +24,7 @@
 #include "kernel/system_call_mem.h"
 #include "kernel/system_call_proc.h"
 #include "kernel/system_call_stdio.h"
+#include "kernel/time.h"
 #include "libc/memory.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
@@ -123,9 +124,8 @@ void kernel_main() {
     kernel_service_log("Testing", "Hi World!");
 
     for (size_t i = 0; i < 10; i++) {
-        while (get_time_s() < i);
-        kernel_log("Timer %u s %u ms %u us", get_time_s(), get_time_ms(),  get_time_us());
-        kernel_log("RTC   %u s %u ms %u us", time_s(), time_ms(), time_us());
+        sleep(1000);
+        kernel_log("Time %u s %u ms %u us %lu ns", time_s(), time_ms(), time_us(), time_ns());
     }
 
     // TODO is this needed here? Create it when it's needed
@@ -141,11 +141,11 @@ void kernel_main() {
         KPANIC("Failed to open tar");
     }
 
-    start_shell();
+    // start_shell();
 
-    pm_resume_process(&__kernel.pm, __kernel.pm.idle_task->pid, 0);
+    // pm_resume_process(&__kernel.pm, __kernel.pm.idle_task->pid, 0);
 
-    idle_loop();
+    // idle_loop();
 
     KPANIC("You shouldn't be here!");
 }
@@ -414,7 +414,7 @@ static void cursor() {
 static void irq_install() {
     enable_interrupts();
     /* IRQ0: timer */
-    init_timer(TIMER_FREQ_MS); // milliseconds
+    init_time(TIMER_FREQ_MS); // milliseconds
     /* IRQ1: keyboard */
     init_keyboard();
     /* IRQ14: ata disk */

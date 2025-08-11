@@ -1,14 +1,15 @@
-#ifndef DRIVER_TIMER_H
-#define DRIVER_TIMER_H
+#ifndef KERNEL_TIME_H
+#define KERNEL_TIME_H
 
 #include <stdint.h>
 
 enum TIMER_FREQ {
     TIMER_FREQ_S  = 1,
     TIMER_FREQ_MS = 1000,
+    TIMER_FREQ_US = 1000000,
 };
 
-void init_timer(uint32_t freq);
+void init_time(uint32_t freq);
 
 /**
  * @brief
@@ -22,10 +23,13 @@ int start_timer_ms(uint32_t ms);
 
 void stop_timer(int id);
 
-uint32_t get_ticks();
+void sleep(uint32_t ms);
 
-uint32_t get_time_s();
-uint32_t get_time_ms();
-uint32_t get_time_ns();
+uint32_t time_ticks();
 
-#endif // DRIVER_TIMER_H
+uint32_t time_s();
+uint32_t time_ms();
+uint32_t time_us();
+uint64_t time_ns();
+
+#endif // KERNEL_TIME_H

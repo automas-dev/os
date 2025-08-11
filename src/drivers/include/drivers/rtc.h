@@ -32,9 +32,9 @@ typedef struct {
 
 void init_rtc(rtc_rate_t rate);
 
-uint32_t time_us();
-uint32_t time_ms();
-uint32_t time_s();
+// uint32_t time_us();
+// uint32_t time_ms();
+// uint32_t time_s();
 
 rtc_time_t * rtc_time();
 

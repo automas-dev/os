@@ -1,4 +1,4 @@
-#include "drivers/timer.h"
+#include "kernel/time.h"
 
 #include "cpu/isr.h"
 #include "cpu/ports.h"
@@ -41,7 +41,7 @@ static void timer_callback(registers_t * regs) {
     }
 }
 
-void init_timer(uint32_t freq) {
+void init_time(uint32_t freq) {
     __tick    = 0;
     __freq    = freq;
     __next_id = 1;
@@ -90,18 +90,29 @@ void stop_timer(int id) {
     }
 }
 
-uint32_t get_ticks() {
+void sleep(uint32_t ms) {
+    uint32_t goal = time_ms() + ms;
+    while (time_ms() < goal) {
+        asm("hlt");
+    }
+}
+
+uint32_t time_ticks() {
     return __tick;
 }
 
-uint32_t get_time_s() {
+uint32_t time_s() {
     return __tick / __freq;
 }
 
-uint32_t get_time_ms() {
-    return (__tick * 1000) / __freq;
+uint32_t time_ms() {
+    return (__tick * 1e3) / __freq;
 }
 
-uint32_t get_time_ns() {
-    return (__tick * 1000000000) / __freq;
+uint32_t time_us() {
+    return (__tick * 1e6) / __freq;
+}
+
+uint64_t time_ns() {
+    return ((uint64_t)__tick * 1e9) / (uint64_t)__freq;
 }
