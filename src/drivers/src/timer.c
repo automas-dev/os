@@ -2,17 +2,14 @@
 
 #include "cpu/isr.h"
 #include "cpu/ports.h"
+#include "drivers/pit.h"
 #include "ebus.h"
+#include "kernel/logs.h"
 #include "libc/datastruct/array.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
 
 // https://wiki.osdev.org/PIT
-
-#define PIT_CTR0_PORT 0x40
-#define PIT_CTR1_PORT 0x41
-#define PIT_CTR2_PORT 0x42
-#define PIT_CTL_PORT  0x43
 
 #define BASE_FREQ 1193180
 
@@ -49,6 +46,8 @@ void init_timer(uint32_t freq) {
     __freq    = freq;
     __next_id = 1;
 
+    init_pit();
+
     if (arr_create(&timers, 4, sizeof(timer_t))) {
         return;
     }
@@ -58,12 +57,9 @@ void init_timer(uint32_t freq) {
 
     /* Get the PIT value: hardware clock at 1193180 Hz */
     uint32_t divisor = BASE_FREQ / freq;
-    uint8_t  low     = (uint8_t)(divisor & 0xFF);
-    uint8_t  high    = (uint8_t)((divisor >> 8) & 0xFF);
-    /* Send the command */
-    port_byte_out(PIT_CTL_PORT, 0x36); /* Command port */
-    port_byte_out(PIT_CTR0_PORT, low);
-    port_byte_out(PIT_CTR0_PORT, high);
+
+    // pit_write_channel(0, PIT_ACCESS_MODE_LOW_HIGH, PIT_CHANNEL_MODE_3_SQUARE_WAVE_GEN, divisor);
+    pit_write_channel(0, PIT_ACCESS_MODE_LOW_HIGH, PIT_CHANNEL_MODE_2_RATE_GEN, divisor);
 }
 
 int start_timer(uint32_t ticks) {
