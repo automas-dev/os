@@ -130,7 +130,7 @@ void kernel_main() {
 
     for (size_t i = 0; i < 10; i++) {
         sleep(1000);
-        KLOG_DEBUG("Time %u s %u ms %u us %lu ns", time_s(), time_ms(), time_us(), time_ns());
+        KLOGS_DEBUG("time", "Time %u s %u ms %u us %lu ns", time_s(), time_ms(), time_us(), time_ns());
     }
 
     // TODO is this needed here? Create it when it's needed

@@ -18,7 +18,7 @@ void kernel_log(int level, const char * service, const char * fmt, ...) {
     put_time();
 
     if (service) {
-        vga_color(VGA_FG_LIGHT_MAGENTA);
+        vga_color(VGA_FG_MAGENTA);
         vga_puts(service);
         vga_puts(": ");
     }
