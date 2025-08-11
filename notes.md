@@ -43,6 +43,10 @@ section once they are finished.
 - [ ] Test code
 - [ ] Move drivers and other os level code out of kernel (only keep essentials)
 
+## Future work
+
+- vprintf that takes file instead of puts and putc
+
 # Task Order
 
 1. Scheduler
