@@ -87,9 +87,13 @@ void kernel_main() {
     // 7. setup system calls
     setup_system_calls();
 
+    init_kmalloc(ADDR2PAGE(VADDR_RAM_BITMASKS) + ram_region_table_count());
+
     // TODO why should the kernel need system calls?
     // Init kernel memory after system calls are registered
-    memory_init(&__kernel.proc.memory, kernel_alloc_page);
+    // memory_init(&__kernel.proc.memory, kernel_alloc_page);
+
+    KLOG_DEBUG("Creating kernel ebus");
 
     // 8. setup event bus
     // Create ebus for kernel (target of queue_event)
@@ -97,21 +101,25 @@ void kernel_main() {
         KPANIC("Failed to init ebus\n");
     }
 
+    KLOG_DEBUG("Creating process manager");
+
     // 9. setup process manager
     pm_create(&__kernel.pm);
+
+    KLOG_DEBUG("Creating scheduler");
 
     scheduler_init(&__kernel.scheduler, &__kernel.pm);
 
     // 9.a create kernel process
     // Setup kernel process and add it to pm
-    __kernel.pm.idle_task   = &__kernel.proc;
-    __kernel.proc.next_proc = __kernel.pm.idle_task;
-    pm_add_proc(&__kernel.pm, &__kernel.proc);
+    // __kernel.pm.idle_task   = &__kernel.proc;
+    // __kernel.proc.next_proc = __kernel.pm.idle_task;
+    // pm_add_proc(&__kernel.pm, &__kernel.proc);
 
     // Create ebus for kernel proc
-    if (ebus_create(&__kernel.proc.event_queue, 4096)) {
-        KPANIC("Failed to init ebus\n");
-    }
+    // if (ebus_create(&__kernel.proc.event_queue, 4096)) {
+    //     KPANIC("Failed to init ebus\n");
+    // }
 
     // 10. setup irq
     // Init drivers and hardware interrupts
@@ -196,12 +204,7 @@ static void setup_tss() {
 
     init_tss();
 
-    // Kernel process used for memory allocation
-    __kernel.proc.next_heap_page = ADDR2PAGE(VADDR_RAM_BITMASKS) + ram_region_table_count();
-    __kernel.proc.cr3            = PADDR_KERNEL_DIR;
-    __kernel.proc.esp0           = VADDR_ISR_STACK;
-    __kernel.proc.state          = PROCESS_STATE_LOADED;
-    set_active_task(&__kernel.proc);
+    __kernel.esp0 = VADDR_ISR_STACK;
 
     // Set initial ESP0 before first task switch
     tss_set_esp0(VADDR_ISR_STACK);
@@ -309,10 +312,6 @@ static int start_shell() {
     return kernel_exec(filename, 1, &filename);
 }
 
-void * kernel_alloc_page(size_t count) {
-    return process_add_pages(get_active_task(), count);
-}
-
 int kernel_switch_task() {
     return scheduler_run(&__kernel.scheduler);
 }
@@ -396,18 +395,6 @@ proc_man_t * kernel_get_proc_man() {
 
 process_t * kernel_find_pid(int pid) {
     return pm_find_pid(&__kernel.pm, pid);
-}
-
-void * kmalloc(size_t size) {
-    return memory_alloc(&__kernel.proc.memory, size);
-}
-
-void * krealloc(void * ptr, size_t size) {
-    return memory_realloc(&__kernel.proc.memory, ptr, size);
-}
-
-void kfree(void * ptr) {
-    memory_free(&__kernel.proc.memory, ptr);
 }
 
 static void cursor() {

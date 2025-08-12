@@ -9,4 +9,6 @@ void * kmalloc(size_t size);
 void * krealloc(void * ptr, size_t size);
 void   kfree(void * ptr);
 
+void * kernel_alloc_page(size_t count);
+
 #endif // KERNEL_MEMORY_H

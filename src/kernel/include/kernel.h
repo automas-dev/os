@@ -17,7 +17,7 @@
 typedef struct _kernel {
     uint32_t    ram_table_addr;
     uint32_t    cr3;
-    process_t   proc;
+    uint32_t    esp0;
     proc_man_t  pm;
     scheduler_t scheduler;
     ebus_t      event_queue;
@@ -58,8 +58,6 @@ process_t *  kernel_find_pid(int pid);
 
 // Returns pid
 int kernel_exec(const char * filename, size_t argc, char ** argv);
-
-void * kernel_alloc_page(size_t count);
 
 void tmp_register_signals_cb(signals_master_cb_t cb);
 
