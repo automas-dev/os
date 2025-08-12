@@ -19,7 +19,6 @@ size_t putu(uint32_t num, uint8_t base, bool upper);
 size_t putlu(uint64_t num, uint8_t base, bool upper);
 
 size_t printf(const char * fmt, ...);
-size_t vprintf(const char * fmt, va_list params);
 
 size_t print_hexblock(const uint8_t * data, size_t count, size_t addr_offset);
 

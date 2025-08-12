@@ -40,11 +40,19 @@ Kernel in protected mode setting up system for user space applications.
    1. Init timer
    2. Init keyboard
    3. ~~Init ata~~
-7. Load ATA & FS drivers
-8. Read OS into memory
-9. Setup stack for TSS
-10. Create idle process
-11. ~~Setup Malloc~~
+7. Setup system calls
+8. Setup event bus
+9. Setup process manager
+   1. Create kernel process
+   2. Create kernel idle task
+10. Setup IRQ
+11. Print welcome message
+12. TODO after this needs to be revised
+13. Load ATA & FS drivers
+14. Read OS into memory
+15. Setup stack for TSS
+16. Create idle process
+17. ~~Setup Malloc~~
     1. should be per proc
 
 ## Stage 3 - OS

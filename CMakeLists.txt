@@ -33,6 +33,9 @@ include_directories(PRIVATE ${CMAKE_BINARY_DIR}/include)
 
 include(cmake/targets.cmake)
 
+# set KERNEL macro for build time
+add_compile_options(-DKERNEL)
+
 add_subdirectory(src)
 
 # ------------------------------------------------------------------------------

@@ -10,18 +10,21 @@
 #include "defs.h"
 #include "drivers/ata.h"
 #include "drivers/keyboard.h"
+#include "drivers/pit.h"
 #include "drivers/ramdisk.h"
 #include "drivers/rtc.h"
-#include "drivers/timer.h"
 #include "drivers/vga.h"
-#include "idle.h"
+#include "exec.h"
 #include "io/file.h"
 #include "kernel/boot_params.h"
-#include "kernel/system_call.h"
+#include "kernel/logs.h"
 #include "kernel/system_call_io.h"
+#include "kernel/system_call_io_dir.h"
+#include "kernel/system_call_io_file.h"
 #include "kernel/system_call_mem.h"
 #include "kernel/system_call_proc.h"
 #include "kernel/system_call_stdio.h"
+#include "kernel/time.h"
 #include "libc/memory.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
@@ -31,7 +34,7 @@
 #include "process.h"
 #include "process_manager.h"
 #include "ram.h"
-#include "term.h"
+#include "system_call.h"
 
 static kernel_t __kernel;
 
@@ -42,25 +45,135 @@ static void id_map_page(mmu_table_t * table, size_t page);
 static void cursor();
 static void irq_install();
 static int  kill(size_t argc, char ** argv);
-static int  try_switch(size_t argc, char ** argv);
 static void map_first_table(mmu_table_t * table);
 
 extern void jump_kernel_mode(void * fn);
 
-static void foo_task();
-static void bar_task();
+static void setup_physical_memory();
+static void setup_virtual_memory();
+static void setup_tss();
+static void setup_system_calls();
+
+static void idle_loop();
+static int  start_shell();
+
+static process_t * load_init();
 
 void kernel_main() {
+    // 1. load vga driver
     init_vga(UINT2PTR(PADDR_VGA));
+    // 1.1 clear screen
     vga_clear();
 
+    // 2. setup memory
     kmemset(&__kernel, 0, sizeof(kernel_t));
 
-    boot_params_t * bparams = get_boot_params();
+    // 2.1 physical memory allocator
+    setup_physical_memory();
 
-    // Init RAM
+    // 2.2 virtual memory (paging)
+    setup_virtual_memory();
+
+    // 3. enable paging
+    mmu_enable_paging(__kernel.cr3);
+
+    // 4. setup gdt (kernel + usr + tss)
+    init_gdt();
+
+    // 5. setup tss (empty)
+    setup_tss();
+
+    // 6. setup isr and idt
+    isr_install();
+
+    // 7. setup system calls
+    setup_system_calls();
+
+    init_kmalloc(ADDR2PAGE(VADDR_RAM_BITMASKS) + ram_region_table_count());
+
+    // TODO why should the kernel need system calls?
+    // Init kernel memory after system calls are registered
+    // memory_init(&__kernel.proc.memory, kernel_alloc_page);
+
+    KLOG_DEBUG("Creating kernel ebus");
+
+    // 8. setup event bus
+    // Create ebus for kernel (target of queue_event)
+    if (ebus_create(&__kernel.event_queue, 4096)) {
+        KPANIC("Failed to init ebus\n");
+    }
+
+    _libc_config_queue_event_call(kernel_queue_event);
+
+    KLOG_DEBUG("Creating process manager");
+
+    // 9. setup process manager
+    pm_create(&__kernel.pm);
+
+    KLOG_DEBUG("Creating scheduler");
+
+    scheduler_init(&__kernel.scheduler, &__kernel.pm);
+
+    // 10. setup irq
+    // Init drivers and hardware interrupts
+    irq_install();
+
+    // 11. print welcome message
+    vga_puts("Welcome to kernel v" PROJECT_VERSION "\n");
+
+    // kernel_log_set_level(KERNEL_LOG_LEVEL_DEBUG);
+
+    // for (size_t i = 0; i < 10; i++) {
+    //     sleep(1000);
+    //     KLOGS_DEBUG("time", "Time %u s %u ms %u us %lu ns", time_s(), time_ms(), time_us(), time_ns());
+    // }
+
+    KLOG_DEBUG("Creating ram disk");
+
+    // TODO is this needed here? Create it when it's needed
+    ramdisk_create(4096);
+
+    KLOG_DEBUG("Opening ata disk");
+
+    __kernel.disk = disk_open(0, DISK_DRIVER_ATA);
+    if (!__kernel.disk) {
+        KPANIC("Failed to open ATA disk");
+    }
+
+    KLOG_DEBUG("Opening tar fs on disk");
+
+    __kernel.tar = tar_open(__kernel.disk);
+    if (!__kernel.tar) {
+        KPANIC("Failed to open tar");
+    }
+
+    KLOG_DEBUG("Loading init executable");
+
+    process_t * init = load_init();
+    if (!init) {
+        KPANIC("Failed to load init executable");
+    }
+
+    KLOG_DEBUG("Launching init executable");
+
+    start_first_task(init);
+
+    // int shell_pid = start_shell();
+
+    // pm_resume_process(&__kernel.pm, shell_pid, 0);
+
+    // idle_loop();
+
+    KPANIC("You shouldn't be here!");
+}
+
+static void setup_physical_memory() {
+    KLOG_TRACE("Setup physical memory");
+
     __kernel.ram_table_addr = PADDR_RAM_TABLE;
     ram_init((void *)__kernel.ram_table_addr, (void *)VADDR_RAM_BITMASKS);
+
+    boot_params_t * bparams = get_boot_params();
 
     for (size_t i = 0; i < bparams->mem_entries_count; i++) {
         upper_ram_t * entry = &bparams->mem_entries[i];
@@ -74,8 +187,11 @@ void kernel_main() {
             ram_region_add_memory(entry->base_addr, entry->length);
         }
     }
+}
 
-    // Init Page Dir
+static void setup_virtual_memory() {
+    KLOG_TRACE("Setup virtual memory");
+
     __kernel.cr3     = PADDR_KERNEL_DIR;
     mmu_dir_t * pdir = (mmu_dir_t *)__kernel.cr3;
     mmu_dir_clear(pdir);
@@ -91,120 +207,214 @@ void kernel_main() {
 
     // Map last table to dir for access to tables
     mmu_dir_set(pdir, MMU_DIR_SIZE - 1, __kernel.cr3, MMU_DIR_RW);
+}
 
-    // Enter Paging
-    mmu_enable_paging(__kernel.cr3);
+static void setup_tss() {
+    KLOG_TRACE("Setup tss");
 
-    // GDT & TSS
-    init_gdt();
     init_tss();
 
-    // Kernel process used for memory allocation
-    __kernel.proc.next_heap_page = ADDR2PAGE(VADDR_RAM_BITMASKS) + ram_region_table_count();
-    __kernel.proc.cr3            = PADDR_KERNEL_DIR;
-    __kernel.proc.esp0           = VADDR_ISR_STACK;
-    __kernel.proc.state          = PROCESS_STATE_LOADED;
-    set_active_task(&__kernel.proc);
+    __kernel.esp0 = VADDR_ISR_STACK;
 
     // Set initial ESP0 before first task switch
     tss_set_esp0(VADDR_ISR_STACK);
+}
 
-    isr_install();
+static void setup_system_calls() {
+    KLOG_TRACE("Setup system calls");
 
     init_system_call(IRQ16);
     system_call_register(SYS_INT_FAMILY_IO, sys_call_io_cb);
     system_call_register(SYS_INT_FAMILY_MEM, sys_call_mem_cb);
     system_call_register(SYS_INT_FAMILY_PROC, sys_call_proc_cb);
     system_call_register(SYS_INT_FAMILY_STDIO, sys_call_tmp_stdio_cb);
-
-    // Init kernel memory after system calls are registered
-    memory_init(&__kernel.kernel_memory, _sys_page_alloc);
-    init_malloc(&__kernel.kernel_memory);
-
-    pm_create(&__kernel.pm);
-
-    process_t * idle = init_idle();
-    printf("Idle task pid is %u\n", idle->pid);
-    __kernel.pm.idle_task   = idle;
-    __kernel.proc.next_proc = __kernel.pm.idle_task;
-    // pm_add_proc(&__kernel.pm, &__kernel.proc);
-    pm_add_proc(&__kernel.pm, idle);
-    // __kernel.pm.task_begin  = &__kernel.proc;
-
-    if (ebus_create(&__kernel.event_bus, 4096)) {
-        KPANIC("Failed to init ebus\n");
-    }
-
-    irq_install();
-
-    vga_puts("Welcome to kernel v" PROJECT_VERSION "\n");
-
-    term_init();
-    if (arr_size(&__kernel.pm.task_list) == 0) {
-        KPANIC("No process");
-    }
-
-    commands_init();
-
-    term_command_add("exit", kill);
-
-    ramdisk_create(4096);
-
-    __kernel.disk = disk_open(0, DISK_DRIVER_ATA);
-    if (!__kernel.disk) {
-        KPANIC("Failed to open ATA disk");
-    }
-
-    __kernel.tar = tar_open(__kernel.disk);
-    if (!__kernel.tar) {
-        KPANIC("Failed to open tar");
-    }
-
-    process_t * foo_proc = kmalloc(sizeof(process_t));
-    if (process_create(foo_proc)) {
-        KPANIC("Failed to create foo task");
-    }
-    process_set_entrypoint(foo_proc, foo_task);
-    foo_proc->state = PROCESS_STATE_LOADED;
-    pm_add_proc(&__kernel.pm, foo_proc);
-
-    process_t * bar_proc = kmalloc(sizeof(process_t));
-    if (process_create(bar_proc)) {
-        KPANIC("Failed to create bar task");
-    }
-    process_set_entrypoint(bar_proc, bar_task);
-    bar_proc->state = PROCESS_STATE_LOADED;
-    pm_add_proc(&__kernel.pm, bar_proc);
-
-    pm_resume_process(&__kernel.pm, __kernel.pm.idle_task->pid, 0);
-
-    KPANIC("You shouldn't be here!");
+    system_call_register(SYS_INT_FAMILY_STDIO, sys_call_tmp_stdio_cb);
+    system_call_register(SYS_INT_FAMILY_IO_FILE, sys_call_io_file_cb);
+    system_call_register(SYS_INT_FAMILY_IO_DIR, sys_call_io_dir_cb);
 }
 
-static void foo_task() {
+static char * copy_string(const char * str) {
+    int    len     = kstrlen(str);
+    char * new_str = kmalloc(len + 1);
+    kmemcpy(new_str, str, len + 1);
+    return new_str;
+}
+
+static int copy_args(process_t * proc, const char * filepath, int argc, const char ** argv) {
+    if (!proc || !filepath || !argv) {
+        return -1;
+    }
+
+    proc->filepath = copy_string(filepath);
+    proc->argc     = argc;
+    proc->argv     = kmalloc(sizeof(char *) * argc);
+    for (int i = 0; i < argc; i++) {
+        proc->argv[i] = copy_string(argv[i]);
+    }
+
+    return 0;
+}
+
+typedef int (*ff_t)(size_t argc, char ** argv);
+
+static void proc_entry() {
+    process_t * proc = get_active_task();
+    ff_t        fn   = UINT2PTR(VADDR_USER_MEM);
+
+    KLOG_INFO("Start task %s with %u args", proc->filepath, proc->argc);
+
+    // TODO get start function pointer from elf
+
+    int res           = fn(proc->argc, proc->argv);
+    proc->status_code = res;
+}
+
+static process_t * load_init() {
+    const char * filename = "init";
+
+    tar_stat_t stat;
+    if (!tar_stat_file(kernel_get_tar(), filename, &stat)) {
+        KLOGS_ERROR("init", "Failed to find file\n");
+        return 0;
+    }
+
+    uint8_t * buff = kmalloc(stat.size);
+    if (!buff) {
+        return 0;
+    }
+
+    tar_fs_file_t * file = tar_file_open(kernel_get_tar(), filename);
+    if (!file) {
+        kfree(buff);
+        return 0;
+    }
+
+    if (!tar_file_read(file, buff, stat.size)) {
+        tar_file_close(file);
+        kfree(buff);
+        return 0;
+    }
+
+    process_t * proc = kmalloc(sizeof(process_t));
+
+    if (process_create(proc)) {
+        KLOGS_ERROR("init", "Failed to create process\n");
+        return 0;
+    }
+
+    if (process_load_heap(proc, buff, stat.size)) {
+        KLOGS_ERROR("init", "Failed to load\n");
+        process_free(proc);
+        return 0;
+    }
+
+    for (size_t i = 0; i < 1022; i++) {
+        process_grow_stack(proc);
+    }
+
+    copy_args(proc, filename, 1, &filename);
+
+    process_set_entrypoint(proc, proc_entry);
+    process_add_pages(proc, 32);
+    pm_add_proc(&__kernel.pm, proc);
+
+    tar_file_close(file);
+    kfree(buff);
+
+    return proc;
+}
+
+static void idle_loop() {
     for (;;) {
-        // printf("foo %u\n", getpid());
-        ebus_event_t event;
-        int          ev = pull_event(EBUS_EVENT_KEY, &event);
-        // if (ev == EBUS_EVENT_KEY) {
-        //     printf("Foo got event %u\n", ev);
-        // }
+        asm("hlt");
+
+        while (cb_len(&__kernel.event_queue.queue) > 0) {
+            ebus_event_t event;
+            if (cb_pop(&__kernel.event_queue.queue, &event)) {
+                KPANIC("Failed to pop from event queue");
+            }
+
+            switch (event.event_id) {
+                case EBUS_EVENT_EXEC: {
+                    int pid = kernel_exec(event.exec.filename, event.exec.argc, event.exec.argv);
+                    if (pid > 0) {
+                        ebus_event_t proc_event  = {0};
+                        proc_event.event_id      = EBUS_EVENT_PROC_MADE;
+                        proc_event.proc_made.pid = pid;
+                        if (ebus_push(&__kernel.event_queue, &proc_event)) {
+                            KPANIC("Ebus push failed");
+                        }
+                    }
+                } break;
+
+                case EBUS_EVENT_PROC_CLOSE: {
+                    process_t * proc = kernel_find_pid(event.proc_close.pid);
+                    if (!proc) {
+                        KPANIC("Failed to find pid");
+                    }
+                    if (pm_remove_proc(&__kernel.pm, proc->pid)) {
+                        KPANIC("Failed to remove process from pm");
+                    }
+                    process_free(proc);
+                } break;
+
+                default: {
+                    if (pm_push_event(&__kernel.pm, &event)) {
+                        KPANIC("Failed to push event to process manager");
+                    }
+                } break;
+            }
+        }
+
+        yield();
     }
 }
 
-static void bar_task() {
-    for (;;) {
-        // printf("bar %u\n", getpid());
-        ebus_event_t event;
-        int          ev = pull_event(EBUS_EVENT_ANY, &event);
-        // if (ev == EBUS_EVENT_KEY) {
-        //     printf("Bar got event %u\n", ev);
-        // }
+int kernel_exec(const char * filename, size_t argc, char ** argv) {
+    tar_stat_t stat;
+    if (!tar_stat_file(kernel_get_tar(), filename, &stat)) {
+        puts("Failed to find file\n");
+        return -1;
     }
+
+    uint8_t * buff = kmalloc(stat.size);
+    if (!buff) {
+        return -1;
+    }
+
+    tar_fs_file_t * file = tar_file_open(kernel_get_tar(), filename);
+    if (!file) {
+        kfree(buff);
+        return -1;
+    }
+
+    if (!tar_file_read(file, buff, stat.size)) {
+        tar_file_close(file);
+        kfree(buff);
+        return -1;
+    }
+
+    int pid = command_exec(buff, stat.size, argc, argv);
+
+    if (pid < 0) {
+        tar_file_close(file);
+        kfree(buff);
+        return -1;
+    }
+
+    tar_file_close(file);
+    kfree(buff);
+
+    return pid;
 }
 
-int kernel_switch_task(int next_pid) {
-    return pm_resume_process(&__kernel.pm, next_pid, 0);
+static int start_shell() {
+    char * filename = "shell";
+    return kernel_exec(filename, 1, &filename);
+}
+
+int kernel_switch_task() {
+    return scheduler_run(&__kernel.scheduler);
 }
 
 mmu_dir_t * get_kernel_dir() {
@@ -220,7 +430,11 @@ process_t * get_current_process() {
 }
 
 ebus_t * get_kernel_ebus() {
-    return &__kernel.event_bus;
+    return &__kernel.event_queue;
+}
+
+void kernel_queue_event(ebus_event_t * event) {
+    ebus_push(&__kernel.event_queue, event);
 }
 
 disk_t * kernel_get_disk() {
@@ -276,24 +490,16 @@ NO_RETURN void kernel_panic(const char * msg, const char * file, unsigned int li
     halt();
 }
 
+kernel_t * get_kernel() {
+    return &__kernel;
+}
+
 proc_man_t * kernel_get_proc_man() {
     return &__kernel.pm;
 }
 
 process_t * kernel_find_pid(int pid) {
     return pm_find_pid(&__kernel.pm, pid);
-}
-
-void * kmalloc(size_t size) {
-    return memory_alloc(&__kernel.kernel_memory, size);
-}
-
-void * krealloc(void * ptr, size_t size) {
-    return memory_realloc(&__kernel.kernel_memory, ptr, size);
-}
-
-void kfree(void * ptr) {
-    memory_free(&__kernel.kernel_memory, ptr);
 }
 
 static void cursor() {
@@ -305,9 +511,11 @@ static void cursor() {
 }
 
 static void irq_install() {
+    KLOG_DEBUG("Setup IRQs");
+
     enable_interrupts();
     /* IRQ0: timer */
-    init_timer(TIMER_FREQ_MS); // milliseconds
+    init_time(TIMER_FREQ_MS); // milliseconds
     /* IRQ1: keyboard */
     init_keyboard();
     /* IRQ14: ata disk */

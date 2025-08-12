@@ -18,25 +18,36 @@ These are calls from the process to the kernel
 
 An interrupt id is an 8 bit family + an 8 bit id.
 
-| Family          | ID     | Name                                                                 |
-| --------------- | ------ | -------------------------------------------------------------------- |
-| I/O             | 0x0100 | open                                                                 |
-|                 | 0x0101 | close                                                                |
-|                 | 0x0102 | read                                                                 |
-|                 | 0x0103 | write                                                                |
-|                 | 0x0104 | seek                                                                 |
-|                 | 0x0105 | tell                                                                 |
-| Memory          | 0x0200 | `void * malloc(size_t size)`                                         |
-|                 | 0x0201 | `void * realloc(void * ptr, size_t size)`                            |
-|                 | 0x0202 | `void free(void * ptr)`                                              |
-| Process Control | 0x0300 | `void exit(uint8_t code)`                                            |
-|                 | 0x0301 | `void abort(uint8_t code, const char * msg)`                         |
-|                 | 0x0302 | `void panic(const char * msg, const char * file, unsigned int line)` |
-|                 | 0x0303 | `int register_signals(void * callback)`                              |
-|                 | 0x0304 | `int getpid()`                                                       |
-| Tmp Std I/O     | 0x1000 | `size_t putc(char c)`                                                |
-|                 | 0x1001 | `size_t puts(const char * str)`                                      |
-|                 | 0x1002 | `size_t vprintf(const char * fmt, va_list params)`                   |
+| Family          | ID     | Name                                                                      |
+| --------------- | ------ | ------------------------------------------------------------------------- |
+| I/O             | 0x0100 | open                                                                      |
+|                 | 0x0101 | close                                                                     |
+|                 | 0x0102 | read                                                                      |
+|                 | 0x0103 | write                                                                     |
+|                 | 0x0104 | seek                                                                      |
+|                 | 0x0105 | tell                                                                      |
+| Memory          | 0x0200 | `void * malloc(size_t size)`                                              |
+|                 | 0x0201 | `void * realloc(void * ptr, size_t size)`                                 |
+|                 | 0x0202 | `void free(void * ptr)`                                                   |
+| Process Control | 0x0300 | `void exit(uint8_t code)`                                                 |
+|                 | 0x0301 | `void abort(uint8_t code, const char * msg)`                              |
+|                 | 0x0302 | `void panic(const char * msg, const char * file, unsigned int line)`      |
+|                 | 0x0303 | `int register_signals(void * callback)`                                   |
+|                 | 0x0304 | `int getpid()`                                                            |
+| Tmp Std I/O     | 0x1000 | `size_t putc(char c)`                                                     |
+|                 | 0x1001 | `size_t puts(const char * str)`                                           |
+|                 | 0x1002 | `size_t vprintf(const char * fmt, va_list params)`                        |
+| File I/O        | 0x1101 | `file_t file_open(const char * path, const char * mode)`                  |
+|                 | 0x1102 | `void file_close(file_t)`                                                 |
+|                 | 0x1103 | `size_t file_read(file_t, size_t size, size_t count, void * buff)`        |
+|                 | 0x1104 | `size_t file_write(file_t, size_t size, size_t count, const void * buff)` |
+|                 | 0x1105 | `int file_seek(file_t, int offset, int origin)`                           |
+|                 | 0x1105 | `int file_tell(file_t)`                                                   |
+| Dir I/O         | 0x1201 | `dir_t dir_open(const char * path)`                                       |
+|                 | 0x1202 | `void dir_close(dir_t)`                                                   |
+|                 | 0x1203 | `int dir_read(dir_t, void * dir_entry)`                                   |
+|                 | 0x1205 | `int dir_seek(dir_t, int offset, int origin)`                             |
+|                 | 0x1205 | `int dir_tell(dir_t)`                                                     |
 
 # System Signals
 

@@ -6,10 +6,11 @@ Active and planned work is tracked in [notes.md](notes.md)
 
 For current specs see
 
-- [memory.md](design/memory.md)
 - [boot.md](design/boot.md)
-- [system_call.md](design/system_call.md)
 - ~~[filesystem.md](design/filesystem.md)~~
+- [memory.md](design/memory.md)
+- [process.md](design/process.md)
+- [system_call.md](design/system_call.md)
 
 ## Goals
 
@@ -55,7 +56,7 @@ achieve these goals.
   - [x] Kernel Service Calls
 - [ ] Date and Time
 - [ ] Optional don't disable interrupts during interrupt (nested interrupts)
-- [ ] Better key event buffer (with mods) (maybe in addition to char buffer)
+- [x] Better key event buffer (with mods) (maybe in addition to char buffer)
 - [x] Change stdlib names with k prefix for namespace during testing
 - [ ] Optimize disk read to check if area already in buffer
 
@@ -85,8 +86,14 @@ there is enough support for their development.
 
 ## Setup
 
+You will need to install the gcc i386 elf cross compiler. This project expects
+this to be under `~/.local/opt/cross` but this can be changed by editing the
+root `CMakeLists.txt`. For instructions of how to build the i386 elf compiler
+from source, follow the instructions on the OS-Dev Wiki
+[GCC_Cross-Compiler](https://wiki.osdev.org/GCC_Cross-Compiler)
+
 ```sh
-git clone git@github.com:twh2898/os.git
+git clone git@github.com:automas-dev/os.git
 cd os
 make setup
 ```
@@ -118,39 +125,4 @@ make test_cov DARK_MODE=ON
 ```sh
 make lint
 make format
-```
-
-### Format drive.img
-
-After creating the drive image with `make drive.img` you can format and mount it
-using the following.
-
-Setup file as drive
-
-```sh
-modprobe nbd max_part=63
-qemu-nbd -c /dev/nbd0 drive.img
-```
-
-Format drive
-
-```sh
-fdisk /dev/nbd0
-mkfs.fat -F32 /dev/nbd0p1
-```
-
-Fdisk commands should be `onp1  w`
-
-Mount the drive
-
-```sh
-mount /dev/nbd0p1 drive
-```
-
-Unmount the drive
-
-```sh
-umount drive
-qemu-nbd -d /dev/nbd0
-rmmod nbd
 ```

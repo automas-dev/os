@@ -35,8 +35,16 @@ int _sys_io_tell(int handle) {
     return send_call(SYS_INT_IO_TELL, handle);
 }
 
-void * _sys_page_alloc(size_t count) {
-    return UINT2PTR(send_call(SYS_INT_MEM_PAGE_ALLOC, count));
+void * _sys_mem_malloc(size_t size) {
+    return UINT2PTR(send_call(SYS_INT_MEM_MALLOC, size));
+}
+
+void * _sys_mem_realloc(void * ptr, size_t size) {
+    return UINT2PTR(send_call(SYS_INT_MEM_REALLOC, ptr, size));
+}
+
+void _sys_mem_free(void * ptr) {
+    send_call(SYS_INT_MEM_FREE, ptr);
 }
 
 void _sys_proc_exit(uint8_t code) {
@@ -70,10 +78,58 @@ int _sys_yield(int filter, ebus_event_t * event_out) {
     return send_call(SYS_INT_PROC_YIELD, filter, event_out);
 }
 
+int _sys_proc_exec(const char * filename, int argc, char ** argv) {
+    return send_call(SYS_INT_PROC_EXEC, filename, argc, argv);
+}
+
 size_t _sys_putc(char c) {
     return send_call(SYS_INT_STDIO_PUTC, c);
 }
 
 size_t _sys_puts(const char * str) {
     return send_call(SYS_INT_STDIO_PUTS, str);
+}
+
+file_t _sys_io_file_open(const char * path, const char * mode) {
+    return send_call(SYS_INT_IO_FILE_OPEN, path, mode);
+}
+
+void _sys_io_file_close(file_t fp) {
+    send_call(SYS_INT_IO_FILE_CLOSE, fp);
+}
+
+size_t _sys_io_file_read(file_t fp, size_t size, size_t count, void * buff) {
+    return send_call(SYS_INT_IO_FILE_READ, fp, size, count, buff);
+}
+
+size_t _sys_io_file_write(file_t fp, size_t size, size_t count, const void * buff) {
+    return send_call(SYS_INT_IO_FILE_WRITE, fp, size, count, buff);
+}
+
+int _sys_io_file_seek(file_t fp, int offset, int origin) {
+    return send_call(SYS_INT_IO_FILE_SEEK, fp, offset, origin);
+}
+
+int _sys_io_file_tell(file_t fp) {
+    return send_call(SYS_INT_IO_FILE_TELL, fp);
+}
+
+dir_t _sys_io_dir_open(const char * path) {
+    return send_call(SYS_INT_IO_DIR_OPEN, path);
+}
+
+void _sys_io_dir_close(dir_t dp) {
+    send_call(SYS_INT_IO_DIR_CLOSE, dp);
+}
+
+int _sys_io_dir_read(dir_t dp, void * dir_entry) {
+    return send_call(SYS_INT_IO_DIR_READ, dp, dir_entry);
+}
+
+int _sys_io_dir_seek(dir_t dp, int offset, int origin) {
+    return send_call(SYS_INT_IO_DIR_SEEK, dp, offset, origin);
+}
+
+int _sys_io_dir_tell(dir_t dp) {
+    return send_call(SYS_INT_IO_DIR_TELL, dp);
 }

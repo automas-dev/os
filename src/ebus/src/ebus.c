@@ -1,6 +1,5 @@
 #include "ebus.h"
 
-#include "kernel.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
 
@@ -71,7 +70,7 @@ int ebus_push(ebus_t * bus, ebus_event_t * event) {
     }
 
     if (event->event_id < 1) {
-        KPANIC("Bad event!");
+        PANIC("Bad event!");
     }
 
     if (cb_len(&bus->queue) == cb_buff_size(&bus->queue)) {
@@ -91,53 +90,53 @@ int ebus_pop(ebus_t * bus, ebus_event_t * event_out) {
     return cb_pop(&bus->queue, event_out);
 }
 
-int ebus_cycle(ebus_t * bus) {
-    if (!bus) {
-        return -1;
-    }
+// int ebus_cycle(ebus_t * bus) {
+//     if (!bus) {
+//         return -1;
+//     }
 
-    while (cb_len(&bus->queue) > 0) {
-        ebus_event_t event;
-        if (cb_pop(&bus->queue, &event)) {
-            return -1;
-        }
+//     while (cb_len(&bus->queue) > 0) {
+//         ebus_event_t event;
+//         if (cb_pop(&bus->queue, &event)) {
+//             return -1;
+//         }
 
-        // if (handle_event(bus, &event)) {
-        //     // Handler consumed event
-        //     continue;
-        // }
+//         // if (handle_event(bus, &event)) {
+//         //     // Handler consumed event
+//         //     continue;
+//         // }
 
-        if (pm_push_event(kernel_get_proc_man(), &event)) {
-            return -1;
-        }
-    }
+//         if (pm_push_event(kernel_get_proc_man(), &event)) {
+//             return -1;
+//         }
+//     }
 
-    return 0;
-}
+//     return 0;
+// }
 
-static int handle_event(ebus_t * bus, ebus_event_t * event) {
-    process_t * curr = get_current_process();
+// static int handle_event(ebus_t * bus, ebus_event_t * event) {
+//     process_t * curr = get_current_process();
 
-    for (size_t i = 0; i < arr_size(&bus->handlers); i++) {
-        ebus_handler_t * handler = arr_at(&bus->handlers, i);
-        if (!handler) {
-            return -1;
-        }
+//     for (size_t i = 0; i < arr_size(&bus->handlers); i++) {
+//         ebus_handler_t * handler = arr_at(&bus->handlers, i);
+//         if (!handler) {
+//             return -1;
+//         }
 
-        if (!handler->event_id || handler->event_id == event->event_id) {
-            process_t * proc = kernel_find_pid(handler->pid);
-            if (!proc) {
-                PANIC("Handler does not exist");
-            }
+//         if (!handler->event_id || handler->event_id == event->event_id) {
+//             process_t * proc = kernel_find_pid(handler->pid);
+//             if (!proc) {
+//                 PANIC("Handler does not exist");
+//             }
 
-            // TODO push to process and mark as ready
+//             // TODO push to process and mark as ready
 
-            // set_current_process(proc);
-            // handler->callback_fn(event);
-        }
-    }
+//             // set_current_process(proc);
+//             // handler->callback_fn(event);
+//         }
+//     }
 
-    // pm_activate_process(kernel_get_proc_man(), curr->pid);
+//     // pm_activate_process(kernel_get_proc_man(), curr->pid);
 
-    return 0;
-}
+//     return 0;
+// }

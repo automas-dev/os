@@ -24,8 +24,8 @@ function(cross_target_binary target)
         "-T${CMAKE_CURRENT_SOURCE_DIR}/link.ld"
         --oformat binary
         -o "${CMAKE_CURRENT_BINARY_DIR}/${target}.bin"
-        $<TARGET_FILE:${target}>
         --start-group
+        $<TARGET_FILE:${target}>
         ${TARGET_LINK_FILES}
         --end-group
         -nostdlib
@@ -39,8 +39,8 @@ function(cross_target_binary target)
         COMMAND ${CMAKE_LINKER}
         "-T${CMAKE_CURRENT_SOURCE_DIR}/link.ld"
         -o "${CMAKE_CURRENT_BINARY_DIR}/${target}.elf"
-        $<TARGET_FILE:${target}>
         --start-group
+        $<TARGET_FILE:${target}>
         ${TARGET_LINK_FILES}
         --end-group
         -nostdlib

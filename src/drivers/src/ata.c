@@ -5,6 +5,7 @@
 #include "debug.h"
 #include "drivers/rtc.h"
 #include "kernel.h"
+#include "kernel/time.h"
 #include "libc/memory.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"

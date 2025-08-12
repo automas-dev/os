@@ -7,6 +7,8 @@ add_subdirectory(libc)
 add_subdirectory(io)
 add_subdirectory(ebus)
 add_subdirectory(drivers)
+add_subdirectory(process)
+add_subdirectory(system_call)
 
 # These must be after libs for linking
 add_subdirectory(kernel)

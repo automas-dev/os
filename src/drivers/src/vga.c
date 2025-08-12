@@ -18,7 +18,7 @@ static void shift_lines();
 
 void init_vga(void * vga_addr) {
     index  = 0;
-    color  = RESET;
+    color  = VGA_RESET;
     screen = vga_addr;
 }
 
@@ -30,11 +30,11 @@ void vga_clear() {
     for (int row = 0; row < VGA_ROWS; row++) {
         for (int col = 0; col < VGA_COLS; col++) {
             index = VGA_INDEX(row, col);
-            vga_put(index, ' ', RESET);
+            vga_put(index, ' ', VGA_RESET);
         }
     }
     index = 0;
-    color = RESET;
+    color = VGA_RESET;
 }
 
 void vga_put(int index, char c, unsigned char attr) {
@@ -100,7 +100,7 @@ size_t vga_putc(char c) {
         if (index > 0) {
             index--;
         }
-        vga_put(index, ' ', RESET);
+        vga_put(index, ' ', VGA_RESET);
     }
     else {
         vga_put(index++, c, color);
@@ -194,6 +194,6 @@ static void shift_lines() {
 
     for (int col = 0; col < VGA_COLS; col++) {
         int index = VGA_INDEX(VGA_ROWS - 1, col);
-        vga_put(index, ' ', RESET);
+        vga_put(index, ' ', VGA_RESET);
     }
 }

@@ -101,3 +101,20 @@ switch_task:
     pop ebp
 
     ret
+
+; start_first_task(proc_t * next)
+global start_first_task
+start_first_task:
+    ; ebp = args
+    push ebp
+    mov  ebp, esp
+    add  ebp, 8
+
+    push edi
+    push esi
+    push eax
+
+    ; esi = next
+    mov esi, [ebp]
+
+    jmp switch_task.resume

@@ -13,7 +13,9 @@
             "remote": true,
             "cwd": "${workspaceRoot}",
             "debugger_args": [
-                "-nx"
+                "-nx",
+                "-ex",
+                "add-symbol-file ${workspaceFolder}/build/src/apps/shell/shell.elf 0x400000"
             ],
             "valuesFormatting": "parseText",
             "preLaunchTask": "Run QEMU",

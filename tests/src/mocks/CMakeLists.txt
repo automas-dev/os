@@ -15,6 +15,7 @@ target_include_directories(${TARGET}
     ${TEST_TARGET_ROOT}/src/libc/include
     ${TEST_TARGET_ROOT}/src/libk/include
     ${TEST_TARGET_ROOT}/src/memory_alloc/include
+    ${TEST_TARGET_ROOT}/src/process/include
     ${TEST_TARGET_ROOT}/src/util/include
 )
 

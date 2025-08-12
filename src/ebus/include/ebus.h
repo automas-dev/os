@@ -24,6 +24,9 @@ enum EBUS_EVENT {
     EBUS_EVENT_ANY = 0,
     EBUS_EVENT_TIMER,
     EBUS_EVENT_KEY,
+    EBUS_EVENT_EXEC,
+    EBUS_EVENT_PROC_MADE,
+    EBUS_EVENT_PROC_CLOSE,
     EBUS_EVENT_CUSTOM,
 };
 
@@ -42,6 +45,19 @@ typedef struct _ebus_event {
             uint32_t keycode;
             uint32_t scancode;
         } key;
+        struct {
+            const char * filename;
+            size_t       argc;
+            char **      argv;
+        } exec;
+        struct {
+            int pid;
+            int error; // TODO use this
+        } proc_made;
+        struct {
+            int pid;
+            int status_code;
+        } proc_close;
         struct {
             int    id;
             void * data;
@@ -85,6 +101,6 @@ void ebus_unregister_handler(ebus_t * bus, int handler_id);
 int ebus_push(ebus_t * bus, ebus_event_t * event);
 int ebus_pop(ebus_t * bus, ebus_event_t * event_out);
 
-int ebus_cycle(ebus_t * bus);
+// int ebus_cycle(ebus_t * bus);
 
 #endif // EBUS_H

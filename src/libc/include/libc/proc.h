@@ -23,6 +23,8 @@
         PANIC("assertion failed " #CHECK " : " MSG); \
     }
 
+typedef void (*_libc_config_queue_event_fn)(ebus_event_t *);
+
 void           proc_exit(uint8_t code);
 void           proc_abort(uint8_t code, const char * msg);
 NO_RETURN void proc_panic(const char * msg, const char * file, unsigned int line);
@@ -31,6 +33,11 @@ void queue_event(ebus_event_t * event);
 int  pull_event(int filter, ebus_event_t * event_out);
 void yield(void);
 
+// return pid
+int popen(const char * filename, size_t argc, char ** argv);
+
 int getpid(void);
+
+void _libc_config_queue_event_call(_libc_config_queue_event_fn fn);
 
 #endif // LIBC_PROC_H

@@ -21,17 +21,17 @@ static rtc_time_t time;
 static bool    read_in_progress();
 static uint8_t read_rtc(uint8_t reg);
 
-uint32_t time_us() {
-    return ticks * 10e6 / frequency;
-}
+// uint32_t time_us() {
+//     return ticks * 1e6 / frequency;
+// }
 
-uint32_t time_ms() {
-    return ticks * 10e3 / frequency;
-}
+// uint32_t time_ms() {
+//     return ticks * 1e3 / frequency;
+// }
 
-uint32_t time_s() {
-    return ticks / frequency;
-}
+// uint32_t time_s() {
+//     return ticks / frequency;
+// }
 
 static void rtc_callback(registers_t * regs) {
     port_byte_out(RTC_REG_PORT, RTC_REG_C);

@@ -8,19 +8,21 @@
 #include "drivers/disk.h"
 #include "drivers/tar.h"
 #include "ebus.h"
+#include "kernel/memory.h"
+#include "kernel/scheduler.h"
 #include "memory_alloc.h"
 #include "process.h"
 #include "process_manager.h"
 
 typedef struct _kernel {
-    uint32_t   ram_table_addr;
-    uint32_t   cr3;
-    process_t  proc;
-    proc_man_t pm;
-    memory_t   kernel_memory;
-    ebus_t     event_bus;
-    disk_t *   disk;
-    tar_fs_t * tar;
+    uint32_t    ram_table_addr;
+    uint32_t    cr3;
+    uint32_t    esp0;
+    proc_man_t  pm;
+    scheduler_t scheduler;
+    ebus_t      event_queue;
+    disk_t *    disk;
+    tar_fs_t *  tar;
 } kernel_t;
 
 /**
@@ -46,13 +48,20 @@ mmu_table_t * get_kernel_table();
 disk_t *   kernel_get_disk();
 tar_fs_t * kernel_get_tar();
 
+kernel_t * get_kernel();
+
 process_t * get_current_process();
 
 ebus_t *     get_kernel_ebus();
 proc_man_t * kernel_get_proc_man();
 process_t *  kernel_find_pid(int pid);
 
+// Returns pid
+int kernel_exec(const char * filename, size_t argc, char ** argv);
+
 void tmp_register_signals_cb(signals_master_cb_t cb);
+
+void kernel_queue_event(ebus_event_t * event);
 
 // ebus_event_t * pull_event(int event_id);
 
@@ -64,11 +73,7 @@ typedef int (*_proc_call_t)(void * data);
 
 int kernel_call_as_proc(int pid, _proc_call_t fn, void * data);
 
-int kernel_switch_task(int next_pid);
-
-void * kmalloc(size_t size);
-void * krealloc(void * ptr, size_t size);
-void   kfree(void * ptr);
+int kernel_switch_task();
 
 #ifdef TESTING
 #define NO_RETURN

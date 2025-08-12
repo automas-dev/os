@@ -16,10 +16,10 @@ QEMUFLAGS = -m 1G -drive format=raw,file=build/os-image.bin,index=0,if=floppy -d
 #  LAUNCH & UTIL
 # ===============
 setup:
-	cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+	cmake -S . -B build -GNinja -DCMAKE_BUILD_TYPE=Debug
 
 build:
-	cmake --build build
+	cmake --build build -j
 
 run:
 	$(QEMU) $(QEMUFLAGS)
@@ -32,7 +32,7 @@ run-debug:
 
 debug:
 	$(QEMU) -s -S $(QEMUFLAGS) &
-	$(GDB) -ex "target remote localhost:1234" -ex "symbol-file build/src/kernel/kernel.elf" -ex "b kernel_main" -ex "b isr_handler"
+	$(GDB) -ex "target remote localhost:1234" -ex "symbol-file build/src/kernel/kernel.elf" -ex "add-symbol-file build/src/apps/foo/foo.elf" -ex "b kernel_main" -ex "b isr_handler"
 
 boot-debug:
 	$(QEMU) -s -S $(QEMUFLAGS) &
