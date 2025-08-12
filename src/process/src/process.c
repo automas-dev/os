@@ -175,7 +175,10 @@ int process_resume(process_t * proc, const ebus_event_t * event) {
     }
 
     process_t * active_before = get_active_task();
-    active_before->state      = PROCESS_STATE_SUSPENDED;
+    if (!active_before) {
+        KPANIC("Failed to find active task");
+    }
+    active_before->state = PROCESS_STATE_SUSPENDED;
 
     proc->state = PROCESS_STATE_RUNNING;
     switch_task(proc);

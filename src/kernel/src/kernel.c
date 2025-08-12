@@ -57,6 +57,8 @@ static void setup_system_calls();
 static void idle_loop();
 static int  start_shell();
 
+static process_t * load_init();
+
 void kernel_main() {
     // 1. load vga driver
     init_vga(UINT2PTR(PADDR_VGA));
@@ -101,6 +103,8 @@ void kernel_main() {
         KPANIC("Failed to init ebus\n");
     }
 
+    _libc_config_queue_event_call(kernel_queue_event);
+
     KLOG_DEBUG("Creating process manager");
 
     // 9. setup process manager
@@ -109,17 +113,6 @@ void kernel_main() {
     KLOG_DEBUG("Creating scheduler");
 
     scheduler_init(&__kernel.scheduler, &__kernel.pm);
-
-    // 9.a create kernel process
-    // Setup kernel process and add it to pm
-    // __kernel.pm.idle_task   = &__kernel.proc;
-    // __kernel.proc.next_proc = __kernel.pm.idle_task;
-    // pm_add_proc(&__kernel.pm, &__kernel.proc);
-
-    // Create ebus for kernel proc
-    // if (ebus_create(&__kernel.proc.event_queue, 4096)) {
-    //     KPANIC("Failed to init ebus\n");
-    // }
 
     // 10. setup irq
     // Init drivers and hardware interrupts
@@ -130,27 +123,44 @@ void kernel_main() {
 
     // kernel_log_set_level(KERNEL_LOG_LEVEL_DEBUG);
 
-    for (size_t i = 0; i < 10; i++) {
-        sleep(1000);
-        KLOGS_DEBUG("time", "Time %u s %u ms %u us %lu ns", time_s(), time_ms(), time_us(), time_ns());
-    }
+    // for (size_t i = 0; i < 10; i++) {
+    //     sleep(1000);
+    //     KLOGS_DEBUG("time", "Time %u s %u ms %u us %lu ns", time_s(), time_ms(), time_us(), time_ns());
+    // }
+
+    KLOG_DEBUG("Creating ram disk");
 
     // TODO is this needed here? Create it when it's needed
     ramdisk_create(4096);
+
+    KLOG_DEBUG("Opening ata disk");
 
     __kernel.disk = disk_open(0, DISK_DRIVER_ATA);
     if (!__kernel.disk) {
         KPANIC("Failed to open ATA disk");
     }
 
+    KLOG_DEBUG("Opening tar fs on disk");
+
     __kernel.tar = tar_open(__kernel.disk);
     if (!__kernel.tar) {
         KPANIC("Failed to open tar");
     }
 
-    // start_shell();
+    KLOG_DEBUG("Loading init executable");
 
-    // pm_resume_process(&__kernel.pm, __kernel.pm.idle_task->pid, 0);
+    process_t * init = load_init();
+    if (!init) {
+        KPANIC("Failed to load init executable");
+    }
+
+    KLOG_DEBUG("Launching init executable");
+
+    start_first_task(init);
+
+    // int shell_pid = start_shell();
+
+    // pm_resume_process(&__kernel.pm, shell_pid, 0);
 
     // idle_loop();
 
@@ -221,6 +231,97 @@ static void setup_system_calls() {
     system_call_register(SYS_INT_FAMILY_STDIO, sys_call_tmp_stdio_cb);
     system_call_register(SYS_INT_FAMILY_IO_FILE, sys_call_io_file_cb);
     system_call_register(SYS_INT_FAMILY_IO_DIR, sys_call_io_dir_cb);
+}
+
+static char * copy_string(const char * str) {
+    int    len     = kstrlen(str);
+    char * new_str = kmalloc(len + 1);
+    kmemcpy(new_str, str, len + 1);
+    return new_str;
+}
+
+static int copy_args(process_t * proc, const char * filepath, int argc, const char ** argv) {
+    if (!proc || !filepath || !argv) {
+        return -1;
+    }
+
+    proc->filepath = copy_string(filepath);
+    proc->argc     = argc;
+    proc->argv     = kmalloc(sizeof(char *) * argc);
+    for (int i = 0; i < argc; i++) {
+        proc->argv[i] = copy_string(argv[i]);
+    }
+
+    return 0;
+}
+
+typedef int (*ff_t)(size_t argc, char ** argv);
+
+static void proc_entry() {
+    process_t * proc = get_active_task();
+    ff_t        fn   = UINT2PTR(VADDR_USER_MEM);
+
+    KLOG_INFO("Start task %s with %u args", proc->filepath, proc->argc);
+
+    // TODO get start function pointer from elf
+
+    int res           = fn(proc->argc, proc->argv);
+    proc->status_code = res;
+}
+
+static process_t * load_init() {
+    const char * filename = "init";
+
+    tar_stat_t stat;
+    if (!tar_stat_file(kernel_get_tar(), filename, &stat)) {
+        KLOGS_ERROR("init", "Failed to find file\n");
+        return 0;
+    }
+
+    uint8_t * buff = kmalloc(stat.size);
+    if (!buff) {
+        return 0;
+    }
+
+    tar_fs_file_t * file = tar_file_open(kernel_get_tar(), filename);
+    if (!file) {
+        kfree(buff);
+        return 0;
+    }
+
+    if (!tar_file_read(file, buff, stat.size)) {
+        tar_file_close(file);
+        kfree(buff);
+        return 0;
+    }
+
+    process_t * proc = kmalloc(sizeof(process_t));
+
+    if (process_create(proc)) {
+        KLOGS_ERROR("init", "Failed to create process\n");
+        return 0;
+    }
+
+    if (process_load_heap(proc, buff, stat.size)) {
+        KLOGS_ERROR("init", "Failed to load\n");
+        process_free(proc);
+        return 0;
+    }
+
+    for (size_t i = 0; i < 1022; i++) {
+        process_grow_stack(proc);
+    }
+
+    copy_args(proc, filename, 1, &filename);
+
+    process_set_entrypoint(proc, proc_entry);
+    process_add_pages(proc, 32);
+    pm_add_proc(&__kernel.pm, proc);
+
+    tar_file_close(file);
+    kfree(buff);
+
+    return proc;
 }
 
 static void idle_loop() {
@@ -330,6 +431,10 @@ process_t * get_current_process() {
 
 ebus_t * get_kernel_ebus() {
     return &__kernel.event_queue;
+}
+
+void kernel_queue_event(ebus_event_t * event) {
+    ebus_push(&__kernel.event_queue, event);
 }
 
 disk_t * kernel_get_disk() {

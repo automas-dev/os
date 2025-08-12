@@ -19,6 +19,7 @@ endmacro()
 
 add_subdirectory(foo)
 add_subdirectory(bar)
+add_subdirectory(init)
 add_subdirectory(demo)
 add_subdirectory(shell)
 

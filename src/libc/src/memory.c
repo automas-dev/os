@@ -2,9 +2,9 @@
 
 #include "libk/sys_call.h"
 
-_libc_config_malloc_call_fn  __malloc_call  = _sys_mem_malloc;
-_libc_config_realloc_call_fn __realloc_call = _sys_mem_realloc;
-_libc_config_free_call_fn    __free_call    = _sys_mem_free;
+static _libc_config_malloc_call_fn  __malloc_call  = _sys_mem_malloc;
+static _libc_config_realloc_call_fn __realloc_call = _sys_mem_realloc;
+static _libc_config_free_call_fn    __free_call    = _sys_mem_free;
 
 void * pmalloc(size_t size) {
     return __malloc_call(size);

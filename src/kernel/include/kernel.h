@@ -61,6 +61,8 @@ int kernel_exec(const char * filename, size_t argc, char ** argv);
 
 void tmp_register_signals_cb(signals_master_cb_t cb);
 
+void kernel_queue_event(ebus_event_t * event);
+
 // ebus_event_t * pull_event(int event_id);
 
 int kernel_add_task(process_t * proc);

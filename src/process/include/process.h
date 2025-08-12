@@ -157,5 +157,6 @@ void set_next_pid(uint32_t next);
 extern void        set_active_task(process_t * active);
 extern process_t * get_active_task(void);
 extern void        switch_task(process_t * proc);
+extern void        start_first_task(process_t * proc);
 
 #endif // KERNEL_PROCESS_H
