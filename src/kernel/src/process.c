@@ -60,7 +60,7 @@ int process_create(process_t * proc) {
 
     paging_temp_free(proc->cr3);
 
-    if (arr_create(&proc->io_handles, 1, sizeof(handle_t))) {
+    if (arr_create(&proc->io_handles, 4, sizeof(handle_t))) {
         ram_page_free(proc->cr3);
         return -1;
     }
@@ -344,18 +344,14 @@ static int add_handle(process_t * proc, int id, int flags, io_device_t * device)
         id = next_handle_id();
     }
 
-    handle_t * h = kmalloc(sizeof(handle_t));
-    if (!h) {
-        return -1;
-    }
+    handle_t h = {
+        .id     = id,
+        .flags  = flags,
+        .device = device,
+    };
 
-    h->id     = id;
-    h->flags  = flags;
-    h->device = device;
-
-    if (arr_insert(&proc->io_handles, arr_size(&proc->io_handles), h)) {
+    if (arr_insert(&proc->io_handles, arr_size(&proc->io_handles), &h)) {
         KLOGS_ERROR("process", "Could not add new handle to process");
-        kfree(h);
         return -1;
     }
 
@@ -377,12 +373,12 @@ static int open_stdio_handles(process_t * proc) {
 
     handle_t * h = arr_at(&proc->io_handles, 0);
 
-    // if (add_handle(proc, 2, DEVICE_IO_FLAG_WRITE, device_screen_open()) < 0) {
-    //     KLOGS_ERROR("process", "Failed to create stderr handle");
-    //     return -1;
-    // }
+    if (add_handle(proc, 2, DEVICE_IO_FLAG_WRITE, device_screen_open()) < 0) {
+        KLOGS_ERROR("process", "Failed to create stderr handle");
+        return -1;
+    }
 
-    // handle_t * h2 = arr_at(&proc->io_handles, 1);
+    handle_t * h2 = arr_at(&proc->io_handles, 1);
 
     set_next_handle_id(3);
 
