@@ -64,7 +64,7 @@ void tar_close(tar_fs_t * tar);
 
 size_t       tar_file_count(tar_fs_t * tar);
 const char * tar_file_name(tar_fs_t * tar, size_t i);
-size_t       tar_file_size(tar_fs_t * tar, size_t i);
+// size_t       tar_file_size(tar_fs_t * tar, size_t i);
 
 tar_stat_t * tar_stat_file_i(tar_fs_t * tar, size_t i, tar_stat_t * stat);
 tar_stat_t * tar_stat_file(tar_fs_t * tar, const char * filename, tar_stat_t * stat);
@@ -74,8 +74,9 @@ tar_stat_t * tar_stat_file(tar_fs_t * tar, const char * filename, tar_stat_t * s
 tar_fs_file_t * tar_file_open(tar_fs_t * tar, const char * filename);
 void            tar_file_close(tar_fs_file_t * file);
 
-bool tar_file_seek(tar_fs_file_t * file, int offset, enum TAR_SEEK_ORIGIN origin);
-int  tar_file_tell(tar_fs_file_t * file);
+size_t tar_file_size(tar_fs_file_t * file);
+bool   tar_file_seek(tar_fs_file_t * file, int offset, enum TAR_SEEK_ORIGIN origin);
+int    tar_file_tell(tar_fs_file_t * file);
 
 size_t tar_file_read(tar_fs_file_t * file, char * buff, size_t count);
 

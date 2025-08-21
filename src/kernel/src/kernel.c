@@ -109,7 +109,7 @@ void kernel_init() {
 static void setup_system_calls() {
     init_system_call(IRQ16);
     system_call_register(SYS_INT_FAMILY_IO, sys_call_io_cb);
-    // system_call_register(SYS_INT_FAMILY_MEM, sys_call_mem_cb);
+    system_call_register(SYS_INT_FAMILY_MEM, sys_call_mem_cb);
     system_call_register(SYS_INT_FAMILY_PROC, sys_call_proc_cb);
 }
 

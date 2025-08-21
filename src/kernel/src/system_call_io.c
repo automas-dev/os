@@ -1,38 +1,34 @@
 #include "kernel/system_call_io.h"
 
-#include "io/file.h"
 #include "kernel.h"
+#include "kernel/device/fs_file.h"
 #include "libc/datastruct/array.h"
 #include "libk/defs.h"
 #include "process.h"
 #include "vga.h"
-
-static handle_t * get_free_handle(process_t * proc);
 
 int sys_call_io_cb(uint16_t int_no, void * args_data, registers_t * regs) {
     process_t * proc       = get_current_process();
     arr_t *     io_handles = &proc->io_handles;
 
     switch (int_no) {
-            // case SYS_INT_IO_OPEN: {
-            //     struct _args {
-            //         const char * path;
-            //         const char * mode;
-            //     } * args = (struct _args *)args_data;
+        case SYS_INT_IO_OPEN: {
+            struct _args {
+                const char * path;
+                const char * mode;
+            } * args = (struct _args *)args_data;
 
-            //     if (!args->path || !args->mode || !*args->path || !*args->mode) {
-            //         return 0;
-            //     }
+            if (!args->path || !args->mode || !*args->path || !*args->mode) {
+                return 0;
+            }
 
-            //     handle_t * handle = get_free_handle(proc);
+            io_device_t * d = device_fs_file_open(args->path, args->mode);
+            if (!d) {
+                return 0;
+            }
 
-            //     if (!handle) {
-            //         return 0;
-            //     }
-
-            //     handle->type = HANDLE_TYPE_FILE; // TODO type by path prefix
-            //     return handle->id;
-            // } break;
+            return process_add_handle(proc, -1, 0, d);
+        } break;
 
             // case SYS_INT_IO_CLOSE: {
             //     struct _args {
@@ -54,25 +50,28 @@ int sys_call_io_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             //     return 0;
             // } break;
 
-            // case SYS_INT_IO_READ: {
-            //     struct _args {
-            //         int    handle;
-            //         char * buff;
-            //         size_t count;
-            //     } * args = (struct _args *)args_data;
+        case SYS_INT_IO_READ: {
+            struct _args {
+                int    handle;
+                char * buff;
+                size_t count;
+                size_t pos;
+            } * args = (struct _args *)args_data;
 
-            //     if (args->handle > arr_size(io_handles)) {
-            //         return 0; // TODO proper error
-            //     }
+            if (args->handle < 0 || !args->buff || !args->count) {
+                return 0;
+            }
 
-            //     handle_t * handle = arr_at(io_handles, args->handle - 1);
+            handle_t * h = process_get_handle(proc, args->handle);
+            if (!h) {
+                KPANIC("Failed to find handle");
+                return 0;
+            }
 
-            //     if (handle->type == HANDLE_TYPE_FREE) {
-            //         return 0; // TODO proper error
-            //     }
+            io_device_t * d = h->device;
 
-            //     // TODO
-            // } break;
+            return d->read_fn(d->data, args->buff, args->count, args->pos);
+        } break;
 
         case SYS_INT_IO_WRITE: {
             struct _args {
@@ -95,6 +94,29 @@ int sys_call_io_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             io_device_t * d = h->device;
 
             return d->write_fn(d->data, args->buff, args->count, args->pos);
+        } break;
+
+        case SYS_INT_IO_SIZE: {
+            struct _args {
+                int          handle;
+                const char * buff;
+                size_t       count;
+                size_t       pos;
+            } * args = (struct _args *)args_data;
+
+            if (args->handle < 0 || !args->buff || !args->count) {
+                return 0;
+            }
+
+            handle_t * h = process_get_handle(proc, args->handle);
+            if (!h) {
+                KPANIC("Failed to find handle");
+                return 0;
+            }
+
+            io_device_t * d = h->device;
+
+            return d->size_fn(d->data);
         } break;
     }
 

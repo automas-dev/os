@@ -147,6 +147,8 @@ int process_grow_stack(process_t * proc);
  */
 int process_load_heap(process_t * proc, const char * buff, size_t size);
 
+int process_add_handle(process_t * proc, int id, int flags, io_device_t * device);
+
 handle_t * process_get_handle(process_t * proc, int id);
 
 /**

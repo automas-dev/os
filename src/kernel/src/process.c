@@ -11,7 +11,6 @@
 #include "libk/sys_call.h"
 #include "paging.h"
 
-static int add_handle(process_t * proc, int id, int flags, io_device_t * device);
 static int open_stdio_handles(process_t * proc);
 
 static uint32_t next_pid();
@@ -335,7 +334,7 @@ handle_t * process_get_handle(process_t * proc, int id) {
     return 0;
 }
 
-static int add_handle(process_t * proc, int id, int flags, io_device_t * device) {
+int process_add_handle(process_t * proc, int id, int flags, io_device_t * device) {
     if (!proc) {
         return -1;
     }
@@ -365,15 +364,15 @@ static int open_stdio_handles(process_t * proc) {
 
     // TODO make stdin
 
-    // add_handle returns handle id
-    if (add_handle(proc, 1, DEVICE_IO_FLAG_WRITE, device_screen_open()) < 0) {
+    // process_add_handle returns handle id
+    if (process_add_handle(proc, 1, DEVICE_IO_FLAG_WRITE, device_screen_open()) < 0) {
         KLOGS_ERROR("process", "Failed to create stdout handle");
         return -1;
     }
 
     handle_t * h = arr_at(&proc->io_handles, 0);
 
-    if (add_handle(proc, 2, DEVICE_IO_FLAG_WRITE, device_screen_open()) < 0) {
+    if (process_add_handle(proc, 2, DEVICE_IO_FLAG_WRITE, device_screen_open()) < 0) {
         KLOGS_ERROR("process", "Failed to create stderr handle");
         return -1;
     }
