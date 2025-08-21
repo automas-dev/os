@@ -1,7 +1,6 @@
 add_subdirectory(util)
 
 add_subdirectory(cpu)
-add_subdirectory(libk)
 add_subdirectory(libc)
 add_subdirectory(ebus)
 add_subdirectory(drivers)
