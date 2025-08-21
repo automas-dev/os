@@ -32,9 +32,7 @@ static void setup_system_calls();
 // static void idle_loop();
 // static int  start_shell();
 
-static process_t * load_init();
-
-void kernel_main() {
+void kernel_init() {
     KLOGS_INFO("kernel", "Kernel Start");
 
     kmemset(&__kernel, 0, sizeof(kernel_t));
@@ -106,15 +104,6 @@ void kernel_main() {
         KPANIC("Failed to open tar");
     }
     KLOGS_DEBUG("kernel", "open tar fs finished");
-
-    process_t * init = load_init();
-    if (!init) {
-        KPANIC("Failed to load init executable");
-    }
-    KLOGS_DEBUG("kernel", "load init finished");
-
-    start_first_task(init);
-    KLOGS_WARNING("kernel", "Returned from init");
 }
 
 static void setup_system_calls() {
@@ -122,97 +111,6 @@ static void setup_system_calls() {
     system_call_register(SYS_INT_FAMILY_IO, sys_call_io_cb);
     // system_call_register(SYS_INT_FAMILY_MEM, sys_call_mem_cb);
     system_call_register(SYS_INT_FAMILY_PROC, sys_call_proc_cb);
-}
-
-static char * copy_string(const char * str) {
-    int    len     = kstrlen(str);
-    char * new_str = kmalloc(len + 1);
-    kmemcpy(new_str, str, len + 1);
-    return new_str;
-}
-
-static int copy_args(process_t * proc, const char * filepath, int argc, const char ** argv) {
-    if (!proc || !filepath || !argv) {
-        return -1;
-    }
-
-    proc->filepath = copy_string(filepath);
-    proc->argc     = argc;
-    proc->argv     = kmalloc(sizeof(char *) * argc);
-    for (int i = 0; i < argc; i++) {
-        proc->argv[i] = copy_string(argv[i]);
-    }
-
-    return 0;
-}
-
-typedef int (*ff_t)(size_t argc, char ** argv);
-
-static void proc_entry() {
-    process_t * proc = get_active_task();
-    ff_t        fn   = UINT2PTR(VADDR_USER_MEM);
-
-    // KLOG_INFO("Start task %s with %u args", proc->filepath, proc->argc);
-
-    // TODO get start function pointer from elf
-
-    int res           = fn(proc->argc, proc->argv);
-    proc->status_code = res;
-}
-
-static process_t * load_init() {
-    const char * filename = "init";
-
-    tar_stat_t stat;
-    if (!tar_stat_file(kernel_get_tar(), filename, &stat)) {
-        KLOGS_ERROR("init", "Failed to find file\n");
-        return 0;
-    }
-
-    uint8_t * buff = kmalloc(stat.size);
-    if (!buff) {
-        return 0;
-    }
-
-    tar_fs_file_t * file = tar_file_open(kernel_get_tar(), filename);
-    if (!file) {
-        kfree(buff);
-        return 0;
-    }
-
-    if (!tar_file_read(file, buff, stat.size)) {
-        tar_file_close(file);
-        kfree(buff);
-        return 0;
-    }
-
-    process_t * proc = kmalloc(sizeof(process_t));
-
-    if (process_create(proc)) {
-        KLOGS_ERROR("init", "Failed to create process\n");
-        return 0;
-    }
-
-    if (process_load_heap(proc, buff, stat.size)) {
-        KLOGS_ERROR("init", "Failed to load\n");
-        process_free(proc);
-        return 0;
-    }
-
-    for (size_t i = 0; i < 1022; i++) {
-        process_grow_stack(proc);
-    }
-
-    copy_args(proc, filename, 1, &filename);
-
-    process_set_entrypoint(proc, proc_entry);
-    process_add_pages(proc, 32);
-    pm_add_proc(&__kernel.pm, proc);
-
-    tar_file_close(file);
-    kfree(buff);
-
-    return proc;
 }
 
 // static void idle_loop() {

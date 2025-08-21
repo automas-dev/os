@@ -5,9 +5,9 @@
  * 2. Initialize ram table (physical memory)
  * 3. Setup paging (virtual memory)
  * 4. Map kernel table
- * 5. Jump to upper kernel (`kernel_main`)
- *
- * The upper kernel `kernel_main` is launched once paging has been enabled.
+ * 5. Initialize kernel (`kernel_init`)
+ * 6. Load init executable
+ * 7. Launch init (os main function)
  */
 
 #include <stdint.h>
@@ -16,18 +16,26 @@
 #include "cpu/gdt.h"
 #include "cpu/mmu.h"
 #include "defs.h"
+#include "drivers/tar.h"
+#include "kernel.h"
 #include "kernel/device/ram.h"
 #include "kernel/device/screen.h"
 #include "kernel/logs.h"
+#include "kernel/memory.h"
 #include "kernel/panic.h"
 #include "libc/file.h"
+#include "libc/string.h"
+#include "process.h"
+#include "process_manager.h"
 #include "vga.h"
 
-void kernel_main();
+void kernel_init();
 
 static void map_kernel_table(mmu_table_t * table);
 static void id_map_range(mmu_table_t * table, size_t start, size_t end);
 static void id_map_page(mmu_table_t * table, size_t page);
+
+static process_t * load_init();
 
 void __start() {
     vga_init();
@@ -93,7 +101,17 @@ void __start() {
     mmu_enable_paging(PADDR_KERNEL_DIR);
     KLOGS_DEBUG("loader", "paging enabled");
 
-    kernel_main();
+    kernel_init();
+    KLOGS_DEBUG("loader", "kernel init finished");
+
+    process_t * init = load_init();
+    if (!init) {
+        KPANIC("Failed to load init executable");
+    }
+    KLOGS_DEBUG("loader", "load init finished");
+
+    start_first_task(init);
+    KLOGS_WARNING("loader", "Returned from init");
 
     KLOGS_INFO("loader", "Halting");
     halt();
@@ -143,4 +161,95 @@ static void id_map_range(mmu_table_t * table, size_t start, size_t end) {
 
 static void id_map_page(mmu_table_t * table, size_t page) {
     mmu_table_set(table, page, page << 12, MMU_TABLE_RW);
+}
+
+static char * copy_string(const char * str) {
+    int    len     = kstrlen(str);
+    char * new_str = kmalloc(len + 1);
+    kmemcpy(new_str, str, len + 1);
+    return new_str;
+}
+
+static int copy_args(process_t * proc, const char * filepath, int argc, const char ** argv) {
+    if (!proc || !filepath || !argv) {
+        return -1;
+    }
+
+    proc->filepath = copy_string(filepath);
+    proc->argc     = argc;
+    proc->argv     = kmalloc(sizeof(char *) * argc);
+    for (int i = 0; i < argc; i++) {
+        proc->argv[i] = copy_string(argv[i]);
+    }
+
+    return 0;
+}
+
+typedef int (*ff_t)(size_t argc, char ** argv);
+
+static void proc_entry() {
+    process_t * proc = get_active_task();
+    ff_t        fn   = UINT2PTR(VADDR_USER_MEM);
+
+    // KLOG_INFO("Start task %s with %u args", proc->filepath, proc->argc);
+
+    // TODO get start function pointer from elf
+
+    int res           = fn(proc->argc, proc->argv);
+    proc->status_code = res;
+}
+
+static process_t * load_init() {
+    const char * filename = "init";
+
+    tar_stat_t stat;
+    if (!tar_stat_file(kernel_get_tar(), filename, &stat)) {
+        KLOGS_ERROR("init", "Failed to find file\n");
+        return 0;
+    }
+
+    uint8_t * buff = kmalloc(stat.size);
+    if (!buff) {
+        return 0;
+    }
+
+    tar_fs_file_t * file = tar_file_open(kernel_get_tar(), filename);
+    if (!file) {
+        kfree(buff);
+        return 0;
+    }
+
+    if (!tar_file_read(file, buff, stat.size)) {
+        tar_file_close(file);
+        kfree(buff);
+        return 0;
+    }
+
+    process_t * proc = kmalloc(sizeof(process_t));
+
+    if (process_create(proc)) {
+        KLOGS_ERROR("init", "Failed to create process\n");
+        return 0;
+    }
+
+    if (process_load_heap(proc, buff, stat.size)) {
+        KLOGS_ERROR("init", "Failed to load\n");
+        process_free(proc);
+        return 0;
+    }
+
+    for (size_t i = 0; i < 1022; i++) {
+        process_grow_stack(proc);
+    }
+
+    copy_args(proc, filename, 1, &filename);
+
+    process_set_entrypoint(proc, proc_entry);
+    process_add_pages(proc, 32);
+    pm_add_proc(&get_kernel()->pm, proc);
+
+    tar_file_close(file);
+    kfree(buff);
+
+    return proc;
 }
