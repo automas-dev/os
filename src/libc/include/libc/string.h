@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 int    kmemcmp(const void * lhs, const void * rhs, size_t n);
 void * kmemcpy(void * dest, const void * src, size_t n);
@@ -16,5 +17,11 @@ char * kstrfind(const char * str, int c);
 // char * kstrtok(char * str, const char * delim);
 
 int katoi(const char * str);
+
+size_t itoa(int32_t n, char * str);
+size_t ltoa(int64_t n, char * str);
+
+size_t utoa(uint32_t n, char * str);
+size_t ultoa(uint64_t n, char * str);
 
 #endif // LIBC_STRING_H

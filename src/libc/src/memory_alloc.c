@@ -1,5 +1,7 @@
 #include "memory_alloc.h"
 
+#include "libc/string.h"
+
 #define PAGE_SIZE 4096
 
 #define MAGIC_FREE 0x46524545
@@ -87,27 +89,26 @@ void * memory_realloc(memory_t * mem, void * ptr, size_t size) {
         return 0;
     }
 
-    return 0; // not implemented
+    // Will never be found
+    if (NOT_ALIGNED(ptr)) {
+        return 0;
+    }
 
-    // // Will never be found
-    // if (NOT_ALIGNED(ptr)) {
-    //     return 0;
-    // }
+    ALIGN_SIZE(size);
 
-    // ALIGN_SIZE(size);
+    memory_entry_t * entry = memory_find_entry_ptr(mem, ptr);
 
-    // memory_entry_t * entry = memory_find_entry_ptr(mem, ptr);
+    // Does not exist
+    if (!entry || entry->magic != MAGIC_USED) {
+        return 0;
+    }
 
-    // // Does not exist
-    // if (!entry || entry->magic != MAGIC_USED) {
-    //     return 0;
-    // }
+    // Same size or smaller
+    if (entry->size <= size) {
+        return ENTRY_PTR(entry);
+    }
 
-    // // Same size
-    // if (entry->size == size) {
-    //     return ENTRY_PTR(entry);
-    // }
-
+    // TODO handle shrink
     // // Shrink
     // if (entry->size < size) {
     //     if (SHOULD_SPLIT(entry, size) && memory_split_entry(mem, entry, size)) {
@@ -117,52 +118,21 @@ void * memory_realloc(memory_t * mem, void * ptr, size_t size) {
     //     return ENTRY_PTR(entry);
     // }
 
-    // // Try to expand
-    // memory_entry_t * next_entry = entry->next;
+    void * new_ptr = memory_alloc(mem, size);
+    if (!new_ptr) {
+        return 0;
+    }
 
-    // if (next_entry->magic == MAGIC_FREE) {
-    //     size_t need_size = size - entry->size;
+    size_t min_size = size;
+    if (entry->size < min_size) {
+        min_size = entry->size;
+    }
 
-    //     while (next_entry && next_entry->size) {
-    //         if (!next_entry->next || next_entry->next->magic != MAGIC_FREE) {
-    //             break;
-    //         }
+    kmemmove(new_ptr, ptr, min_size);
 
-    //         if (memory_merge_with_next(mem, next_entry)) {
-    //             return 0;
-    //         }
-    //     }
+    memory_free(mem, ptr);
 
-    //     if (next_entry->size >= need_size) {
-    //         if (!memory_merge_with_next(mem, entry)) {
-    //             return 0;
-    //         }
-
-    //         if (SHOULD_SPLIT(entry, size) && memory_split_entry(mem, entry, size)) {
-    //             return 0;
-    //         }
-
-    //         return ENTRY_PTR(entry);
-    //     }
-    // }
-
-    // // Create new and copy
-    // memory_entry_t * new_entry = memory_find_entry_size(mem, size);
-
-    // if (!new_entry) {
-    //     entry = memory_alloc(mem, size);
-    // }
-
-    // entry->magic = MAGIC_USED;
-
-    // char * src  = ENTRY_PTR(entry);
-    // char * dest = ENTRY_PTR(new_entry);
-
-    // for (size_t i = 0; i < entry->size; i++) {
-    //     *dest++ = *src++;
-    // }
-
-    // return ENTRY_PTR(new_entry);
+    return new_ptr;
 }
 
 int memory_free(memory_t * mem, void * ptr) {

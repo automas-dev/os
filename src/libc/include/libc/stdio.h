@@ -6,10 +6,16 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "libc/file.h"
+
 #ifndef TESTING
 
-size_t itoa(int32_t n, char * str);
-size_t ltoa(int64_t n, char * str);
+extern file_t _stdin;
+#define stdin (&_stdin)
+extern file_t _stdout;
+#define stdout (&_stdout)
+extern file_t _stderr;
+#define stderr (&_stderr)
 
 size_t puts(const char * str);
 size_t putc(char c);

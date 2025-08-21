@@ -3,7 +3,6 @@
 #include <stddef.h>
 
 #include "defs.h"
-#include "drivers/vga.h"
 #include "ebus.h"
 #include "exec.h"
 #include "kernel.h"
@@ -12,6 +11,7 @@
 #include "libc/string.h"
 #include "libk/defs.h"
 #include "process.h"
+#include "vga.h"
 
 int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
     int res = 0;

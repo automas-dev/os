@@ -57,10 +57,8 @@ enum VGA_BG {
  *
  * The cursor / index will also be reset to 0 and the color will be reset to
  * white on black.
- *
- * @param vga_addr address of VGA memory
  */
-void init_vga(void * vga_addr);
+void vga_init();
 
 /**
  * @brief Clear the VGA buffer and reset the cursor and color.
@@ -166,5 +164,7 @@ size_t vga_putu(unsigned int num);
  * @return size_t number of characters written (0 for failure)
  */
 size_t vga_putx(unsigned int num);
+
+size_t vga_write(const char * buff, size_t size);
 
 #endif // DRIVER_VGA_H

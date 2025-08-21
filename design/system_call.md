@@ -49,6 +49,17 @@ An interrupt id is an 8 bit family + an 8 bit id.
 |                 | 0x1205 | `int dir_seek(dir_t, int offset, int origin)`                             |
 |                 | 0x1205 | `int dir_tell(dir_t)`                                                     |
 
+## System Calls 2.0
+
+io
+- open handle
+- close handle
+- read handle
+- write handle
+- handle size? (maybe part of open)
+- stat? size? (can't be seek or tell, those are in libc)
+
+
 # System Signals
 
 These are callbacks from the kernel to the process.

@@ -3,13 +3,13 @@
 #include "cpu/mmu.h"
 #include "cpu/tss.h"
 #include "kernel.h"
+#include "kernel/device/ram.h"
 #include "libc/memory.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
 #include "libc/string.h"
 #include "paging.h"
 #include "process.h"
-#include "ram.h"
 
 typedef int (*ff_t)(size_t argc, char ** argv);
 

@@ -211,3 +211,99 @@ int katoi(const char * str) {
 
     return res;
 }
+
+size_t itoa(int32_t n, char * str) {
+    if (!str) {
+        return 0;
+    }
+
+    bool is_neg = n < 0;
+
+    size_t len = 0;
+
+    if (is_neg) {
+        *str++ = '-';
+        len++;
+        n = -n;
+    }
+
+    len += utoa(n, str);
+
+    return len;
+}
+
+size_t ltoa(int64_t n, char * str) {
+    if (!str) {
+        return 0;
+    }
+
+    bool is_neg = n < 0;
+
+    size_t len = 0;
+
+    if (is_neg) {
+        *str++ = '-';
+        len++;
+        n = -n;
+    }
+
+    len += ultoa(n, str);
+
+    return len;
+}
+
+size_t utoa(uint32_t n, char * str) {
+    if (!str) {
+        return 0;
+    }
+
+    size_t   len = 0;
+    uint32_t rev = 0;
+    while (n > 0) {
+        rev = (rev * 10) + (n % 10);
+        n /= 10;
+        len += 1;
+    }
+
+    for (size_t i = 0; i < len; i++) {
+        *str++ = '0' + (rev % 10);
+        rev /= 10;
+    }
+
+    if (len == 0) {
+        *str++ = '0';
+        len++;
+    }
+
+    *str = 0;
+
+    return len;
+}
+
+size_t ultoa(uint64_t n, char * str) {
+    if (!str) {
+        return 0;
+    }
+
+    size_t   len = 0;
+    uint64_t rev = 0;
+    while (n > 0) {
+        rev = (rev * 10) + (n % 10);
+        n /= 10;
+        len += 1;
+    }
+
+    for (size_t i = 0; i < len; i++) {
+        *str++ = '0' + (rev % 10);
+        rev /= 10;
+    }
+
+    if (len == 0) {
+        *str++ = '0';
+        len++;
+    }
+
+    *str = 0;
+
+    return len;
+}

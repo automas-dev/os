@@ -1,7 +1,7 @@
 #include "paging.h"
 
+#include "kernel/device/ram.h"
 #include "libc/string.h"
-#include "ram.h"
 
 typedef struct {
     uint32_t addr;

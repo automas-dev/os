@@ -6,14 +6,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef size_t (*puts_fn)(const char * s);
-typedef size_t (*putc_fn)(char c);
+#include "libc/file.h"
 
-size_t vputi(puts_fn ps, putc_fn pc, int32_t num, uint8_t base, bool upper);
-size_t vputli(puts_fn ps, putc_fn pc, int64_t num, uint8_t base, bool upper);
-size_t vputu(puts_fn ps, putc_fn pc, uint32_t num, uint8_t base, bool upper);
-size_t vputlu(puts_fn ps, putc_fn pc, uint64_t num, uint8_t base, bool upper);
+size_t vputi(file_t * file, int32_t num, uint8_t base, bool upper);
+size_t vputli(file_t * file, int64_t num, uint8_t base, bool upper);
+size_t vputu(file_t * file, uint32_t num, uint8_t base, bool upper);
+size_t vputlu(file_t * file, uint64_t num, uint8_t base, bool upper);
 
-size_t vprintf(puts_fn ps, putc_fn pc, const char * fmt, ...);
+size_t vprintf(file_t * file, const char * fmt, va_list params);
 
 #endif // LIBC_STDIO_IMPL_H

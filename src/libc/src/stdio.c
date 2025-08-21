@@ -8,106 +8,55 @@
 
 #ifndef TESTING
 
-size_t itoa(int32_t n, char * str) {
-    bool is_neg = n < 0;
+file_t _stdin = {
+    .handle = 0,
+    .flags  = FILE_FLAG_READ,
+    .size   = 0,
+    .pos    = 0,
+};
 
-    if (is_neg) {
-        *str++ = '-';
+file_t _stdout = {
+    .handle = 1,
+    .flags  = FILE_FLAG_WRITE,
+    .size   = 0,
+    .pos    = 0,
+};
 
-        n = -n;
-    }
-
-    size_t   len = 0;
-    uint32_t rev = 0;
-    while (n > 0) {
-        rev = (rev * 10) + (n % 10);
-        n /= 10;
-        len += 1;
-    }
-
-    for (size_t i = 0; i < len; i++) {
-        *str++ = '0' + (rev % 10);
-        rev /= 10;
-    }
-
-    if (len == 0) {
-        *str++ = '0';
-        len++;
-    }
-
-    *str = 0;
-
-    if (is_neg) {
-        len++;
-    }
-
-    return len;
-}
-
-size_t ltoa(int64_t n, char * str) {
-    bool is_neg = n < 0;
-
-    if (is_neg) {
-        *str++ = '-';
-
-        n = -n;
-    }
-
-    size_t   len = 0;
-    uint64_t rev = 0;
-    while (n > 0) {
-        rev = (rev * 10) + (n % 10);
-        n /= 10;
-        len += 1;
-    }
-
-    for (size_t i = 0; i < len; i++) {
-        *str++ = '0' + (rev % 10);
-        rev /= 10;
-    }
-
-    if (len == 0) {
-        *str++ = '0';
-        len++;
-    }
-
-    *str = 0;
-
-    if (is_neg) {
-        len++;
-    }
-
-    return len;
-}
+file_t _stderr = {
+    .handle = 2,
+    .flags  = FILE_FLAG_WRITE,
+    .size   = 0,
+    .pos    = 0,
+};
 
 size_t puts(const char * str) {
-    return _sys_puts(str);
+    return _sys_io_write(1, str, kstrlen(str), 0);
 }
 
 size_t putc(char c) {
-    return _sys_putc(c);
+    return _sys_io_write(1, &c, 1, 0);
 }
 
 size_t puti(int32_t num, uint8_t base, bool upper) {
-    return vputi(_sys_puts, _sys_putc, num, base, upper);
+    return vputi(stdout, num, base, upper);
 }
 
 size_t putli(int64_t num, uint8_t base, bool upper) {
-    return vputli(_sys_puts, _sys_putc, num, base, upper);
+    return vputli(stdout, num, base, upper);
 }
 
 size_t putu(uint32_t num, uint8_t base, bool upper) {
-    return vputu(_sys_puts, _sys_putc, num, base, upper);
+    return vputu(stdout, num, base, upper);
 }
 
 size_t putlu(uint64_t num, uint8_t base, bool upper) {
-    return vputlu(_sys_puts, _sys_putc, num, base, upper);
+    return vputlu(stdout, num, base, upper);
 }
 
 size_t printf(const char * fmt, ...) {
     va_list params;
     va_start(params, fmt);
-    return vprintf(_sys_puts, _sys_putc, fmt, params);
+    return vprintf(stdout, fmt, params);
 }
 
 size_t print_hexblock(const uint8_t * data, size_t count, size_t addr_offset) {

@@ -9,12 +9,12 @@ static memory_t __memory;
 static size_t   __next_heap_page;
 
 void init_kmalloc(size_t next_heap_page) {
-    KLOGS_DEBUG("kmalloc", "Init kmalloc to heap page 0x%X", next_heap_page);
+    // KLOGS_DEBUG("kmalloc", "Init kmalloc to heap page 0x%X", next_heap_page);
 
     __next_heap_page = next_heap_page;
     memory_init(&__memory, kernel_alloc_page);
 
-    KLOGS_DEBUG("kmalloc", "Override libc pmalloc functions");
+    KLOGS_TRACE("kmalloc", "Override libc pmalloc functions");
     _libc_config_malloc_call(kmalloc);
     _libc_config_realloc_call(krealloc);
     _libc_config_free_call(kfree);
@@ -41,18 +41,18 @@ void * kernel_alloc_page(size_t count) {
         return 0;
     }
 
-    mmu_dir_t * dir = paging_temp_map(get_kernel()->cr3);
+    mmu_dir_t * dir = paging_temp_map(VADDR_KERNEL_DIR);
 
     if (!dir) {
         return 0;
     }
 
     if (paging_add_pages(dir, __next_heap_page, __next_heap_page + count)) {
-        paging_temp_free(get_kernel()->cr3);
+        paging_temp_free(VADDR_KERNEL_DIR);
         return 0;
     }
 
-    paging_temp_free(get_kernel()->cr3);
+    paging_temp_free(VADDR_KERNEL_DIR);
 
     void * ptr = UINT2PTR(PAGE2ADDR(__next_heap_page));
     __next_heap_page += count;

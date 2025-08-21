@@ -5,22 +5,25 @@
 #include <stdint.h>
 
 #include "ebus.h"
+#include "kernel/device/io.h"
 #include "libc/datastruct/array.h"
+#include "libc/file.h"
 #include "memory_alloc.h"
 
 typedef void (*signals_master_cb_t)(int);
 
-enum HANDLE_TYPE {
-    HANDLE_TYPE_FREE = 0,
-    HANDLE_TYPE_FILE,
-    HANDLE_TYPE_DIR,
-};
+// enum HANDLE_TYPE {
+//     HANDLE_TYPE_FREE = 0,
+//     HANDLE_TYPE_FILE,
+//     HANDLE_TYPE_DIR,
+// };
 
 typedef struct _handle {
     int id;
-    int type;
+    int flags;
+    // int type;
 
-    size_t cursor;
+    io_device_t * device;
 } handle_t;
 
 enum PROCESS_STATE {
@@ -144,6 +147,8 @@ int process_grow_stack(process_t * proc);
  */
 int process_load_heap(process_t * proc, const char * buff, size_t size);
 
+handle_t * process_get_handle(process_t * proc, int id);
+
 /**
  * @brief Set the next PID value. All future PID's will be incremented from
  * here.
@@ -153,6 +158,8 @@ int process_load_heap(process_t * proc, const char * buff, size_t size);
  * @param next process id
  */
 void set_next_pid(uint32_t next);
+
+void set_next_handle_id(uint32_t next);
 
 extern void        set_active_task(process_t * active);
 extern process_t * get_active_task(void);

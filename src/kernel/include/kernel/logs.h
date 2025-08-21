@@ -30,6 +30,9 @@ void init_kernel_logs();
 void kernel_log_enable();
 void kernel_log_disable();
 
+void kernel_log_time_enable();
+void kernel_log_time_disable();
+
 void kernel_log_set_level(int level);
 
 void kernel_log(int level, const char * service, const char * fmt, ...);

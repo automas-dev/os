@@ -1,5 +1,5 @@
 set(TARGET kernel)
 
 cross_target(${TARGET})
-target_link_libraries(${TARGET} libk libc cpu io ebus drivers memory_alloc process system_call util)
+target_link_libraries(${TARGET} libk libc cpu ebus drivers util)
 cross_target_binary(${TARGET})

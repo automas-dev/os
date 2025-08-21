@@ -1,12 +1,12 @@
 #include "system_call.h"
 
 #include "cpu/isr.h"
-#include "drivers/vga.h"
 #include "libc/memory.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
 #include "libc/string.h"
 #include "libk/defs.h"
+#include "vga.h"
 
 #define MAX_CALLBACKS 0x100
 sys_call_handler_t callbacks[MAX_CALLBACKS];

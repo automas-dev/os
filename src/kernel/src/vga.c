@@ -1,9 +1,8 @@
-#include "drivers/vga.h"
+#include "vga.h"
 
 #include "cpu/ports.h"
-#include "libc/string.h"
+#include "defs.h"
 
-#define VGA_ADDRESS     0xb8000
 #define REG_SCREEN_CTRL 0x3d4
 #define REG_SCREEN_DATA 0x3d5
 
@@ -16,10 +15,12 @@ static char * screen;
 static void update_cursor();
 static void shift_lines();
 
-void init_vga(void * vga_addr) {
+void vga_init() {
     index  = 0;
     color  = VGA_RESET;
-    screen = vga_addr;
+    screen = UINT2PTR(PADDR_VGA);
+
+    vga_clear();
 }
 
 /*
@@ -178,6 +179,13 @@ size_t vga_putx(unsigned int num) {
     return _print_uint(num, 16);
 }
 
+size_t vga_write(const char * buff, size_t size) {
+    for (size_t i = 0; i < size; i++) {
+        vga_putc(buff[i]);
+    }
+    return size;
+}
+
 /*
  * HELPER FUNCTIONS
  */
@@ -190,7 +198,9 @@ static void update_cursor() {
 }
 
 static void shift_lines() {
-    kmemmove(screen, screen + (VGA_COLS * 2), ((VGA_ROWS - 1) * VGA_COLS * 2));
+    for (size_t i = 0; i < ((VGA_ROWS - 1) * VGA_COLS * 2); i++) {
+        screen[i] = screen[i + VGA_COLS * 2];
+    }
 
     for (int col = 0; col < VGA_COLS; col++) {
         int index = VGA_INDEX(VGA_ROWS - 1, col);

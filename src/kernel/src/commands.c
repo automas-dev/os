@@ -9,10 +9,10 @@
 #include "drivers/disk.h"
 #include "drivers/rtc.h"
 #include "drivers/tar.h"
-#include "drivers/vga.h"
 #include "ebus.h"
 #include "exec.h"
 #include "kernel.h"
+#include "kernel/device/ram.h"
 #include "kernel/time.h"
 #include "libc/datastruct/array.h"
 #include "libc/memory.h"
@@ -22,7 +22,7 @@
 #include "libc/string.h"
 #include "paging.h"
 #include "process.h"
-#include "ram.h"
+#include "vga.h"
 
 bool debug = false;
 

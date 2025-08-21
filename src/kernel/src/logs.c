@@ -2,19 +2,22 @@
 
 #include <stdarg.h>
 
-#include "drivers/vga.h"
 #include "kernel/time.h"
+#include "libc/stdio.h"
 #include "libc/stdio_impl.h"
 #include "libc/string.h"
+#include "vga.h"
 
 int __enabled;
+int __time_enabled;
 int __level;
 
 static void put_time();
 
 void init_kernel_logs() {
-    __enabled = 1;
-    __level   = 0;
+    __enabled      = 1;
+    __time_enabled = 0;
+    __level        = 0;
 }
 
 void kernel_log_enable() {
@@ -23,6 +26,14 @@ void kernel_log_enable() {
 
 void kernel_log_disable() {
     __enabled = 0;
+}
+
+void kernel_log_time_enable() {
+    __time_enabled = 1;
+}
+
+void kernel_log_time_disable() {
+    __time_enabled = 0;
 }
 
 void kernel_log_set_level(int level) {
@@ -34,8 +45,12 @@ void kernel_log(int level, const char * service, const char * fmt, ...) {
         return;
     }
 
-    vga_color(VGA_FG_GREEN | VGA_BG_BLACK);
-    put_time();
+    if (__time_enabled) {
+        vga_color(VGA_FG_GREEN | VGA_BG_BLACK);
+        put_time();
+    }
+
+    vga_color(VGA_RESET);
 
     if (service) {
         vga_color(VGA_FG_MAGENTA);
@@ -47,6 +62,8 @@ void kernel_log(int level, const char * service, const char * fmt, ...) {
     switch (level) {
         default:
         case KERNEL_LOG_LEVEL_TRACE:
+            vga_color(VGA_FG_CYAN | VGA_BG_BLACK);
+            break;
         case KERNEL_LOG_LEVEL_DEBUG:
             vga_color(VGA_FG_LIGHT_GRAY | VGA_BG_BLACK);
             break;
@@ -63,7 +80,7 @@ void kernel_log(int level, const char * service, const char * fmt, ...) {
 
     va_list params;
     va_start(params, fmt);
-    vprintf(vga_puts, vga_putc, fmt, params);
+    vprintf(stdout, fmt, params);
     vga_color(VGA_RESET);
     vga_putc('\n');
 }
@@ -73,5 +90,5 @@ static void put_time() {
     uint32_t s  = ms / 1e3;
     ms %= 1000;
 
-    vprintf(vga_puts, vga_putc, "[%3u.%03u] ", s, ms);
+    printf("[%3u.%03u] ", s, ms);
 }

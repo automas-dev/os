@@ -3,12 +3,19 @@
 #include "cpu/mmu.h"
 #include "cpu/tss.h"
 #include "kernel.h"
+#include "kernel/device/ram.h"
+#include "kernel/device/screen.h"
+#include "kernel/logs.h"
+#include "kernel/memory.h"
 #include "libc/string.h"
 #include "libk/sys_call.h"
 #include "paging.h"
-#include "ram.h"
+
+static int add_handle(process_t * proc, int id, int flags, io_device_t * device);
+static int open_stdio_handles(process_t * proc);
 
 static uint32_t next_pid();
+static uint32_t next_handle_id();
 
 int process_create(process_t * proc) {
     if (!proc) {
@@ -65,6 +72,13 @@ int process_create(process_t * proc) {
     }
 
     if (memory_init(&proc->memory, kernel_alloc_page)) {
+        ebus_free(&proc->event_queue);
+        arr_free(&proc->io_handles);
+        ram_page_free(proc->cr3);
+        return -1;
+    }
+
+    if (open_stdio_handles(proc)) {
         ebus_free(&proc->event_queue);
         arr_free(&proc->io_handles);
         ram_page_free(proc->cr3);
@@ -305,6 +319,76 @@ int process_load_heap(process_t * proc, const char * buff, size_t size) {
     return 0;
 }
 
+handle_t * process_get_handle(process_t * proc, int id) {
+    if (!proc || id < 0) {
+        return 0;
+    }
+
+    for (size_t i = 0; i < arr_size(&proc->io_handles); i++) {
+        handle_t * h = arr_at(&proc->io_handles, i);
+
+        if (h->id == id) {
+            return h;
+        }
+    }
+
+    return 0;
+}
+
+static int add_handle(process_t * proc, int id, int flags, io_device_t * device) {
+    if (!proc) {
+        return -1;
+    }
+
+    if (id < 0) {
+        id = next_handle_id();
+    }
+
+    handle_t * h = kmalloc(sizeof(handle_t));
+    if (!h) {
+        return -1;
+    }
+
+    h->id     = id;
+    h->flags  = flags;
+    h->device = device;
+
+    if (arr_insert(&proc->io_handles, arr_size(&proc->io_handles), h)) {
+        KLOGS_ERROR("process", "Could not add new handle to process");
+        kfree(h);
+        return -1;
+    }
+
+    return id;
+}
+
+static int open_stdio_handles(process_t * proc) {
+    if (!proc) {
+        return -1;
+    }
+
+    // TODO make stdin
+
+    // add_handle returns handle id
+    if (add_handle(proc, 1, DEVICE_IO_FLAG_WRITE, device_screen_open()) < 0) {
+        KLOGS_ERROR("process", "Failed to create stdout handle");
+        return -1;
+    }
+
+    handle_t * h = arr_at(&proc->io_handles, 0);
+
+    // if (add_handle(proc, 2, DEVICE_IO_FLAG_WRITE, device_screen_open()) < 0) {
+    //     KLOGS_ERROR("process", "Failed to create stderr handle");
+    //     return -1;
+    // }
+
+    // handle_t * h2 = arr_at(&proc->io_handles, 1);
+
+    set_next_handle_id(3);
+
+    return 0;
+}
+
 static uint32_t __pid;
 
 static uint32_t next_pid() {
@@ -320,4 +404,21 @@ static uint32_t next_pid() {
 void set_next_pid(uint32_t next) {
     next_pid(); // Force pid_set to true so it doesn't override this value
     __pid = next;
+}
+
+static uint32_t __handle_id;
+
+static uint32_t next_handle_id() {
+    static int handle_id_set = 0;
+    // Handle initializing __pid because there is no static init
+    if (!handle_id_set) {
+        __handle_id   = 3;
+        handle_id_set = 1;
+    }
+    return __handle_id++;
+}
+
+void set_next_handle_id(uint32_t next) {
+    next_handle_id(); // Force handle_id_set to true so it doesn't override this value
+    __handle_id = next;
 }
