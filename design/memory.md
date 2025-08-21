@@ -24,10 +24,9 @@ at address 0x500.
 
 | start | size | description        |
 | ----- | ---- | ------------------ |
-| 0     | 4    | GDT table address  |
-| 4     | 2    | Low Memory Size    |
-| 6     | 2    | Memory Entry Count |
-| 8     | x    | Memory Map Entries |
+| 0     | 2    | Low Memory Size    |
+| 2     | 2    | Memory Entry Count |
+| 4     | x    | Memory Map Entries |
 
 x is the value of Memory Entry Count * 24
 
