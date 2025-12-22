@@ -89,21 +89,6 @@ void kernel_init() {
     kernel_log_time_enable();
     KLOGS_DEBUG("kernel", "irq init finished");
 
-    // 11. print welcome message
-    // vga_puts("Welcome to kernel v" PROJECT_VERSION "\n");
-
-    // kernel_log_set_level(KERNEL_LOG_LEVEL_DEBUG);
-
-    // for (size_t i = 0; i < 10; i++) {
-    //     sleep(1000);
-    //     KLOGS_DEBUG("time", "Time %u s %u ms %u us %lu ns", time_s(), time_ms(), time_us(), time_ns());
-    // }
-
-    // TODO is this needed here? Create it when it's needed
-    // ramdisk_create(4096);
-
-    // KLOG_DEBUG("Opening ata disk");
-
     // 8.10 Mount disk
     __kernel.disk = disk_open(0, DISK_DRIVER_ATA);
     if (!__kernel.disk) {
@@ -125,52 +110,6 @@ static void setup_system_calls() {
     system_call_register(SYS_INT_FAMILY_MEM, sys_call_mem_cb);
     system_call_register(SYS_INT_FAMILY_PROC, sys_call_proc_cb);
 }
-
-// static void idle_loop() {
-//     for (;;) {
-//         asm("hlt");
-
-//         while (cb_len(&__kernel.event_queue.queue) > 0) {
-//             ebus_event_t event;
-//             if (cb_pop(&__kernel.event_queue.queue, &event)) {
-//                 KPANIC("Failed to pop from event queue");
-//             }
-
-//             switch (event.event_id) {
-//                 case EBUS_EVENT_EXEC: {
-//                     int pid = kernel_exec(event.exec.filename, event.exec.argc, event.exec.argv);
-//                     if (pid > 0) {
-//                         ebus_event_t proc_event  = {0};
-//                         proc_event.event_id      = EBUS_EVENT_PROC_MADE;
-//                         proc_event.proc_made.pid = pid;
-//                         if (ebus_push(&__kernel.event_queue, &proc_event)) {
-//                             KPANIC("Ebus push failed");
-//                         }
-//                     }
-//                 } break;
-
-//                 case EBUS_EVENT_PROC_CLOSE: {
-//                     process_t * proc = kernel_find_pid(event.proc_close.pid);
-//                     if (!proc) {
-//                         KPANIC("Failed to find pid");
-//                     }
-//                     if (pm_remove_proc(&__kernel.pm, proc->pid)) {
-//                         KPANIC("Failed to remove process from pm");
-//                     }
-//                     process_free(proc);
-//                 } break;
-
-//                 default: {
-//                     if (pm_push_event(&__kernel.pm, &event)) {
-//                         KPANIC("Failed to push event to process manager");
-//                     }
-//                 } break;
-//             }
-//         }
-
-//         yield();
-//     }
-// }
 
 int kernel_exec(const char * filename, size_t argc, char ** argv) {
     tar_stat_t stat;
@@ -209,11 +148,6 @@ int kernel_exec(const char * filename, size_t argc, char ** argv) {
 
     return pid;
 }
-
-// static int start_shell() {
-//     char * filename = "shell";
-//     return kernel_exec(filename, 1, &filename);
-// }
 
 int kernel_switch_task() {
     return scheduler_run(&__kernel.scheduler);
