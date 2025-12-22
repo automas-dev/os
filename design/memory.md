@@ -53,6 +53,14 @@ Region Type can be one of the following
 | 4    | ACPI NVS         | Reserved |
 | 5    | Bad Memory       | Reserved |
 
+ACPI 3.0 Extended Attributes
+
+| bit    | description                  |
+| ------ | ---------------------------- |
+| 0      | entry should be ignored if 0 |
+| 1      | entry is non-volatile if 1   |
+| 2 - 31 | undefined                    |
+
 ## Protected Mode
 
 | start   | end     | size      | description           |
