@@ -1,4 +1,4 @@
-# Boot
+# Boot Stage
 
 Execution of the first 512 bytes "boot sector".
 
