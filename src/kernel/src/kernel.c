@@ -41,18 +41,20 @@ static void setup_system_calls();
 void kernel_init() {
     KLOGS_INFO("kernel", "Kernel Start");
 
+    // 8.1 Clear kernel struct
     kmemset(&__kernel, 0, sizeof(kernel_t));
 
     __kernel.esp0 = VADDR_ISR_STACK;
 
-    // 6. setup isr and idt
+    // 8.2 Install ISR and IDT
     isr_install();
     KLOGS_DEBUG("kernel", "isr init finished");
 
-    // 7. setup system calls
+    // 8.3 Setup system calls
     setup_system_calls();
     KLOGS_DEBUG("kernel", "system call init finished");
 
+    // 8.4 Initialize kmalloc
     init_kmalloc(ADDR2PAGE(VADDR_RAM_BITMASKS) + ram_region_table_count());
     KLOGS_DEBUG("kernel", "kmalloc init finished");
 
@@ -61,7 +63,7 @@ void kernel_init() {
     // memory_init(&__kernel.proc.memory, kernel_alloc_page);
     // KLOGS_DEBUG("kernel", "memory init finished");
 
-    // 8. setup event bus
+    // 8.5 Setup event bus
     // Create ebus for kernel (target of queue_event)
     if (ebus_create(&__kernel.event_queue, 4096)) {
         KPANIC("Failed to init ebus\n");
@@ -70,17 +72,20 @@ void kernel_init() {
     _libc_config_queue_event_call(kernel_queue_event);
     KLOGS_DEBUG("kernel", "ebus init finished");
 
-    // 9. setup process manager
+    // 8.6 Create process manager
     pm_create(&__kernel.pm);
     KLOGS_DEBUG("kernel", "process manager init finished");
 
+    // 8.7 Initialize Scheduler
     scheduler_init(&__kernel.scheduler, &__kernel.pm);
     KLOGS_DEBUG("kernel", "scheduler init finished");
 
-    // 10. setup irq
+    // 8.8 Install IRQ
     // Init drivers and hardware interrupts
     // TODO move earlier (maybe after isr install) to get time for logs
     irq_install();
+
+    // 8.9 Enable time in kernel logs
     kernel_log_time_enable();
     KLOGS_DEBUG("kernel", "irq init finished");
 
@@ -99,12 +104,14 @@ void kernel_init() {
 
     // KLOG_DEBUG("Opening ata disk");
 
+    // 8.10 Mount disk
     __kernel.disk = disk_open(0, DISK_DRIVER_ATA);
     if (!__kernel.disk) {
         KPANIC("Failed to open ATA disk");
     }
     KLOGS_DEBUG("kernel", "open ata disk finished");
 
+    // 8.11 Mount filesystem
     __kernel.tar = tar_open(__kernel.disk);
     if (!__kernel.tar) {
         KPANIC("Failed to open tar");

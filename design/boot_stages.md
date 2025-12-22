@@ -9,8 +9,8 @@ The BIOS firmware does a lot more than this, only the steps to launch the kernel
 are included.
 
 1. Power On Self Test (POST)
-2. Load boot sector (512 Bytes) into memory at 0x7c00
-3. Jump to 0x7c00
+2. Load boot sector (512 Bytes) into memory at `0x7c00`
+3. Jump to `0x7c00`
 
 ## Stage 1 - Boot
 
@@ -43,39 +43,26 @@ initialize the kernel then load and launch init program.
 6. Initialize TSS
 7. Enable paging
 8. Initialize kernel (`kernel_init`)
-9. Load init executable
+   1. Clear kernel struct
+   2. Install ISR and IDT
+   3. Setup System Calls
+   4. Initialize `kmalloc`
+   5. (TMP) Setup Event Bus
+   6. Create Process Manager
+   7. Initialize Scheduler
+   8. Install IRQ
+      1. Enable interrupts
+      2. Timer
+      3. Keyboard
+      4. ATA
+      5. RTC
+   9.  Enable time in kernel logs
+   10. Mount disk
+   11. Mount filesystem
+9.  Load init executable
 10. Launch init (os main function)
 
 TODO after here is out of date and needs to be rewritten
-
-## Stage 3 - Kernel
-
-Kernel in protected mode setting up system for user space applications.
-
-2. Setup Memory
-   1. Physical Memory Allocator
-   2. Virtual Memory (paging)
-3. Enable Paging
-4. Setup GDT (kernel + user + tss)
-5. Setup TSS (empty)
-6. Setup ISR and IDT
-   1. Init timer
-   2. Init keyboard
-   3. ~~Init ata~~
-7. Setup system calls
-8. Setup event bus
-9. Setup process manager
-   1. Create kernel process
-   2. Create kernel idle task
-10. Setup IRQ
-11. Print welcome message
-12. TODO after this needs to be revised
-13. Load ATA & FS drivers
-14. Read OS into memory
-15. Setup stack for TSS
-16. Create idle process
-17. ~~Setup Malloc~~
-    1. should be per proc
 
 ## Stage 3 - OS
 
