@@ -22,7 +22,7 @@
 #include "libc/string.h"
 #include "paging.h"
 #include "process.h"
-#include "vga.h"
+#include "drivers/vga.h"
 
 bool debug = false;
 

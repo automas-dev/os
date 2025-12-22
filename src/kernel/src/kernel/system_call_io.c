@@ -5,7 +5,7 @@
 #include "libc/datastruct/array.h"
 #include "libk/defs.h"
 #include "process.h"
-#include "vga.h"
+#include "drivers/vga.h"
 
 int sys_call_io_cb(uint16_t int_no, void * args_data, registers_t * regs) {
     process_t * proc       = get_current_process();

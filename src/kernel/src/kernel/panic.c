@@ -1,5 +1,5 @@
 #include "kernel.h"
-#include "vga.h"
+#include "drivers/vga.h"
 
 NO_RETURN void kernel_panic(const char * msg, const char * file, unsigned int line) {
     vga_color(VGA_FG_WHITE | VGA_BG_RED);

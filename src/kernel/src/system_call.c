@@ -6,7 +6,7 @@
 #include "libc/stdio.h"
 #include "libc/string.h"
 #include "libk/defs.h"
-#include "vga.h"
+#include "drivers/vga.h"
 
 #define MAX_CALLBACKS 0x100
 sys_call_handler_t callbacks[MAX_CALLBACKS];

@@ -22,7 +22,7 @@
 #include "libc/string.h"
 #include "process.h"
 #include "process_manager.h"
-#include "vga.h"
+#include "drivers/vga.h"
 
 void kernel_init();
 
