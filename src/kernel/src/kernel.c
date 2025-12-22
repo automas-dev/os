@@ -1,3 +1,9 @@
+/**
+ * @brief Higher kernel operates in virtual memory after paging is enabled.
+ *
+ * Documentation moved to design/boot_stages.md
+ */
+
 #include "kernel.h"
 
 #include "defs.h"

@@ -3,7 +3,7 @@
 This describes the planned stages and steps, it does not represent the current
 implementation or progress.
 
-## BIOS
+## Stage 0 - BIOS
 
 The BIOS firmware does a lot more than this, only the steps to launch the kernel
 are included.
@@ -28,14 +28,30 @@ Execution of the first 512 bytes "boot sector".
 
 ## Stage 2 - Loader
 
-...
+Loader starts in raw memory before paging is enabled. After paging is enabled,
+initialize the kernel then load and launch init program.
+
+1. Load VGA driver and clear screen
+2. Setup kernel logging (screen only)
+3. Initialize ram table (physical memory)
+4. Initialize kernel virtual memory
+   1. Create page dir
+   2. Create first page table
+   3. Map first page table
+   4. Map last table to dir for access to tables
+5. Initialize GDT
+6. Initialize TSS
+7. Enable paging
+8. Initialize kernel (`kernel_init`)
+9. Load init executable
+10. Launch init (os main function)
+
+TODO after here is out of date and needs to be rewritten
 
 ## Stage 3 - Kernel
 
 Kernel in protected mode setting up system for user space applications.
 
-1. Load VGA driver
-   1. Clear screen
 2. Setup Memory
    1. Physical Memory Allocator
    2. Virtual Memory (paging)

@@ -1,13 +1,8 @@
 /**
- * @brief Lower kernel operates in raw memory before paging is enabled.
+ * @brief Loader starts in raw memory before paging is enabled. After paging is
+ * enabled, initialize the kernel then load and launch init program.
  *
- * 1. Clear screen
- * 2. Initialize ram table (physical memory)
- * 3. Setup paging (virtual memory)
- * 4. Map kernel table
- * 5. Initialize kernel (`kernel_init`)
- * 6. Load init executable
- * 7. Launch init (os main function)
+ * Documentation moved to design/boot_stages.md
  */
 
 #include <stdint.h>
@@ -38,14 +33,17 @@ static void id_map_page(mmu_table_t * table, size_t page);
 static process_t * load_init();
 
 void __start() {
+    // 1. Load VGA driver and clear screen
     vga_init();
 
+    // 2. Setup kernel logging (screen only)
     _libc_config_file_write_call(device_screen_write_raw);
 
     kernel_log_set_level(KERNEL_LOG_LEVEL_DEBUG);
     KLOGS_DEBUG("loader", "vga init finished");
     KLOGS_INFO("loader", "Loader Start");
 
+    // 3. Initialize ram table (physical memory)
     void * ram_table = UINT2PTR(PADDR_RAM_TABLE);
 
     if (ram_init(ram_table, UINT2PTR(VADDR_RAM_BITMASKS))) {
@@ -71,45 +69,53 @@ void __start() {
 
     KLOGS_DEBUG("loader", "ram table init finished");
 
+    // 4. Initialize kernel virtual memory
+    // 4.1 Create page dir
     mmu_dir_t * pdir = UINT2PTR(PADDR_KERNEL_DIR);
     mmu_dir_clear(pdir);
 
     KLOGS_DEBUG("loader", "page dir created");
 
-    // Init first table
+    // 4.2 Create first page table
     uint32_t first_table_addr = ram_page_palloc();
     mmu_dir_set(pdir, 0, first_table_addr, MMU_DIR_RW);
 
     KLOGS_DEBUG("loader", "page table created");
 
-    // Map first table
+    // 4.3 Map first page table
     mmu_table_t * first_table = UINT2PTR(first_table_addr);
     mmu_table_clear(first_table);
     map_kernel_table(first_table);
 
-    // Map last table to dir for access to tables
+    // 4.4 Map last table to dir for access to tables
     mmu_dir_set(pdir, MMU_DIR_SIZE - 1, PADDR_KERNEL_DIR, MMU_DIR_RW);
 
     KLOGS_DEBUG("loader", "kernel page table finished");
 
+    // 5. Initialize GDT
     init_gdt();
     KLOGS_DEBUG("loader", "gdt init finished");
 
+    // 6. Initialize TSS
     init_tss();
     KLOGS_DEBUG("loader", "tss init finished");
 
+    // 7. Enable paging
     mmu_enable_paging(PADDR_KERNEL_DIR);
     KLOGS_DEBUG("loader", "paging enabled");
 
+    // 8. Initialize kernel
     kernel_init();
     KLOGS_DEBUG("loader", "kernel init finished");
 
+    // 9. Load init executable
     process_t * init = load_init();
     if (!init) {
         KPANIC("Failed to load init executable");
     }
     KLOGS_DEBUG("loader", "load init finished");
 
+    // 10. Launch init (os main function)
     start_first_task(init);
     KLOGS_WARNING("loader", "Returned from init");
 
