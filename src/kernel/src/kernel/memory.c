@@ -8,7 +8,7 @@
 static memory_t __memory;
 static size_t   __next_heap_page;
 
-void init_kmalloc(size_t next_heap_page) {
+void kmalloc_init(size_t next_heap_page) {
     // KLOGS_DEBUG("kmalloc", "Init kmalloc to heap page 0x%X", next_heap_page);
 
     __next_heap_page = next_heap_page;

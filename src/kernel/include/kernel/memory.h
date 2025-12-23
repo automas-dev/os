@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-void init_kmalloc(size_t next_heap_page);
+void kmalloc_init(size_t next_heap_page);
 
 void * kmalloc(size_t size);
 void * krealloc(void * ptr, size_t size);

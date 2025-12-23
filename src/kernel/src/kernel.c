@@ -55,7 +55,7 @@ void kernel_init() {
     KLOGS_DEBUG("kernel", "system call init finished");
 
     // 8.4 Initialize kmalloc
-    init_kmalloc(ADDR2PAGE(VADDR_RAM_BITMASKS) + ram_region_table_count());
+    kmalloc_init(ADDR2PAGE(VADDR_RAM_BITMASKS) + ram_region_table_count());
     KLOGS_DEBUG("kernel", "kmalloc init finished");
 
     // TODO why should the kernel need system calls?
