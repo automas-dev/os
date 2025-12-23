@@ -209,7 +209,7 @@ static void irq_install() {
     enable_interrupts();
     KLOGS_TRACE("kernel", "interrupts enabled");
     /* IRQ0: timer */
-    init_time(TIMER_FREQ_MS); // milliseconds
+    time_init(TIMER_FREQ_MS); // milliseconds
     KLOGS_TRACE("kernel", "pit init finished");
     /* IRQ1: keyboard */
     keyboard_init();

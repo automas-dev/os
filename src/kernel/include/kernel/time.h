@@ -9,7 +9,7 @@ enum TIMER_FREQ {
     TIMER_FREQ_US = 1000000,
 };
 
-void init_time(uint32_t freq);
+void time_init(uint32_t freq);
 
 /**
  * @brief
@@ -17,11 +17,11 @@ void init_time(uint32_t freq);
  * @param ticks
  * @return int id, < 0 for fail
  */
-int start_timer(uint32_t ticks);
-int start_timer_ns(uint32_t ns);
-int start_timer_ms(uint32_t ms);
+int time_start_timer(uint32_t ticks);
+int time_start_timer_ns(uint32_t ns);
+int time_start_timer_ms(uint32_t ms);
 
-void stop_timer(int id);
+void time_stop_timer(int id);
 
 void sleep(uint32_t ms);
 

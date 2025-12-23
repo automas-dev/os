@@ -174,7 +174,7 @@ static int sleep_cmd(size_t argc, char ** argv) {
     handler.event_id       = EBUS_EVENT_TIMER;
 
     sleep_handler = ebus_register_handler(get_kernel_ebus(), &handler);
-    start_timer_ms(1000);
+    time_start_timer_ms(1000);
 }
 
 static int ret_cmd(size_t argc, char ** argv) {

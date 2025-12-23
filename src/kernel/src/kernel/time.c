@@ -41,7 +41,7 @@ static void timer_callback(registers_t * regs) {
     }
 }
 
-void init_time(uint32_t freq) {
+void time_init(uint32_t freq) {
     __tick    = 0;
     __freq    = freq;
     __next_id = 1;
@@ -62,7 +62,7 @@ void init_time(uint32_t freq) {
     pit_write_channel(0, PIT_ACCESS_MODE_LOW_HIGH, PIT_CHANNEL_MODE_2_RATE_GEN, divisor);
 }
 
-int start_timer(uint32_t ticks) {
+int time_start_timer(uint32_t ticks) {
     timer_t t;
     t.id    = __next_id++;
     t.count = ticks;
@@ -72,15 +72,15 @@ int start_timer(uint32_t ticks) {
     return t.id;
 }
 
-int start_timer_ns(uint32_t ns) {
-    return start_timer(ns * __freq / 1000000000);
+int time_start_timer_ns(uint32_t ns) {
+    return time_start_timer(ns * __freq / 1000000000);
 }
 
-int start_timer_ms(uint32_t ms) {
-    return start_timer(ms * __freq / 1000);
+int time_start_timer_ms(uint32_t ms) {
+    return time_start_timer(ms * __freq / 1000);
 }
 
-void stop_timer(int id) {
+void time_stop_timer(int id) {
     for (int i = 0; i < arr_size(&timers); i++) {
         timer_t * t = arr_at(&timers, i);
         if (t->id == id) {
