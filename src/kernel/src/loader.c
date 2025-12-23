@@ -12,6 +12,7 @@
 #include "cpu/mmu.h"
 #include "defs.h"
 #include "drivers/tar.h"
+#include "drivers/vga.h"
 #include "kernel.h"
 #include "kernel/device/ram.h"
 #include "kernel/device/screen.h"
@@ -22,7 +23,6 @@
 #include "libc/string.h"
 #include "process.h"
 #include "process_manager.h"
-#include "drivers/vga.h"
 
 void kernel_init();
 

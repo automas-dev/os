@@ -2,11 +2,11 @@
 
 #include <stdarg.h>
 
+#include "drivers/vga.h"
 #include "kernel/time.h"
 #include "libc/stdio.h"
 #include "libc/stdio_impl.h"
 #include "libc/string.h"
-#include "drivers/vga.h"
 
 int __enabled;
 int __time_enabled;

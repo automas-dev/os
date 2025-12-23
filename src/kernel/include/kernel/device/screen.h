@@ -3,8 +3,8 @@
 
 #include <stddef.h>
 
-#include "kernel/device/io.h"
 #include "drivers/vga.h"
+#include "kernel/device/io.h"
 
 io_device_t * device_screen_open();
 void          device_screen_close(io_device_t *);

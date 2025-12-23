@@ -9,6 +9,7 @@
 #include "drivers/disk.h"
 #include "drivers/rtc.h"
 #include "drivers/tar.h"
+#include "drivers/vga.h"
 #include "ebus.h"
 #include "exec.h"
 #include "kernel.h"
@@ -22,7 +23,6 @@
 #include "libc/string.h"
 #include "paging.h"
 #include "process.h"
-#include "drivers/vga.h"
 
 bool debug = false;
 
