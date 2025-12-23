@@ -34,10 +34,10 @@ static void callback(registers_t * regs) {
     uint16_t int_no = regs->eax & 0xffff;
     uint8_t  family = (regs->eax >> 8) & 0xff;
 
-    if (family != 0x01 && family != 0x10) {
-        process_t * proc = get_current_process();
-        KLOGS_DEBUG("SYS_CALL", "Got system call 0x%04x from PID %u", (int)int_no, proc->pid);
-    }
+    // if (family != 0x01 && family != 0x10) {
+    //     process_t * proc = get_current_process();
+    //     KLOGS_DEBUG("SYS_CALL", "Got system call 0x%04x from PID %u", (int)int_no, proc->pid);
+    // }
 
     void * args_data = UINT2PTR(regs->ebx);
 

@@ -175,6 +175,7 @@ void term_run() {
             key_cb(event.key.keycode, event.key.c, event.key.event, event.key.mods);
         }
         term_update();
+        yield();
     }
 }
 

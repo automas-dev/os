@@ -40,11 +40,12 @@ void init() {
     // new_pid = proc_open("demo", 0, 0);
     // printf("New PID is %u\n", new_pid);
 
-    proc_open("ping", 0, 0);
-    proc_open("pong", 0, 0);
+    // proc_open("ping", 0, 0);
+    // proc_open("pong", 0, 0);
+
+    proc_open("shell", 0, 0);
 
     for (;;) {
-        // asm("hlt");
         yield();
     }
 }
