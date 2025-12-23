@@ -22,6 +22,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             // TODO this isn't fully updated with task switching
 
         case SYS_INT_PROC_EXIT: {
+            KLOGS_DEBUG("SC_PROC", "System call proc exit");
             struct _args {
                 uint8_t code;
             } * args = (struct _args *)args_data;
@@ -42,6 +43,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             // TODO this isn't fully updated with task switching
 
         case SYS_INT_PROC_ABORT: {
+            KLOGS_DEBUG("SC_PROC", "System call proc abort");
             struct _args {
                 uint8_t      code;
                 const char * msg;
@@ -62,6 +64,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
         } break;
 
         case SYS_INT_PROC_PANIC: {
+            KLOGS_DEBUG("SC_PROC", "System call proc panic");
             struct _args {
                 const char * msg;
                 const char * file;
@@ -87,6 +90,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
         } break;
 
         case SYS_INT_PROC_REG_SIG: {
+            KLOGS_DEBUG("SC_PROC", "System call proc sig");
             struct _args {
                 signals_master_cb_t cb;
             } * args = (struct _args *)args_data;
@@ -94,6 +98,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
         } break;
 
         case SYS_INT_PROC_GETPID: {
+            KLOGS_DEBUG("SC_PROC", "System call proc getpid");
             process_t * p = get_current_process();
             if (!p) {
                 KPANIC("Failed to find current process");
@@ -102,6 +107,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
         } break;
 
         case SYS_INT_PROC_QUEUE_EVENT: {
+            KLOGS_DEBUG("SC_PROC", "System call proc queue event");
             struct _args {
                 ebus_event_t * event;
             } * args = (struct _args *)args_data;
@@ -117,6 +123,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
         } break;
 
         case SYS_INT_PROC_YIELD: {
+            KLOGS_DEBUG("SC_PROC", "System call proc yield");
             struct _args {
                 int            filter;
                 ebus_event_t * event_out;
@@ -129,6 +136,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             // process_yield(proc, regs->esp, regs->eip, args->filter);
             enable_interrupts();
             process_t * next = pm_get_next(kernel_get_proc_man());
+            KLOGS_DEBUG("SC_PROC", "Switching from process %u to %u", proc->pid, next->pid);
             if (pm_resume_process(kernel_get_proc_man(), next->pid, 0)) {
                 KPANIC("Failed to resume process");
             }
@@ -145,6 +153,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
         } break;
 
         case SYS_INT_PROC_EXEC: {
+            KLOGS_DEBUG("SC_PROC", "System call proc exec");
             struct _args {
                 const char * filename;
                 size_t       argc;
