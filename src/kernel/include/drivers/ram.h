@@ -1,5 +1,5 @@
-#ifndef KERNEL_RAM_H
-#define KERNEL_RAM_H
+#ifndef DRIVERS_RAM_H
+#define DRIVERS_RAM_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -111,4 +111,4 @@ uint32_t ram_page_palloc();
  */
 int ram_page_free(uint32_t addr);
 
-#endif // KERNEL_RAM_H
+#endif // DRIVERS_RAM_H
