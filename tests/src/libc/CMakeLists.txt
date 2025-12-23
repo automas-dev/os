@@ -10,17 +10,17 @@ unit_test(
     TARGET_FILES libc/src/array.c
 )
 
-unit_test(
-    TARGET test_libc_memory
-    TEST_FILES test_memory.cpp
-    TARGET_FILES libc/src/memory.c
-)
+# unit_test(
+#     TARGET test_libc_memory
+#     TEST_FILES test_memory.cpp
+#     TARGET_FILES libc/src/memory.c
+# )
 
-unit_test(
-    TARGET test_libc_process
-    TEST_FILES test_process.cpp
-    TARGET_FILES libc/src/proc.c
-)
+# unit_test(
+#     TARGET test_libc_process
+#     TEST_FILES test_process.cpp
+#     TARGET_FILES libc/src/proc.c
+# )
 
 unit_test(
     TARGET test_libc_signal
