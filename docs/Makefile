@@ -1,11 +1,11 @@
 
 setup:
-	poetry install
+	uv sync
 
 build:
-	poetry run mkdocs build
+	uv run mkdocs build
 
 serve:
-	poetry run mkdocs serve
+	uv run mkdocs serve
 
 .PHONY: setup build serve
