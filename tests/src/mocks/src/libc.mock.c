@@ -30,6 +30,7 @@ DEFINE_FAKE_VOID_FUNC(proc_panic, const char *, const char *, unsigned int);
 DEFINE_FAKE_VOID_FUNC(set_next_pid, uint32_t);
 DEFINE_FAKE_VOID_FUNC(queue_event, ebus_event_t *);
 DEFINE_FAKE_VALUE_FUNC(int, pull_event, int, ebus_event_t *);
+DEFINE_FAKE_VALUE_FUNC(int, proc_open, const char *, size_t, char **);
 DEFINE_FAKE_VOID_FUNC(yield);
 
 void reset_libc_proc_mock(void) {
@@ -39,6 +40,7 @@ void reset_libc_proc_mock(void) {
     RESET_FAKE(set_next_pid);
     RESET_FAKE(queue_event);
     RESET_FAKE(pull_event);
+    RESET_FAKE(proc_open);
     RESET_FAKE(yield);
 }
 

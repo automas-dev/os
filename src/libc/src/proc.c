@@ -28,7 +28,7 @@ void yield() {
     _sys_yield(0, 0);
 }
 
-int popen(const char * filename, size_t argc, char ** argv) {
+int proc_open(const char * filename, size_t argc, char ** argv) {
     if (!filename) {
         return -1;
     }

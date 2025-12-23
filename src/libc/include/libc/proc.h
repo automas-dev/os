@@ -34,7 +34,7 @@ int  pull_event(int filter, ebus_event_t * event_out);
 void yield(void);
 
 // return pid
-int popen(const char * filename, size_t argc, char ** argv);
+int proc_open(const char * filename, size_t argc, char ** argv);
 
 int getpid(void);
 
