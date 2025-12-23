@@ -2,8 +2,8 @@
 
 #include "cpu/mmu.h"
 #include "cpu/tss.h"
-#include "kernel.h"
 #include "drivers/ram.h"
+#include "kernel.h"
 #include "kernel/device/screen.h"
 #include "kernel/logs.h"
 #include "kernel/memory.h"

@@ -58,7 +58,7 @@ enum VGA_BG {
  * The cursor / index will also be reset to 0 and the color will be reset to
  * white on black.
  */
-void vga_init();
+void vga_init(char * ptr);
 
 /**
  * @brief Clear the VGA buffer and reset the cursor and color.

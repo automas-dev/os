@@ -2,8 +2,8 @@
 
 #include "cpu/mmu.h"
 #include "cpu/tss.h"
-#include "kernel.h"
 #include "drivers/ram.h"
+#include "kernel.h"
 #include "libc/memory.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"

@@ -11,10 +11,10 @@
 #include "cpu/gdt.h"
 #include "cpu/mmu.h"
 #include "defs.h"
+#include "drivers/ram.h"
 #include "drivers/tar.h"
 #include "drivers/vga.h"
 #include "kernel.h"
-#include "drivers/ram.h"
 #include "kernel/device/screen.h"
 #include "kernel/logs.h"
 #include "kernel/memory.h"
@@ -34,7 +34,7 @@ static process_t * load_init();
 
 void __start() {
     // 1. Load VGA driver and clear screen
-    vga_init();
+    vga_init(UINT2PTR(PADDR_VGA));
 
     // 2. Setup kernel logging (screen only)
     _libc_config_file_write_call(device_screen_write_raw);

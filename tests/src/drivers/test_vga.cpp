@@ -18,7 +18,7 @@ protected:
         init_mocks();
 
         buff.fill(0);
-        init_vga(buff.data());
+        vga_init(buff.data());
     }
 };
 

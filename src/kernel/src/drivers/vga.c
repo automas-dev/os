@@ -15,10 +15,10 @@ static char * screen;
 static void update_cursor();
 static void shift_lines();
 
-void vga_init() {
+void vga_init(char * ptr) {
     index  = 0;
     color  = VGA_RESET;
-    screen = UINT2PTR(PADDR_VGA);
+    screen = ptr;
 
     vga_clear();
 }
