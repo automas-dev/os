@@ -19,9 +19,13 @@ char * kstrfind(const char * str, int c);
 int katoi(const char * str);
 
 size_t itoa(int32_t n, char * str);
+size_t itoa_base(size_t max_length, int32_t n, char * str, uint8_t base, bool upper);
 size_t ltoa(int64_t n, char * str);
+size_t ltoa_base(size_t max_length, int64_t n, char * str, uint8_t base, bool upper);
 
 size_t utoa(uint32_t n, char * str);
+size_t utoa_base(size_t max_length, uint32_t n, char * str, uint8_t base, bool upper);
 size_t ultoa(uint64_t n, char * str);
+size_t ultoa_base(size_t max_length, uint64_t n, char * str, uint8_t base, bool upper);
 
 #endif // LIBC_STRING_H

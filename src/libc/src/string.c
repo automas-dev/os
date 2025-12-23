@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define BASE_DEFAULT_UPPER true
+
 static char * kstrtok_curr = 0;
 
 int kmemcmp(const void * lhs, const void * rhs, size_t n) {
@@ -213,6 +215,10 @@ int katoi(const char * str) {
 }
 
 size_t itoa(int32_t n, char * str) {
+    return itoa_base(-1, n, str, 10, BASE_DEFAULT_UPPER);
+}
+
+size_t itoa_base(size_t max_length, int32_t n, char * str, uint8_t base, bool upper) {
     if (!str) {
         return 0;
     }
@@ -227,12 +233,16 @@ size_t itoa(int32_t n, char * str) {
         n = -n;
     }
 
-    len += utoa(n, str);
+    len += utoa_base(max_length - 1, n, str, base, upper);
 
     return len;
 }
 
 size_t ltoa(int64_t n, char * str) {
+    return ltoa_base(-1, n, str, 10, BASE_DEFAULT_UPPER);
+}
+
+size_t ltoa_base(size_t max_length, int64_t n, char * str, uint8_t base, bool upper) {
     if (!str) {
         return 0;
     }
@@ -247,27 +257,42 @@ size_t ltoa(int64_t n, char * str) {
         n = -n;
     }
 
-    len += ultoa(n, str);
+    len += ultoa_base(max_length - 1, n, str, base, upper);
 
     return len;
 }
 
 size_t utoa(uint32_t n, char * str) {
-    if (!str) {
+    return utoa_base(-1, n, str, 10, BASE_DEFAULT_UPPER);
+}
+
+size_t utoa_base(size_t max_length, uint32_t n, char * str, uint8_t base, bool upper) {
+    if (!str || !max_length || !base) {
         return 0;
     }
 
     size_t   len = 0;
     uint32_t rev = 0;
     while (n > 0) {
-        rev = (rev * 10) + (n % 10);
-        n /= 10;
+        rev = (rev * base) + (n % base);
+        n /= base;
         len += 1;
     }
 
+    if (len > max_length) {
+        len = max_length;
+    }
+
     for (size_t i = 0; i < len; i++) {
-        *str++ = '0' + (rev % 10);
-        rev /= 10;
+        char digit = rev % base;
+        if (digit > 9) {
+            digit = (upper ? 'A' : 'a') + (digit - 10);
+        }
+        else {
+            digit = '0' + digit;
+        }
+        *str++ = digit;
+        rev /= base;
     }
 
     if (len == 0) {
@@ -281,21 +306,36 @@ size_t utoa(uint32_t n, char * str) {
 }
 
 size_t ultoa(uint64_t n, char * str) {
-    if (!str) {
+    return ultoa_base(-1, n, str, 10, BASE_DEFAULT_UPPER);
+}
+
+size_t ultoa_base(size_t max_length, uint64_t n, char * str, uint8_t base, bool upper) {
+    if (!str || !max_length || !base) {
         return 0;
     }
 
     size_t   len = 0;
     uint64_t rev = 0;
     while (n > 0) {
-        rev = (rev * 10) + (n % 10);
-        n /= 10;
+        rev = (rev * base) + (n % base);
+        n /= base;
         len += 1;
     }
 
+    if (len > max_length) {
+        len = max_length;
+    }
+
     for (size_t i = 0; i < len; i++) {
-        *str++ = '0' + (rev % 10);
-        rev /= 10;
+        char digit = rev % base;
+        if (digit > 9) {
+            digit = (upper ? 'A' : 'a') + (digit - 10);
+        }
+        else {
+            digit = '0' + digit;
+        }
+        *str++ = digit;
+        rev /= base;
     }
 
     if (len == 0) {

@@ -27,7 +27,7 @@ size_t vputi(file_t * file, int32_t num, uint8_t base, bool upper) {
 
     // 32 bit oct = 11 + - + null terminator
     char   buff[13];
-    size_t buff_len = itoa(num, buff);
+    size_t buff_len = itoa_base(sizeof(buff), num, buff, base, upper);
 
     return file_write(file, 1, buff_len, buff);
 }
@@ -39,7 +39,7 @@ size_t vputli(file_t * file, int64_t num, uint8_t base, bool upper) {
 
     // 32 bit oct = 24 + - + null terminator
     char   buff[26];
-    size_t buff_len = ltoa(num, buff);
+    size_t buff_len = ltoa_base(sizeof(buff), num, buff, base, upper);
 
     return file_write(file, 1, buff_len, buff);
 }
@@ -51,7 +51,7 @@ size_t vputu(file_t * file, uint32_t num, uint8_t base, bool upper) {
 
     // 32 bit oct = 11 + - + null terminator
     char   buff[13];
-    size_t buff_len = utoa(num, buff);
+    size_t buff_len = utoa_base(sizeof(buff), num, buff, base, upper);
 
     return file_write(file, 1, buff_len, buff);
 }
@@ -63,7 +63,7 @@ size_t vputlu(file_t * file, uint64_t num, uint8_t base, bool upper) {
 
     // 32 bit oct = 24 + - + null terminator
     char   buff[26];
-    size_t buff_len = ultoa(num, buff);
+    size_t buff_len = ultoa_base(sizeof(buff), num, buff, base, upper);
 
     return file_write(file, 1, buff_len, buff);
 }
