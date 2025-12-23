@@ -9,7 +9,7 @@
 #define REGION_MAX_SIZE       (REGION_MAX_PAGE_COUNT * PAGE_SIZE)
 
 extern "C" {
-#include "ram.h"
+#include "drivers/ram.h"
 
 // 1 page for each region in the table + 1 for alignment
 #define BITMASK_SIZE (REGION_TABLE_SIZE * PAGE_SIZE + PAGE_SIZE)

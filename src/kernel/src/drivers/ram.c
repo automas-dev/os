@@ -1,4 +1,4 @@
-#include "kernel/device/ram.h"
+#include "drivers/ram.h"
 
 #include "cpu/mmu.h"
 #include "libc/string.h"

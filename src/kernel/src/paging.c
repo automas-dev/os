@@ -1,6 +1,6 @@
 #include "paging.h"
 
-#include "kernel/device/ram.h"
+#include "drivers/ram.h"
 #include "libc/string.h"
 
 typedef struct {

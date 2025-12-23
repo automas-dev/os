@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 #include "fff.h"
-#include "ram.h"
+#include "drivers/ram.h"
 
 DECLARE_FAKE_VALUE_FUNC(int, ram_init, ram_table_t *, void *);
 DECLARE_FAKE_VALUE_FUNC(int, ram_region_add_memory, uint64_t, uint64_t);

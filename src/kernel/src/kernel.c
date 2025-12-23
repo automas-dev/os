@@ -12,7 +12,7 @@
 #include "drivers/ramdisk.h"
 #include "drivers/rtc.h"
 #include "exec.h"
-#include "kernel/device/ram.h"
+#include "drivers/ram.h"
 #include "kernel/logs.h"
 #include "kernel/panic.h"
 #include "kernel/system_call_io.h"

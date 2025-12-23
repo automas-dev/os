@@ -3,7 +3,7 @@
 #include "cpu/mmu.h"
 #include "cpu/tss.h"
 #include "kernel.h"
-#include "kernel/device/ram.h"
+#include "drivers/ram.h"
 #include "libc/memory.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"

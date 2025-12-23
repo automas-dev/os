@@ -13,7 +13,7 @@
 #include "ebus.h"
 #include "exec.h"
 #include "kernel.h"
-#include "kernel/device/ram.h"
+#include "drivers/ram.h"
 #include "kernel/time.h"
 #include "libc/datastruct/array.h"
 #include "libc/memory.h"

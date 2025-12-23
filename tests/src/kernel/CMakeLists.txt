@@ -7,5 +7,5 @@ unit_test(
 unit_test(
     TARGET test_ram
     TEST_FILES test_ram.cpp
-    TARGET_FILES kernel/src/ram.c
+    TARGET_FILES kernel/src/drivers/ram.c
 )
