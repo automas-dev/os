@@ -153,7 +153,7 @@ void ata_close(ata_t * disk) {
     kfree(disk);
 }
 
-void init_ata() {
+void ata_init() {
     /* Primary Drive */
     register_interrupt_handler(IRQ14, ata_callback);
 }

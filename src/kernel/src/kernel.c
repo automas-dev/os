@@ -215,7 +215,7 @@ static void irq_install() {
     init_keyboard();
     KLOGS_TRACE("kernel", "keyboard init finished");
     /* IRQ14: ata disk */
-    init_ata();
+    ata_init();
     KLOGS_TRACE("kernel", "ata init finished");
     /* IRQ8: real time clock */
     init_rtc(RTC_RATE_1024_HZ);

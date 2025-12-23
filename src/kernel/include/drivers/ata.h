@@ -10,7 +10,7 @@
 
 typedef struct _ata ata_t;
 
-void init_ata();
+void ata_init();
 
 ata_t * ata_open(uint8_t id);
 void    ata_close(ata_t * disk);
