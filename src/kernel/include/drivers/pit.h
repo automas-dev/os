@@ -25,7 +25,7 @@ enum PIT_CHANNEL_MODE {
 
 // bit 0 is bcd / binary mode, should always be 0
 
-void init_pit();
+void pit_init();
 
 int pit_write_channel(uint8_t channel, uint8_t access_mode, uint8_t channel_mode, uint16_t reload_value);
 

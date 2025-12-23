@@ -46,7 +46,7 @@ void init_time(uint32_t freq) {
     __freq    = freq;
     __next_id = 1;
 
-    init_pit();
+    pit_init();
 
     if (arr_create(&timers, 4, sizeof(timer_t))) {
         return;

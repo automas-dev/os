@@ -27,7 +27,7 @@ typedef struct _channel {
 
 pit_channel_t channels[3];
 
-void init_pit() {
+void pit_init() {
     kmemset(channels, 0, sizeof(channels));
 
     channels[0].channel = PIT_CHANNEL_0;
