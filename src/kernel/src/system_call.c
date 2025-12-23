@@ -2,6 +2,7 @@
 
 #include "cpu/isr.h"
 #include "drivers/vga.h"
+#include "kernel/logs.h"
 #include "libc/memory.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
@@ -30,6 +31,10 @@ static void callback(registers_t * regs) {
 
     uint16_t int_no = regs->eax & 0xffff;
     uint8_t  family = (regs->eax >> 8) & 0xff;
+
+    if (family != 0x01 && family != 0x10) {
+        KLOGS_DEBUG("SYS_CALL", "Got system call 0x%04x", (int)int_no);
+    }
 
     void * args_data = UINT2PTR(regs->ebx);
 
