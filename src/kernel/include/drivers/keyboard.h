@@ -80,6 +80,6 @@ typedef enum keyboard_key {
     KEY_SUPER = 0x5B,
 } keyboard_key_t;
 
-void init_keyboard();
+void keyboard_init();
 
 #endif // DRIVER_KEYBOARD_H

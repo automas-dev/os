@@ -19,7 +19,7 @@ static bool    get_key_state(uint8_t keycode);
 static void    set_key_state(uint8_t keycode, bool state);
 static uint8_t get_mods();
 
-void init_keyboard() {
+void keyboard_init() {
     e0_mode = false;
     kmemset(keystate, 0, sizeof(keystate));
     register_interrupt_handler(IRQ1, keyboard_callback);

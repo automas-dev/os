@@ -212,7 +212,7 @@ static void irq_install() {
     init_time(TIMER_FREQ_MS); // milliseconds
     KLOGS_TRACE("kernel", "pit init finished");
     /* IRQ1: keyboard */
-    init_keyboard();
+    keyboard_init();
     KLOGS_TRACE("kernel", "keyboard init finished");
     /* IRQ14: ata disk */
     ata_init();
