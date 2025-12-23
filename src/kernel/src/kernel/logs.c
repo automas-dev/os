@@ -14,7 +14,7 @@ int __level;
 
 static void put_time();
 
-void init_kernel_logs() {
+void kernel_log_init() {
     __enabled      = 1;
     __time_enabled = 0;
     __level        = 0;

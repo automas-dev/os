@@ -1,5 +1,5 @@
-#ifndef KERNEL_LOGS_H
-#define KERNEL_LOGS_H
+#ifndef KERNEL_LOG_H
+#define KERNEL_LOG_H
 
 #include <stdarg.h>
 #include <stddef.h>
@@ -25,7 +25,7 @@ enum KERNEL_LOG_LEVEL {
 #define KLOGS_WARNING(SERVICE, FMT, ...) kernel_log(KERNEL_LOG_LEVEL_WARNING, (SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
 #define KLOGS_ERROR(SERVICE, FMT, ...)   kernel_log(KERNEL_LOG_LEVEL_ERROR, (SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
 
-void init_kernel_logs();
+void kernel_log_init();
 
 void kernel_log_enable();
 void kernel_log_disable();
@@ -37,4 +37,4 @@ void kernel_log_set_level(int level);
 
 void kernel_log(int level, const char * service, const char * fmt, ...);
 
-#endif // KERNEL_LOGS_H
+#endif // KERNEL_LOG_H
