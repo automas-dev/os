@@ -30,7 +30,7 @@ typedef struct {
     uint8_t year;
 } rtc_time_t;
 
-void init_rtc(rtc_rate_t rate);
+void rtc_init(rtc_rate_t rate);
 
 // uint32_t time_us();
 // uint32_t time_ms();

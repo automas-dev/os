@@ -39,7 +39,7 @@ static void rtc_callback(registers_t * regs) {
     ticks++;
 }
 
-void init_rtc(rtc_rate_t rate) {
+void rtc_init(rtc_rate_t rate) {
     register_interrupt_handler(IRQ8, rtc_callback);
 
     disable_interrupts();

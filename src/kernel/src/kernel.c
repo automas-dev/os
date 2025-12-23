@@ -218,7 +218,7 @@ static void irq_install() {
     ata_init();
     KLOGS_TRACE("kernel", "ata init finished");
     /* IRQ8: real time clock */
-    init_rtc(RTC_RATE_1024_HZ);
+    rtc_init(RTC_RATE_1024_HZ);
     KLOGS_TRACE("kernel", "rtc init finished");
 }
 
