@@ -763,7 +763,7 @@ static int command_lookup(size_t argc, char ** argv) {
         return 1;
     }
 
-    int res = command_exec(buff, stat.size, argc, argv);
+    int res = command_exec(buff, filename, stat.size, argc, argv);
 
     if (!buff) {
         return 0;

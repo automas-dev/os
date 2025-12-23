@@ -153,44 +153,14 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
         } break;
 
         case SYS_INT_PROC_EXEC: {
-            KLOGS_DEBUG("SC_PROC", "System call proc exec");
             struct _args {
                 const char * filename;
                 size_t       argc;
                 char **      argv;
             } * args = (struct _args *)args_data;
+            KLOGS_DEBUG("SC_PROC", "System call proc exec \"%s\" argc=%d", args->filename, args->argc);
 
-            if (args->argc < 1) {
-                return -1;
-            }
-
-            char * copy_filename = kmalloc(kstrlen(args->filename) + 1);
-            kmemcpy(copy_filename, args->filename, sizeof(args->filename) + 1);
-
-            char ** copy = kmalloc(sizeof(char *) * args->argc);
-            for (size_t i = 0; i < args->argc; i++) {
-                size_t len = kstrlen(args->argv[i]) + 1;
-                copy[i]    = kmalloc(len);
-                kmemcpy(&copy[i], &args->argv[i], len);
-            }
-
-            ebus_event_t event  = {0};
-            event.event_id      = EBUS_EVENT_EXEC;
-            event.exec.filename = copy_filename;
-            event.exec.argc     = args->argc;
-            event.exec.argv     = copy;
-
-            queue_event(&event);
-
-            for (;;) {
-                ebus_event_t event;
-
-                int eid = pull_event(EBUS_EVENT_PROC_MADE, &event);
-
-                if (eid == EBUS_EVENT_PROC_MADE) {
-                    return event.proc_made.pid;
-                }
-            }
+            return kernel_exec(args->filename, args->argc, args->argv);
         } break;
     }
 

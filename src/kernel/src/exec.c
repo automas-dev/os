@@ -14,9 +14,9 @@
 typedef int (*ff_t)(size_t argc, char ** argv);
 
 static void proc_entry();
-static int  copy_args(process_t * proc, char * filepath, int argc, char ** argv);
+static int  copy_args(process_t * proc, const char * filepath, int argc, char ** argv);
 
-int command_exec(uint8_t * buff, size_t size, size_t argc, char ** argv) {
+int command_exec(uint8_t * buff, const char * filepath, size_t size, size_t argc, char ** argv) {
     process_t * proc = kmalloc(sizeof(process_t));
 
     process_t * active = get_active_task();
@@ -36,7 +36,7 @@ int command_exec(uint8_t * buff, size_t size, size_t argc, char ** argv) {
         process_grow_stack(proc);
     }
 
-    copy_args(proc, argv[0], argc, argv);
+    copy_args(proc, filepath, argc, argv);
 
     process_set_entrypoint(proc, proc_entry);
     process_add_pages(proc, 32);
@@ -64,23 +64,26 @@ static void proc_entry() {
     proc->status_code = res;
 }
 
-static char * copy_string(char * str) {
+static char * copy_string(const char * str) {
     int    len     = kstrlen(str);
     char * new_str = kmalloc(len + 1);
     kmemcpy(new_str, str, len + 1);
     return new_str;
 }
 
-static int copy_args(process_t * proc, char * filepath, int argc, char ** argv) {
+static int copy_args(process_t * proc, const char * filepath, int argc, char ** argv) {
     if (!proc || !filepath || !argv) {
         return -1;
     }
 
     proc->filepath = copy_string(filepath);
-    proc->argc     = argc;
-    proc->argv     = kmalloc(sizeof(char *) * argc);
+    proc->argc     = argc + 1;
+    proc->argv     = kmalloc(sizeof(char *) * (argc + 1));
+
+    size_t len    = kstrlen(filepath);
+    proc->argv[0] = copy_string(filepath);
     for (int i = 0; i < argc; i++) {
-        proc->argv[i] = copy_string(argv[i]);
+        proc->argv[i + 1] = copy_string(argv[i]);
     }
 
     return 0;

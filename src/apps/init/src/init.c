@@ -30,6 +30,16 @@ void init() {
         file_close(f);
     }
 
+    printf("Opening new process\n");
+
+    char * filename = "foo";
+    int    new_pid  = popen(filename, 1, 0);
+
+    printf("New PID is %u\n", new_pid);
+
+    new_pid = popen("demo", 1, 0);
+    printf("New PID is %u\n", new_pid);
+
     for (;;) {
         asm("hlt");
     }

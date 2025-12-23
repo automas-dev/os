@@ -29,7 +29,7 @@ void yield() {
 }
 
 int popen(const char * filename, size_t argc, char ** argv) {
-    if (argc < 1 || !argv) {
+    if (!filename) {
         return -1;
     }
     return _sys_proc_exec(filename, argc, argv);

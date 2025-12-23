@@ -2,12 +2,14 @@
 
 #include "cpu/isr.h"
 #include "drivers/vga.h"
+#include "kernel.h"
 #include "kernel/logs.h"
 #include "libc/memory.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
 #include "libc/string.h"
 #include "libk/defs.h"
+#include "process.h"
 
 #define MAX_CALLBACKS 0x100
 sys_call_handler_t callbacks[MAX_CALLBACKS];
@@ -33,7 +35,8 @@ static void callback(registers_t * regs) {
     uint8_t  family = (regs->eax >> 8) & 0xff;
 
     if (family != 0x01 && family != 0x10) {
-        KLOGS_DEBUG("SYS_CALL", "Got system call 0x%04x", (int)int_no);
+        process_t * proc = get_current_process();
+        KLOGS_DEBUG("SYS_CALL", "Got system call 0x%04x from PID %u", (int)int_no, proc->pid);
     }
 
     void * args_data = UINT2PTR(regs->ebx);

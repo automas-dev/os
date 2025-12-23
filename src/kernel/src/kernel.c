@@ -135,7 +135,7 @@ int kernel_exec(const char * filename, size_t argc, char ** argv) {
         return -1;
     }
 
-    int pid = command_exec(buff, stat.size, argc, argv);
+    int pid = command_exec(buff, filename, stat.size, argc, argv);
 
     if (pid < 0) {
         tar_file_close(file);
