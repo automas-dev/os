@@ -32,16 +32,20 @@ void init() {
 
     printf("Opening new process\n");
 
-    char * filename = "foo";
-    int    new_pid  = popen(filename, 1, 0);
+    // char * filename = "foo";
+    // int    new_pid  = proc_open(filename, 0, 0);
 
-    printf("New PID is %u\n", new_pid);
+    // printf("New PID is %u\n", new_pid);
 
-    new_pid = popen("demo", 1, 0);
-    printf("New PID is %u\n", new_pid);
+    // new_pid = proc_open("demo", 0, 0);
+    // printf("New PID is %u\n", new_pid);
+
+    proc_open("ping", 0, 0);
+    proc_open("pong", 0, 0);
 
     for (;;) {
-        asm("hlt");
+        // asm("hlt");
+        yield();
     }
 }
 

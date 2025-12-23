@@ -292,7 +292,7 @@ static void exec_buff() {
 
     // No match was found
     else {
-        int pid = popen(argv[0], argc, argv);
+        int pid = proc_open(argv[0], argc, argv);
         if (pid < 0) {
             printf("Unknown command '%s'\n", argv[0]);
             term_last_ret = 1;
