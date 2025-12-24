@@ -39,6 +39,10 @@ int getpid(void) {
     return _sys_proc_getpid();
 }
 
+int proc_set_foreground(int pid) {
+    _sys_proc_set_foreground(pid);
+}
+
 void _libc_config_queue_event_call(_libc_config_queue_event_fn fn) {
     __queue_event = fn;
 }

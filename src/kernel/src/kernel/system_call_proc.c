@@ -172,6 +172,15 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
 
             return kernel_exec(args->filename, args->argc, args->argv);
         } break;
+
+        case SYS_INT_PROC_SET_FOREGROUND: {
+            struct _args {
+                int pid;
+            } * args = (struct _args *)args_data;
+            KLOGS_DEBUG("SC_PROC", "System call set foreground pid %d", args->pid);
+
+            return pm_set_foreground_proc(kernel_get_proc_man(), args->pid);
+        } break;
     }
 
     return res;

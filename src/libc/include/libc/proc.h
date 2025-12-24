@@ -35,6 +35,7 @@ void yield(void);
 
 // return pid
 int proc_open(const char * filename, size_t argc, char ** argv);
+int proc_set_foreground(int pid);
 
 int getpid(void);
 

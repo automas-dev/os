@@ -18,14 +18,15 @@
 #define SYS_INT_MEM_REALLOC 0x0201
 #define SYS_INT_MEM_FREE    0x0202
 
-#define SYS_INT_PROC_EXIT        0x0300
-#define SYS_INT_PROC_ABORT       0x0301
-#define SYS_INT_PROC_PANIC       0x0302
-#define SYS_INT_PROC_REG_SIG     0x0303
-#define SYS_INT_PROC_GETPID      0x0304
-#define SYS_INT_PROC_QUEUE_EVENT 0x0305
-#define SYS_INT_PROC_YIELD       0x0306
-#define SYS_INT_PROC_EXEC        0x0307
+#define SYS_INT_PROC_EXIT           0x0300
+#define SYS_INT_PROC_ABORT          0x0301
+#define SYS_INT_PROC_PANIC          0x0302
+#define SYS_INT_PROC_REG_SIG        0x0303
+#define SYS_INT_PROC_GETPID         0x0304
+#define SYS_INT_PROC_QUEUE_EVENT    0x0305
+#define SYS_INT_PROC_YIELD          0x0306
+#define SYS_INT_PROC_EXEC           0x0307
+#define SYS_INT_PROC_SET_FOREGROUND 0x0308
 
 // #define SYS_INT_STDIO_PUTC 0x1000
 // #define SYS_INT_STDIO_PUTS 0x1001

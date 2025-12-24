@@ -3,6 +3,7 @@
 #include "kernel.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
+#include "libc/string.h"
 
 static int pid_arr_index(arr_t * arr, int pid);
 
@@ -10,6 +11,8 @@ int pm_create(proc_man_t * pm) {
     if (!pm) {
         return -1;
     }
+
+    kmemset(pm, 0, sizeof(proc_man_t));
 
     if (arr_create(&pm->task_list, 4, sizeof(process_t *))) {
         return -1;
@@ -59,6 +62,21 @@ int pm_remove_proc(proc_man_t * pm, int pid) {
     if (i < 0 || arr_remove(&pm->task_list, i, 0)) {
         return -1;
     }
+
+    return -1;
+}
+
+int pm_set_foreground_proc(proc_man_t * pm, int pid) {
+    if (!pm || pid < 0) {
+        return -1;
+    }
+
+    process_t * proc = pm_find_pid(pm, pid);
+    if (!proc) {
+        return -1;
+    }
+
+    pm->foreground_task = proc;
 
     return -1;
 }

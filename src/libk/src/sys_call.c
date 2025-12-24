@@ -77,3 +77,7 @@ int _sys_yield(int filter, ebus_event_t * event_out) {
 int _sys_proc_exec(const char * filename, int argc, char ** argv) {
     return send_call(SYS_INT_PROC_EXEC, filename, argc, argv);
 }
+
+int _sys_proc_set_foreground(int pid) {
+    return send_call(SYS_INT_PROC_SET_FOREGROUND, pid);
+}
