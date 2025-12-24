@@ -2,6 +2,7 @@
 
 #include "libc/proc.h"
 #include "libc/stdio.h"
+#include "libc/string.h"
 
 static int handle_event(ebus_t * bus, ebus_event_t * event);
 
@@ -88,6 +89,15 @@ int ebus_pop(ebus_t * bus, ebus_event_t * event_out) {
     }
 
     return cb_pop(&bus->queue, event_out);
+}
+
+int ebus_peek(ebus_t * bus, ebus_event_t * event_out) {
+    if (!bus || ebus_queue_size(bus) < 1) {
+        return -1;
+    }
+
+    void * ev = cb_peek(&bus->queue, 0);
+    return kmemcpy(event_out, ev, sizeof(ebus_event_t)) == 0;
 }
 
 // int ebus_cycle(ebus_t * bus) {

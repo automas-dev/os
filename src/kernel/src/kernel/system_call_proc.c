@@ -119,7 +119,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             process_t * proc        = get_current_process();
             args->event->source_pid = proc->pid;
 
-            ebus_push(get_kernel_ebus(), args->event);
+            kernel_queue_event(args->event);
         } break;
 
         case SYS_INT_PROC_YIELD: {
@@ -135,21 +135,31 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             proc->state        = (args->filter ? PROCESS_STATE_WAITING : PROCESS_STATE_SUSPENDED);
             // process_yield(proc, regs->esp, regs->eip, args->filter);
             enable_interrupts();
-            process_t * next = pm_get_next(kernel_get_proc_man());
+            process_t * next      = pm_get_next(kernel_get_proc_man());
+            int         has_event = 0;
+            if (ebus_queue_size(&next->event_queue) > 0) {
+                // KLOGS_DEBUG("SC_PROC", "Got %u events", ebus_queue_size(&next->event_queue));
+                if (ebus_pop(&next->event_queue, args->event_out)) {
+                    KPANIC("Yea, that didn't work");
+                }
+                has_event = 1;
+            }
             // KLOGS_DEBUG("SC_PROC", "Switching from process %u to %u", proc->pid, next->pid);
             if (pm_resume_process(kernel_get_proc_man(), next->pid, 0)) {
                 KPANIC("Failed to resume process");
             }
-            proc = get_current_process();
-            if (ebus_queue_size(&proc->event_queue) > 0) {
-                if (ebus_pop(&proc->event_queue, args->event_out)) {
-                    return -1;
-                }
-                if (args->event_out) {
-                    return args->event_out->event_id;
-                }
-            }
-            return 0;
+
+            // TODO return 1 for event out
+            // proc = get_current_process();
+            // if (ebus_queue_size(&proc->event_queue) > 0) {
+            //     if (ebus_pop(&proc->event_queue, args->event_out)) {
+            //         return -1;
+            //     }
+            //     if (args->event_out) {
+            //         return args->event_out->event_id;
+            //     }
+            // }
+            return has_event;
         } break;
 
         case SYS_INT_PROC_EXEC: {

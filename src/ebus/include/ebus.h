@@ -100,6 +100,7 @@ void ebus_unregister_handler(ebus_t * bus, int handler_id);
 
 int ebus_push(ebus_t * bus, ebus_event_t * event);
 int ebus_pop(ebus_t * bus, ebus_event_t * event_out);
+int ebus_peek(ebus_t * bus, ebus_event_t * event_out);
 
 // int ebus_cycle(ebus_t * bus);
 

@@ -163,6 +163,7 @@ ebus_t * get_kernel_ebus() {
 
 void kernel_queue_event(ebus_event_t * event) {
     ebus_push(&__kernel.event_queue, event);
+    pm_push_event(&__kernel.pm, event);
 }
 
 disk_t * kernel_get_disk() {

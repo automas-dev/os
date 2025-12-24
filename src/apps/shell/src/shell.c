@@ -1,8 +1,8 @@
 #include "shell.h"
 
 #include "commands.h"
-#include "drivers/keyboard.h"
 #include "ebus.h"
+#include "keyboard.h"
 #include "libc/datastruct/circular_buffer.h"
 #include "libc/memory.h"
 #include "libc/proc.h"
@@ -170,12 +170,17 @@ void term_run() {
 
     for (;;) {
         ebus_event_t event;
-        int          ev = pull_event(EBUS_EVENT_KEY, &event);
-        if (ev == EBUS_EVENT_KEY) {
-            key_cb(event.key.keycode, event.key.c, event.key.event, event.key.mods);
+        if (pull_event(EBUS_EVENT_KEY, &event)) {
+            // printf("Got event type 0x%04x\n", event.event_id);
+            if (event.event_id == EBUS_EVENT_KEY) {
+                key_cb(event.key.keycode, event.key.c, event.key.event, event.key.mods);
+                // printf("Got key %c %x %x\n", event.key.c, event.key.keycode, event.key.scancode);
+                // if (event.key.event == 0) {
+                //     putc(event.key.c);
+                // }
+            }
         }
         term_update();
-        yield();
     }
 }
 

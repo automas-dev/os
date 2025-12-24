@@ -99,6 +99,13 @@ process_t * pm_get_next(proc_man_t * pm) {
             return 0;
         }
 
+        if (proc->state == PROCESS_STATE_WAITING && ebus_queue_size(&proc->event_queue) > 0) {
+            ebus_event_t event;
+            if (ebus_peek(&proc->event_queue, &event) > 0) {
+                proc->state = PROCESS_STATE_SUSPENDED;
+            }
+        }
+
         if (proc->state == PROCESS_STATE_LOADED || proc->state == PROCESS_STATE_SUSPENDED || proc->state == PROCESS_STATE_RUNNING) {
             return proc;
         }
