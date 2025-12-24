@@ -101,6 +101,34 @@ static void key_cb(uint8_t code, char c, keyboard_event_t event, keyboard_mod_t 
     }
 }
 
+static void key_char_cb(char c) {
+    if (cb_len(&keybuff) >= MAX_CHARS) {
+        ERROR("key buffer overflow");
+        printf("(%u out of %u)", cb_len(&keybuff), MAX_CHARS);
+        PANIC("key buffer overflow");
+        return;
+    }
+
+    if (c == KEY_BACKSPACE) {
+        if (cb_len(&keybuff) > 0) {
+            putc(c);
+            cb_rpop(&keybuff, 0);
+        }
+        return;
+    }
+
+    if (cb_push(&keybuff, &c)) {
+        ERROR("key buffer write error");
+        return;
+    }
+
+    if (c == KEY_ENTER) {
+        command_ready++;
+    }
+
+    putc(c);
+}
+
 static void key_event_handler(const ebus_event_t * event) {
     key_cb(event->key.keycode, event->key.c, event->key.event, event->key.mods);
 }
@@ -177,6 +205,11 @@ void term_run() {
                 // printf("Got key %c %x %x\n", event.key.c, event.key.keycode, event.key.scancode);
                 // if (event.key.event == 0) {
                 //     putc(event.key.c);
+                // }
+
+                // char c = getc();
+                // if (c) {
+                //     key_char_cb(c);
                 // }
             }
         }

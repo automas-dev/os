@@ -62,15 +62,36 @@ int sys_call_io_cb(uint16_t int_no, void * args_data, registers_t * regs) {
                 return 0;
             }
 
+            // TODO get stdin handle and use device read
+            // TODO add buffer to handle_t
+
+            if (args->handle == 0) {
+                size_t available = io_buffer_length(proc->io_buffer);
+                size_t count     = args->count; // idk if this needs to be copied or can be edited in place
+                if (count > available) {
+                    count = available;
+                }
+
+                if (count > 0) {
+                    for (size_t i = 0; i < count; i++) {
+                        if (io_buffer_pop(proc->io_buffer, &args->buff[i])) {
+                            break;
+                        }
+                    }
+                }
+
+                return count;
+            }
+
             handle_t * h = process_get_handle(proc, args->handle);
             if (!h) {
                 KPANIC("Failed to find handle");
                 return 0;
             }
 
-            io_device_t * d = h->device;
+            // io_device_t * d = h->device;
 
-            return d->read_fn(d->data, args->buff, args->count, args->pos);
+            // return d->read_fn(d->data, args->buff, args->count, args->pos);
         } break;
 
         case SYS_INT_IO_WRITE: {

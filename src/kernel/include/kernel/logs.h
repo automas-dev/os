@@ -12,6 +12,11 @@ enum KERNEL_LOG_LEVEL {
     KERNEL_LOG_LEVEL_ERROR,
 };
 
+// #define STRINGIZE(x) STRINGIZE2(x)
+// #define STRINGIZE2(x) #x
+// #define LINE_STRING STRINGIZE(__LINE__)
+// #define PREFIX __BASE_FILE__ ":" LINE_STRING
+
 #define VA_ARGS(...)           , ##__VA_ARGS__
 #define KLOG_TRACE(FMT, ...)   kernel_log(KERNEL_LOG_LEVEL_TRACE, 0, (FMT)VA_ARGS(__VA_ARGS__))
 #define KLOG_DEBUG(FMT, ...)   kernel_log(KERNEL_LOG_LEVEL_DEBUG, 0, (FMT)VA_ARGS(__VA_ARGS__))

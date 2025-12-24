@@ -4,6 +4,7 @@
 
 #include "cpu/isr.h"
 #include "cpu/ports.h"
+#include "kernel/logs.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
 #include "libc/string.h"
@@ -20,6 +21,7 @@ static void    set_key_state(uint8_t keycode, bool state);
 static uint8_t get_mods();
 
 void keyboard_init() {
+    KLOGS_DEBUG("keyboard", "Register interrupt");
     __e0_mode = false;
     kmemset(__keystate, 0, sizeof(__keystate));
     register_interrupt_handler(IRQ1, keyboard_callback);

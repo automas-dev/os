@@ -81,8 +81,14 @@ static int cat_cmd(size_t argc, char ** argv) {
     return 0;
 }
 
+static int pid_cmd(size_t argc, char ** argv) {
+    printf("PID is %d\n", getpid());
+    return 0;
+}
+
 void init_commands() {
     term_command_add("echo", echo_cmd);
     term_command_add("ls", ls_cmd);
     term_command_add("cat", cat_cmd);
+    term_command_add("pid", pid_cmd);
 }

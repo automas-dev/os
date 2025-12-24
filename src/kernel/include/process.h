@@ -6,9 +6,12 @@
 
 #include "ebus.h"
 #include "kernel/device/io.h"
+#include "kernel/io_buffer.h"
 #include "libc/datastruct/array.h"
 #include "libc/file.h"
 #include "memory_alloc.h"
+
+#define IO_BUFFER_SIZE 512
 
 typedef void (*signals_master_cb_t)(int);
 
@@ -32,6 +35,7 @@ enum PROCESS_STATE {
     PROCESS_STATE_LOADED,
     PROCESS_STATE_SUSPENDED,
     PROCESS_STATE_WAITING,
+    // PROCESS_STATE_WAITING_STDIN,
     PROCESS_STATE_RUNNING,
     PROCESS_STATE_DEAD,
     PROCESS_STATE_ERROR,
@@ -61,8 +65,7 @@ typedef struct _process {
     uint32_t           filter_event;
     enum PROCESS_STATE state;
 
-    // TODO replace this with scheduler
-    struct _process * next_proc;
+    io_buffer_t * io_buffer;
 } process_t;
 
 /**

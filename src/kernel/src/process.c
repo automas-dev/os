@@ -77,10 +77,19 @@ int process_create(process_t * proc) {
         return -1;
     }
 
+    proc->io_buffer = io_buffer_create(IO_BUFFER_SIZE);
+    if (!proc->io_buffer) {
+        ebus_free(&proc->event_queue);
+        arr_free(&proc->io_handles);
+        ram_page_free(proc->cr3);
+        return -1;
+    }
+
     if (open_stdio_handles(proc)) {
         ebus_free(&proc->event_queue);
         arr_free(&proc->io_handles);
         ram_page_free(proc->cr3);
+        io_buffer_free(proc->io_buffer);
         return -1;
     }
 

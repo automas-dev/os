@@ -1,6 +1,8 @@
 #include "process_manager.h"
 
+#include "drivers/keyboard.h"
 #include "kernel.h"
+#include "kernel/logs.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
 #include "libc/string.h"
@@ -117,6 +119,16 @@ process_t * pm_get_next(proc_man_t * pm) {
             return 0;
         }
 
+        KLOGS_TRACE("pm", "PID %u is state %x", proc->pid, proc->state);
+
+        // if (proc->state == PROCESS_STATE_WAITING_STDIN) {
+        //     KLOGS_DEBUG("pm", "Process waiting for stdin");
+        //     if (io_buffer_length(proc->io_buffer) > 0) {
+        //         KLOGS_DEBUG("pm", "Process is waiting for stdin and has %u ready", io_buffer_length(proc->io_buffer));
+        //         return proc;
+        //     }
+        // }
+
         if (proc->state == PROCESS_STATE_WAITING && ebus_queue_size(&proc->event_queue) > 0) {
             ebus_event_t event;
             if (ebus_peek(&proc->event_queue, &event) > 0) {
@@ -163,30 +175,49 @@ int pm_push_event(proc_man_t * pm, ebus_event_t * event) {
         return -1;
     }
 
-    process_t * active = get_active_task();
+    if (event->event_id = EBUS_EVENT_KEY) {
+        process_t * foreground = pm->foreground_task;
 
-    for (size_t i = 0; i < arr_size(&pm->task_list); i++) {
-        process_t * proc;
-        arr_get(&pm->task_list, i, &proc);
+        KLOGS_DEBUG("pm", "Foreground is %u", foreground->pid);
 
-        if (proc->pid == active->pid) {
-            continue;
+        // if (event->key.event == KEY_EVENT_PRESS) {
+        //     if (io_buffer_push(foreground->io_buffer, event->key.c)) {
+        //         KLOGS_WARNING("pm", "Failed to push key into io buffer");
+        //         return -1;
+        //     }
+        //     KLOGS_TRACE("pm", "IO buffer is size %u", io_buffer_length(foreground->io_buffer));
+        // }
+
+        if (ebus_push(&foreground->event_queue, event)) {
+            return -1;
         }
+    }
+    else {
+        process_t * active = get_active_task();
 
-        if (proc->state <= PROCESS_STATE_LOADED || proc->state >= PROCESS_STATE_DEAD) {
-            continue;
-        }
+        for (size_t i = 0; i < arr_size(&pm->task_list); i++) {
+            process_t * proc;
+            arr_get(&pm->task_list, i, &proc);
 
-        if (!proc->filter_event || proc->filter_event == event->event_id) {
-            if (ebus_push(&proc->event_queue, event)) {
-                return -1;
+            if (proc->pid == active->pid) {
+                continue;
             }
 
-            if (proc->state == PROCESS_STATE_WAITING) {
-                proc->state = PROCESS_STATE_SUSPENDED;
+            if (proc->state <= PROCESS_STATE_LOADED || proc->state >= PROCESS_STATE_DEAD) {
+                continue;
+            }
+
+            if (proc->filter_event == event->event_id) {
+                KLOGS_DEBUG("pm", "Process %u was waiting for %u and got it", proc->pid, proc->filter_event);
+                if (ebus_push(&proc->event_queue, event)) {
+                    return -1;
+                }
+
+                if (proc->state == PROCESS_STATE_WAITING) {
+                    proc->state = PROCESS_STATE_SUSPENDED;
+                }
             }
         }
     }
-
     return 0;
 }

@@ -77,10 +77,11 @@ void kernel_init() {
     // Init drivers and hardware interrupts
     // TODO move earlier (maybe after isr install) to get time for logs
     irq_install();
+    KLOGS_DEBUG("kernel", "irq init finished");
 
     // 8.9 Enable time in kernel logs
     kernel_log_time_enable();
-    KLOGS_DEBUG("kernel", "irq init finished");
+    KLOGS_DEBUG("kernel", "enabled kernel log time");
 
     // 8.10 Mount disk
     __kernel.disk = disk_open(0, DISK_DRIVER_ATA);

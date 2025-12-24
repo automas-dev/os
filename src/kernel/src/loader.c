@@ -254,6 +254,7 @@ static process_t * load_init() {
     process_set_entrypoint(proc, proc_entry);
     process_add_pages(proc, 32);
     pm_add_proc(&get_kernel()->pm, proc);
+    pm_set_foreground_proc(&get_kernel()->pm, proc->pid);
 
     tar_file_close(file);
     kfree(buff);

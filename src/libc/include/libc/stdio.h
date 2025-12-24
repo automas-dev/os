@@ -24,6 +24,9 @@ size_t putli(int64_t num, uint8_t base, bool upper);
 size_t putu(uint32_t num, uint8_t base, bool upper);
 size_t putlu(uint64_t num, uint8_t base, bool upper);
 
+char   getc();
+size_t gets(size_t size, char * buff);
+
 size_t printf(const char * fmt, ...);
 
 size_t print_hexblock(const uint8_t * data, size_t count, size_t addr_offset);

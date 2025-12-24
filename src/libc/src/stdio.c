@@ -53,6 +53,16 @@ size_t putlu(uint64_t num, uint8_t base, bool upper) {
     return vputlu(stdout, num, base, upper);
 }
 
+char getc() {
+    char c = 0;
+    _sys_io_read(0, &c, 1, 0);
+    return c;
+}
+
+size_t gets(size_t size, char * buff) {
+    return _sys_io_read(stdin->handle, buff, size, 0);
+}
+
 size_t printf(const char * fmt, ...) {
     va_list params;
     va_start(params, fmt);
