@@ -10,6 +10,12 @@ unit_test(
     TARGET_FILES libc/src/array.c
 )
 
+unit_test(
+    TARGET test_memory_alloc
+    TEST_FILES test_memory_alloc.cpp
+    TARGET_FILES libc/src/memory_alloc.c
+)
+
 # unit_test(
 #     TARGET test_libc_memory
 #     TEST_FILES test_memory.cpp
