@@ -12,29 +12,6 @@
 
 // https://wiki.osdev.org/ATA_PIO_Mode
 
-#if SAFETY > 1
-#include "libc/stdio.h"
-#define TEST_PTR(REF)          \
-    if (!(REF)) {              \
-        printf(                \
-            "[ERROR] "__FILE__ \
-            ":%u Null ptr\n",  \
-            __LINE__);         \
-        return;                \
-    }
-#define TEST_PTR_RET(REF)      \
-    if (!(REF)) {              \
-        printf(                \
-            "[ERROR] "__FILE__ \
-            ":%u Null ptr\n",  \
-            __LINE__);         \
-        return 0;              \
-    }
-#else
-#define TEST_PTR(REF)
-#define TEST_PTR_RET(REF)
-#endif
-
 #define MAX_RETRY     5000
 #define TIMEOUT_MS    1000
 #define START_TIMEOUT uint32_t __timeout = time_ms() + TIMEOUT_MS;

@@ -12,12 +12,12 @@
 #include "process.h"
 
 #define MAX_CALLBACKS 0x100
-sys_call_handler_t callbacks[MAX_CALLBACKS];
+static sys_call_handler_t __callbacks[MAX_CALLBACKS];
 
 static void callback(registers_t * regs);
 
 void system_call_init(uint8_t isr_interrupt_no) {
-    kmemset(callbacks, 0, sizeof(callbacks));
+    kmemset(__callbacks, 0, sizeof(__callbacks));
     register_interrupt_handler(isr_interrupt_no, callback);
 }
 
@@ -25,7 +25,7 @@ void system_call_register(uint8_t family, sys_call_handler_t handler) {
     if (family > MAX_CALLBACKS) {
         PANIC("Out of range interrupt family");
     }
-    callbacks[family] = handler;
+    __callbacks[family] = handler;
 }
 
 static void callback(registers_t * regs) {
@@ -41,7 +41,7 @@ static void callback(registers_t * regs) {
 
     void * args_data = UINT2PTR(regs->ebx);
 
-    sys_call_handler_t handler = callbacks[family];
+    sys_call_handler_t handler = __callbacks[family];
 
     if (handler) {
         res = handler(int_no, args_data, regs);

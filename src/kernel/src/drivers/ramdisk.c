@@ -11,14 +11,14 @@ struct _ramdisk {
     void * data;
 };
 
-static ramdisk_t devices[RAMDISK_MAX];
-static int       device_count = 0;
+static ramdisk_t __devices[RAMDISK_MAX];
+static int       __device_count = 0;
 
 int ramdisk_create(size_t size) {
-    if (device_count < 0) {
+    if (__device_count < 0) {
         PANIC("NEGATIVE DEVICE COUNT");
     }
-    if (device_count == RAMDISK_MAX) {
+    if (__device_count == RAMDISK_MAX) {
         PANIC("TOO MANY RAM DISK DEVICES");
     }
 
@@ -27,18 +27,18 @@ int ramdisk_create(size_t size) {
         PANIC("RAMDISK OUT OF MEMORY");
     }
 
-    devices[device_count].id   = device_count;
-    devices[device_count].size = size;
-    devices[device_count].data = data;
+    __devices[__device_count].id   = __device_count;
+    __devices[__device_count].size = size;
+    __devices[__device_count].data = data;
 
-    return device_count++;
+    return __device_count++;
 }
 
 ramdisk_t * ramdisk_open(int id) {
-    if (id < 0 || id >= device_count) {
+    if (id < 0 || id >= __device_count) {
         return 0;
     }
-    return &devices[id];
+    return &__devices[id];
 }
 
 void ramdisk_close(ramdisk_t * rdisk) {

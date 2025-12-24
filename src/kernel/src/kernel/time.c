@@ -18,16 +18,16 @@ typedef struct _timer {
     uint32_t count;
 } timer_t;
 
-uint32_t __tick    = 0;
-uint32_t __freq    = 0;
-int      __next_id = 1;
+static uint32_t __tick    = 0;
+static uint32_t __freq    = 0;
+static int      __next_id = 1;
 
-arr_t timers; // timer_t
+static arr_t __timers; // timer_t
 
 static void timer_callback(registers_t * regs) {
     __tick++;
-    for (int i = 0; i < arr_size(&timers); i++) {
-        timer_t * timer = arr_at(&timers, i);
+    for (int i = 0; i < arr_size(&__timers); i++) {
+        timer_t * timer = arr_at(&__timers, i);
         timer->count--;
         if (timer->count == 0) {
             ebus_event_t e;
@@ -35,7 +35,7 @@ static void timer_callback(registers_t * regs) {
             e.timer.id   = timer->id;
             e.timer.time = __tick;
             queue_event(&e);
-            arr_remove(&timers, i, 0);
+            arr_remove(&__timers, i, 0);
             i--; // Account for the reduced size after insert
         }
     }
@@ -48,7 +48,7 @@ void time_init(uint32_t freq) {
 
     pit_init();
 
-    if (arr_create(&timers, 4, sizeof(timer_t))) {
+    if (arr_create(&__timers, 4, sizeof(timer_t))) {
         return;
     }
 
@@ -66,7 +66,7 @@ int time_start_timer(uint32_t ticks) {
     timer_t t;
     t.id    = __next_id++;
     t.count = ticks;
-    if (arr_insert(&timers, arr_size(&timers), &t)) {
+    if (arr_insert(&__timers, arr_size(&__timers), &t)) {
         return -1;
     }
     return t.id;
@@ -81,10 +81,10 @@ int time_start_timer_ms(uint32_t ms) {
 }
 
 void time_stop_timer(int id) {
-    for (int i = 0; i < arr_size(&timers); i++) {
-        timer_t * t = arr_at(&timers, i);
+    for (int i = 0; i < arr_size(&__timers); i++) {
+        timer_t * t = arr_at(&__timers, i);
         if (t->id == id) {
-            arr_remove(&timers, i, 0);
+            arr_remove(&__timers, i, 0);
             return;
         }
     }

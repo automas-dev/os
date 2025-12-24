@@ -8,7 +8,7 @@
 
 // static void print_trace(registers_t *);
 
-isr_t interrupt_handlers[256];
+static isr_t __interrupt_handlers[256];
 
 /* Can't do this with a loop because we need the address
  * of the function names */
@@ -178,7 +178,7 @@ US RW  P - Description
 */
 
 void register_interrupt_handler(uint8_t n, isr_t handler) {
-    interrupt_handlers[n] = handler;
+    __interrupt_handlers[n] = handler;
 }
 
 void irq_handler(registers_t r) {
@@ -197,8 +197,8 @@ void irq_handler(registers_t r) {
     }
 
     /* Handle the interrupt in a more modular way */
-    if (interrupt_handlers[r.int_no] != 0) {
-        isr_t handler = interrupt_handlers[r.int_no];
+    if (__interrupt_handlers[r.int_no] != 0) {
+        isr_t handler = __interrupt_handlers[r.int_no];
         handler(&r);
     }
 }

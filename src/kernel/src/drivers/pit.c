@@ -25,14 +25,14 @@ typedef struct _channel {
     uint16_t reload_value;
 } pit_channel_t;
 
-pit_channel_t channels[3];
+static pit_channel_t __channels[3];
 
 void pit_init() {
-    kmemset(channels, 0, sizeof(channels));
+    kmemset(__channels, 0, sizeof(__channels));
 
-    channels[0].channel = PIT_CHANNEL_0;
-    channels[1].channel = PIT_CHANNEL_1;
-    channels[2].channel = PIT_CHANNEL_2;
+    __channels[0].channel = PIT_CHANNEL_0;
+    __channels[1].channel = PIT_CHANNEL_1;
+    __channels[2].channel = PIT_CHANNEL_2;
 }
 
 int pit_write_channel(uint8_t channel, uint8_t access_mode, uint8_t channel_mode, uint16_t reload_value) {
@@ -40,11 +40,11 @@ int pit_write_channel(uint8_t channel, uint8_t access_mode, uint8_t channel_mode
         return -1;
     }
 
-    channels[channel].access_mode  = access_mode;
-    channels[channel].mode         = channel_mode;
-    channels[channel].reload_value = reload_value;
+    __channels[channel].access_mode  = access_mode;
+    __channels[channel].mode         = channel_mode;
+    __channels[channel].reload_value = reload_value;
 
-    uint8_t cmd = channels[channel].channel | channels[channel].access_mode | channel_mode;
+    uint8_t cmd = __channels[channel].channel | __channels[channel].access_mode | channel_mode;
 
     disable_interrupts();
 
@@ -87,7 +87,7 @@ int pit_write_channel(uint8_t channel, uint8_t access_mode, uint8_t channel_mode
 
 //     int count = port_byte_in(PIT_CHANNEL_0_PORT + channel);
 
-//     if (channels[channel].access_mode == PIT_ACCESS_MODE_LOW_HIGH) {
+//     if (__channels[channel].access_mode == PIT_ACCESS_MODE_LOW_HIGH) {
 //         count |= port_byte_in(PIT_CHANNEL_0_PORT + channel) << 4;
 //     }
 

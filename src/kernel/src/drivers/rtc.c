@@ -13,30 +13,30 @@
 #define RTC_REG_B            0xb
 #define RTC_REG_C            0xc
 
-static uint32_t ticks = 0;
-uint32_t        frequency;
+static uint32_t __ticks = 0;
+static uint32_t __frequency;
 
-static rtc_time_t time;
+static rtc_time_t __time;
 
 static bool    read_in_progress();
 static uint8_t read_rtc(uint8_t reg);
 
 // uint32_t time_us() {
-//     return ticks * 1e6 / frequency;
+//     return __ticks * 1e6 / __frequency;
 // }
 
 // uint32_t time_ms() {
-//     return ticks * 1e3 / frequency;
+//     return __ticks * 1e3 / __frequency;
 // }
 
 // uint32_t time_s() {
-//     return ticks / frequency;
+//     return __ticks / __frequency;
 // }
 
 static void rtc_callback(registers_t * regs) {
     port_byte_out(RTC_REG_PORT, RTC_REG_C);
     port_byte_in(RTC_DATA_PORT);
-    ticks++;
+    __ticks++;
 }
 
 void rtc_init(rtc_rate_t rate) {
@@ -55,22 +55,22 @@ void rtc_init(rtc_rate_t rate) {
     port_byte_out(RTC_DATA_PORT, (prev & 0xF0) | rate);
     enable_interrupts();
 
-    frequency = 32768 >> (rate - 1);
+    __frequency = 32768 >> (rate - 1);
 }
 
 rtc_time_t * rtc_time() {
     while (read_in_progress());
 
-    time.second = read_rtc(0x00);
-    time.minute = read_rtc(0x02);
-    time.hour   = read_rtc(0x04);
-    time.day    = read_rtc(0x07);
-    time.month  = read_rtc(0x08);
-    time.year   = read_rtc(0x09);
+    __time.second = read_rtc(0x00);
+    __time.minute = read_rtc(0x02);
+    __time.hour   = read_rtc(0x04);
+    __time.day    = read_rtc(0x07);
+    __time.month  = read_rtc(0x08);
+    __time.year   = read_rtc(0x09);
 
     // TODO there's a lot more
 
-    return &time;
+    return &__time;
 }
 
 static bool read_in_progress() {

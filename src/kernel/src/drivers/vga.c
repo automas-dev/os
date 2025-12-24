@@ -8,17 +8,17 @@
 
 #define MAX_INDEX (VGA_ROWS * VGA_COLS)
 
-static int    index;
-static char   color;
-static char * screen;
+static int    __index;
+static char   __color;
+static char * __screen;
 
 static void update_cursor();
 static void shift_lines();
 
 void vga_init(char * ptr) {
-    index  = 0;
-    color  = VGA_RESET;
-    screen = ptr;
+    __index  = 0;
+    __color  = VGA_RESET;
+    __screen = ptr;
 
     vga_clear();
 }
@@ -30,18 +30,18 @@ void vga_init(char * ptr) {
 void vga_clear() {
     for (int row = 0; row < VGA_ROWS; row++) {
         for (int col = 0; col < VGA_COLS; col++) {
-            index = VGA_INDEX(row, col);
-            vga_put(index, ' ', VGA_RESET);
+            __index = VGA_INDEX(row, col);
+            vga_put(__index, ' ', VGA_RESET);
         }
     }
-    index = 0;
-    color = VGA_RESET;
+    __index = 0;
+    __color = VGA_RESET;
 }
 
 void vga_put(int index, char c, unsigned char attr) {
     index *= 2;
-    screen[index]     = c;
-    screen[index + 1] = attr;
+    __screen[index]     = c;
+    __screen[index + 1] = attr;
 }
 
 /*
@@ -49,15 +49,15 @@ void vga_put(int index, char c, unsigned char attr) {
  */
 
 int vga_cursor_row() {
-    return VGA_ROW(index);
+    return VGA_ROW(__index);
 }
 
 int vga_cursor_col() {
-    return VGA_COL(index);
+    return VGA_COL(__index);
 }
 
 int vga_index() {
-    return index;
+    return __index;
 }
 
 void vga_cursor(int row, int col) {
@@ -65,7 +65,7 @@ void vga_cursor(int row, int col) {
         return;
     }
 
-    index = VGA_INDEX(row, col);
+    __index = VGA_INDEX(row, col);
     update_cursor();
 }
 
@@ -87,30 +87,30 @@ void vga_cursor_show() {
  */
 
 void vga_color(unsigned char attr) {
-    color = attr;
+    __color = attr;
 }
 
 size_t vga_putc(char c) {
     size_t ret = 0;
     if (c == '\n') {
-        int row = VGA_ROW(index);
-        index   = VGA_INDEX(row + 1, 0);
+        int row = VGA_ROW(__index);
+        __index = VGA_INDEX(row + 1, 0);
         ret     = 0;
     }
     else if (c == '\b') {
-        if (index > 0) {
-            index--;
+        if (__index > 0) {
+            __index--;
         }
-        vga_put(index, ' ', VGA_RESET);
+        vga_put(__index, ' ', VGA_RESET);
     }
     else {
-        vga_put(index++, c, color);
+        vga_put(__index++, c, __color);
         ret = 1;
     }
 
-    if (index >= MAX_INDEX) {
+    if (__index >= MAX_INDEX) {
         shift_lines();
-        index = VGA_INDEX(VGA_ROWS - 1, 0);
+        __index = VGA_INDEX(VGA_ROWS - 1, 0);
     }
 
     update_cursor();
@@ -192,14 +192,14 @@ size_t vga_write(const char * buff, size_t size) {
 
 static void update_cursor() {
     port_byte_out(REG_SCREEN_CTRL, 14);
-    port_byte_out(REG_SCREEN_DATA, (unsigned char)(index >> 8));
+    port_byte_out(REG_SCREEN_DATA, (unsigned char)(__index >> 8));
     port_byte_out(REG_SCREEN_CTRL, 15);
-    port_byte_out(REG_SCREEN_DATA, (unsigned char)(index & 0xff));
+    port_byte_out(REG_SCREEN_DATA, (unsigned char)(__index & 0xff));
 }
 
 static void shift_lines() {
     for (size_t i = 0; i < ((VGA_ROWS - 1) * VGA_COLS * 2); i++) {
-        screen[i] = screen[i + VGA_COLS * 2];
+        __screen[i] = __screen[i + VGA_COLS * 2];
     }
 
     for (int col = 0; col < VGA_COLS; col++) {

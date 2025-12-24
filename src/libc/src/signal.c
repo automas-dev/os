@@ -10,10 +10,10 @@ typedef struct _signal {
     struct _signal * next;
 } signal_t;
 
-static signal_t * signals = 0;
+static signal_t * __signals = 0;
 
 static void signal_callback(int sig_no) {
-    signal_t * sig = signals;
+    signal_t * sig = __signals;
     while (sig) {
         if (sig->sig_no == sig_no) {
             sig->callback();
@@ -28,7 +28,7 @@ int register_signal(int sig_no, signal_handler callback) {
         return -1;
     }
 
-    signal_t * sig = signals;
+    signal_t * sig = __signals;
     while (sig) {
         if (sig->sig_no == sig_no) {
             return -1;
@@ -45,8 +45,8 @@ int register_signal(int sig_no, signal_handler callback) {
     sig->callback = callback;
     sig->next     = 0;
 
-    sig->next = signals;
-    signals   = sig;
+    sig->next = __signals;
+    __signals = sig;
 
     _sys_register_signals(signal_callback);
     return 0;
