@@ -5,10 +5,12 @@
 #include "debug.h"
 #include "drivers/rtc.h"
 #include "kernel.h"
+#include "kernel/logs.h"
 #include "kernel/time.h"
 #include "libc/memory.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
+#include "libc/string.h"
 
 // https://wiki.osdev.org/ATA_PIO_Mode
 
@@ -104,7 +106,7 @@ struct _ata {
 
 static void ata_callback(registers_t * regs) {
     if (debug) {
-        puts("disk callback\n");
+        KLOGS_DEBUG("ata", "disk callback");
     }
 }
 
@@ -118,7 +120,7 @@ ata_t * ata_open(uint8_t id) {
         disk->io_base = ATA_BUS_0_IO_BASE;
         disk->ct_base = ATA_BUS_0_CTL_BASE;
         if (!ata_identify(disk)) {
-            puts("ERROR: failed to identify disk\n");
+            KLOGS_ERROR("ata", "failed to identify disk %u", id);
             kfree(disk);
             return 0;
         }
@@ -156,54 +158,52 @@ bool ata_status(ata_t * disk) {
 
     uint8_t status = port_byte_in(disk->ct_base + ATA_CTL_ALT_STATUS);
     if (debug) {
-        printf("Status is %02X\n", status);
         if (status & ATA_STATUS_FLAG_ERR) {
-            puts("ERR ");
+            KLOGS_ERROR("ata", "Status is 0x%02X ERR", status);
         }
         if (status & ATA_STATUS_FLAG_DRQ) {
-            puts("DRQ ");
+            KLOGS_ERROR("ata", "Status is 0x%02X DRQ", status);
         }
         if (status & ATA_STATUS_FLAG_SRV) {
-            puts("SRV ");
+            KLOGS_ERROR("ata", "Status is 0x%02X SRV", status);
         }
         if (status & ATA_STATUS_FLAG_DF) {
-            puts("DF ");
+            KLOGS_ERROR("ata", "Status is 0x%02X DF", status);
         }
         if (status & ATA_STATUS_FLAG_RDY) {
-            puts("RDY ");
+            KLOGS_ERROR("ata", "Status is 0x%02X RDY", status);
         }
         if (status & ATA_STATUS_FLAG_BSY) {
-            puts("BSY ");
+            KLOGS_ERROR("ata", "Status is 0x%02X BSY", status);
         }
-        putc('\n');
     }
 
     if (status & ATA_STATUS_FLAG_ERR) {
         if (debug) {
             uint8_t error = port_byte_in(disk->io_base + ATA_IO_ERROR);
             if (error & ATA_ERROR_FLAG_AMNF) {
-                puts("ERROR: AMNF - Address mark not found\n");
+                KLOGS_ERROR("ata", "AMNF - Address mark not found\n");
             }
             if (error & ATA_ERROR_FLAG_TKZNK) {
-                puts("ERROR: TKZNK - Track zero not found\n");
+                KLOGS_ERROR("ata", "TKZNK - Track zero not found\n");
             }
             if (error & ATA_ERROR_FLAG_ABRT) {
-                puts("ERROR: ABRT - Aborted command\n");
+                KLOGS_ERROR("ata", "ABRT - Aborted command\n");
             }
             if (error & ATA_ERROR_FLAG_MCR) {
-                puts("ERROR: MCR - Media change request\n");
+                KLOGS_ERROR("ata", "MCR - Media change request\n");
             }
             if (error & ATA_ERROR_FLAG_IDNF) {
-                puts("ERROR: IDNF - ID not found\n");
+                KLOGS_ERROR("ata", "IDNF - ID not found\n");
             }
             if (error & ATA_ERROR_FLAG_MC) {
-                puts("ERROR: MC - Media changed\n");
+                KLOGS_ERROR("ata", "MC - Media changed\n");
             }
             if (error & ATA_ERROR_FLAG_UNC) {
-                puts("ERROR: UNC - Uncorrectable data error\n");
+                KLOGS_ERROR("ata", "UNC - Uncorrectable data error\n");
             }
             if (error & ATA_ERROR_FLAG_BBK) {
-                puts("ERROR: BBK - Bad block detected\n");
+                KLOGS_ERROR("ata", "BBK - Bad block detected\n");
             }
         }
         return true;
@@ -235,7 +235,7 @@ size_t ata_sect_read(ata_t * disk, uint8_t * buff, size_t sect_count, uint32_t l
     while (port_byte_in(disk->ct_base + ATA_CTL_ALT_STATUS) & (ATA_STATUS_FLAG_DRQ | ATA_STATUS_FLAG_BSY)) {
         TEST_TIMEOUT
         if (retry++ > MAX_RETRY) {
-            puts("[ERROR] max retries for ata_sect_read wait for first status\n");
+            KLOGS_ERROR("ata", "max retries for ata_sect_read wait for first status\n");
             return 0;
         }
     }
@@ -256,7 +256,7 @@ size_t ata_sect_read(ata_t * disk, uint8_t * buff, size_t sect_count, uint32_t l
             while (!(port_byte_in(disk->ct_base + ATA_CTL_ALT_STATUS) & ATA_STATUS_FLAG_DRQ)) {
                 TEST_TIMEOUT
                 if (retry++ > MAX_RETRY) {
-                    puts("[ERROR] max retries for ata_sect_read wait to read next sect\n");
+                    KLOGS_ERROR("ata", "max retries for ata_sect_read wait to read next sect");
                     return 0;
                 }
             }
@@ -297,7 +297,7 @@ size_t ata_sect_write(ata_t * disk, uint8_t * buff, size_t sect_count, uint32_t 
     while (port_byte_in(disk->ct_base + ATA_CTL_ALT_STATUS) & (ATA_STATUS_FLAG_DRQ | ATA_STATUS_FLAG_BSY)) {
         TEST_TIMEOUT
         if (retry++ > MAX_RETRY) {
-            puts("[ERROR] max retries for ata_sect_write wait for first status\n");
+            KLOGS_ERROR("ata", "max retries for ata_sect_write wait for first status");
             return 0;
         }
     }
@@ -319,7 +319,7 @@ size_t ata_sect_write(ata_t * disk, uint8_t * buff, size_t sect_count, uint32_t 
             while (!(port_byte_in(disk->ct_base + ATA_CTL_ALT_STATUS) & ATA_STATUS_FLAG_DRQ)) {
                 TEST_TIMEOUT
                 if (retry++ > MAX_RETRY) {
-                    puts("[ERROR] max retries for ata_sect_write wait to write next sect\n");
+                    KLOGS_ERROR("ata", "max retries for ata_sect_write wait to write next sect");
                     return 0;
                 }
             }
@@ -351,12 +351,12 @@ static bool ata_identify(ata_t * disk) {
     uint16_t status = port_word_in(disk->io_base + ATA_IO_STATUS);
 
     if (status == 0) {
-        puts("Drive does not exist\n");
+        KLOGS_WARNING("ata", "Drive does not exist\n");
         return false;
     }
 
     if (debug) {
-        puts("Polling");
+        KLOGS_DEBUG("ata", "Polling");
     }
     size_t retry = 0;
     while (status & ATA_STATUS_FLAG_BSY) {
@@ -366,7 +366,7 @@ static bool ata_identify(ata_t * disk) {
         status = port_byte_in(disk->io_base + ATA_IO_STATUS);
         TEST_TIMEOUT
         if (retry++ > MAX_RETRY) {
-            puts("[ERROR] max retries for ata_identity wait for first status\n");
+            KLOGS_ERROR("ata", "max retries for ata_identity wait for first status");
             return 0;
         }
     }
@@ -375,15 +375,15 @@ static bool ata_identify(ata_t * disk) {
     }
 
     if (port_byte_in(disk->io_base + ATA_IO_LBA_MID) || port_byte_in(disk->io_base + ATA_IO_LBA_HIGH)) {
-        puts("Disk does not support ATA\n");
+        KLOGS_WARNING("ata", "Disk does not support ATA");
         return false;
     }
     if (debug) {
-        puts("Drive is ATA\n");
+        KLOGS_DEBUG("ata", "Drive is ATA");
     }
 
     if (debug) {
-        puts("Polling");
+        KLOGS_DEBUG("ata", "Polling");
     }
     retry = 0;
     while (!(status & (ATA_STATUS_FLAG_DRQ | ATA_STATUS_FLAG_ERR))) {
@@ -393,7 +393,7 @@ static bool ata_identify(ata_t * disk) {
         status = port_byte_in(disk->io_base + ATA_IO_STATUS);
         TEST_TIMEOUT
         if (retry++ > MAX_RETRY) {
-            puts("[ERROR] max retries for ata_identity wait for second status\n");
+            KLOGS_ERROR("ata", "max retries for ata_identity wait for second status");
             return 0;
         }
     }
@@ -402,13 +402,13 @@ static bool ata_identify(ata_t * disk) {
     }
 
     if (status & ATA_STATUS_FLAG_ERR) {
-        puts("Disk initialized with errors\n");
+        KLOGS_WARNING("ata", "Disk initialized with errors");
         return false;
     }
 
     if (status & ATA_STATUS_FLAG_DRQ) {
         if (debug) {
-            puts("Disk is ready\n");
+            KLOGS_DEBUG("ata", "Disk is ready");
         }
     }
 
@@ -432,7 +432,7 @@ static bool ata_identify(ata_t * disk) {
     bool has_lba = (data[83] & (1 << 10));
     if (has_lba) {
         if (debug) {
-            printf("Drive has LBA48 Mode\n");
+            KLOGS_DEBUG("ata", "Drive has LBA48 Mode");
         }
     }
 
@@ -441,7 +441,7 @@ static bool ata_identify(ata_t * disk) {
     size28 |= data[60];
 
     if (debug) {
-        printf("LDA28 has %u sectors\n", size28);
+        KLOGS_DEBUG("ata", "LDA28 has %u sectors", size28);
     }
 
     uint64_t size48 = data[100];
@@ -450,7 +450,7 @@ static bool ata_identify(ata_t * disk) {
     size48          = (size48 << 16) | data[103];
 
     if (debug) {
-        printf("LDA48 has %u sectors\n", size48);
+        KLOGS_DEBUG("ata", "LDA48 has %u sectors", size48);
     }
 
     disk->sect_count = size28;
@@ -480,7 +480,7 @@ static void software_reset(ata_t * disk) {
         status = port_byte_in(disk->ct_base + ATA_CTL_ALT_STATUS);
         TEST_TIMEOUT_VOID
         if (retry++ > MAX_RETRY) {
-            puts("[ERROR] max retries for software_reset wait for drive\n");
+            KLOGS_ERROR("ata", "max retries for software_reset wait for drive");
             return;
         }
     }
