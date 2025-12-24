@@ -39,6 +39,7 @@ void __start() {
     // 2. Setup kernel logging (screen only)
     _libc_config_file_write_call(device_screen_write_raw);
 
+    kernel_log_init();
     kernel_log_set_level(KERNEL_LOG_LEVEL_DEBUG);
     KLOGS_DEBUG("loader", "vga init finished");
     KLOGS_INFO("loader", "Loader Start");

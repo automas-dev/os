@@ -29,14 +29,7 @@ static kernel_t __kernel;
 extern _Noreturn void halt(void);
 
 static void irq_install();
-static int  kill(size_t argc, char ** argv);
-
-extern void jump_kernel_mode(void * fn);
-
 static void setup_system_calls();
-
-// static void idle_loop();
-// static int  start_shell();
 
 void kernel_init() {
     KLOGS_INFO("kernel", "Kernel Start");
@@ -176,22 +169,7 @@ tar_fs_t * kernel_get_tar() {
 
 void tmp_register_signals_cb(signals_master_cb_t cb) {
     get_active_task()->signals_callback = cb;
-    printf("Attached master signal callback at %p\n", get_active_task()->signals_callback);
-}
-
-int kernel_close_process(process_t * proc) {
-    if (!proc) {
-        return -1;
-    }
-
-    proc->state = PROCESS_STATE_DEAD;
-
-    process_t * next = pm_get_next(&__kernel.pm);
-    if (!next) {
-        next = __kernel.pm.idle_task;
-    }
-
-    return 0;
+    KLOGS_DEBUG("kernel", "Attached master signal callback at %p\n", get_active_task()->signals_callback);
 }
 
 kernel_t * get_kernel() {
@@ -221,11 +199,4 @@ static void irq_install() {
     /* IRQ8: real time clock */
     rtc_init(RTC_RATE_1024_HZ);
     KLOGS_TRACE("kernel", "rtc init finished");
-}
-
-static int kill(size_t argc, char ** argv) {
-    printf("Leaving process now\n");
-    kernel_exit();
-    KPANIC("Never return!");
-    return 0;
 }

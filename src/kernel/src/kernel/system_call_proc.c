@@ -37,7 +37,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
 
             queue_event(&event);
             kernel_switch_task();
-            KPANIC("Unexpected return from kernel_close_process");
+            KPANIC("Unexpected return from kernel_switch_task");
         } break;
 
             // TODO this isn't fully updated with task switching
@@ -60,7 +60,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
 
             queue_event(&event);
             kernel_switch_task();
-            KPANIC("Unexpected return from kernel_close_process");
+            KPANIC("Unexpected return from kernel_switch_task");
         } break;
 
         case SYS_INT_PROC_PANIC: {

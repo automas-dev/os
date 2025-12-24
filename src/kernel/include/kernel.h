@@ -42,8 +42,6 @@ void kernel_queue_event(ebus_event_t * event);
 
 // ebus_event_t * pull_event(int event_id);
 
-int kernel_close_process(process_t * proc);
-
 typedef int (*_proc_call_t)(void * data);
 
 int kernel_call_as_proc(int pid, _proc_call_t fn, void * data);
