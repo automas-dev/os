@@ -178,7 +178,7 @@ int pm_push_event(proc_man_t * pm, ebus_event_t * event) {
     if (event->event_id = EBUS_EVENT_KEY) {
         process_t * foreground = pm->foreground_task;
 
-        KLOGS_DEBUG("pm", "Foreground is %u", foreground->pid);
+        KLOGS_TRACE("pm", "Foreground is %u", foreground->pid);
 
         // if (event->key.event == KEY_EVENT_PRESS) {
         //     if (io_buffer_push(foreground->io_buffer, event->key.c)) {
