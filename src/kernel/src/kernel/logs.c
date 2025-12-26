@@ -64,13 +64,13 @@ void kernel_log(int level, const char * file, size_t lineno, const char * servic
         printf("[%s]", service);
     }
 
-    serial_write_str(SERIAL_PORT_COM1, ": ");
+    puts(": ");
 
     va_list params;
     va_start(params, fmt);
     vprintf(stdout, fmt, params);
     if (start_now) {
-        serial_write_str(SERIAL_PORT_COM1, "\n");
+        putc('\n');
     }
 }
 

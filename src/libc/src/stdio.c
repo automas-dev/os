@@ -30,11 +30,11 @@ file_t _stderr = {
 };
 
 size_t puts(const char * str) {
-    return _sys_io_write(1, str, kstrlen(str), 0);
+    return file_write(stdout, 1, kstrlen(str), str);
 }
 
 size_t putc(char c) {
-    return _sys_io_write(1, &c, 1, 0);
+    return file_write(stdout, 1, 1, &c);
 }
 
 size_t puti(int32_t num, uint8_t base, bool upper) {
