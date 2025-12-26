@@ -19,12 +19,16 @@ enum KERNEL_LOG_LEVEL {
 #define LINE_STRING   STRINGIZE(__LINE__)
 #define PREFIX        __BASE_FILE__ ":" LINE_STRING
 
+#ifndef SERVICE
+#define SERVICE 0
+#endif
+
 #define VA_ARGS(...)           , ##__VA_ARGS__
-#define KLOG_TRACE(FMT, ...)   kernel_log(KERNEL_LOG_LEVEL_TRACE, (__FILE__), (__LINE__), 0, (FMT)VA_ARGS(__VA_ARGS__))
-#define KLOG_DEBUG(FMT, ...)   kernel_log(KERNEL_LOG_LEVEL_DEBUG, (__FILE__), (__LINE__), 0, (FMT)VA_ARGS(__VA_ARGS__))
-#define KLOG_INFO(FMT, ...)    kernel_log(KERNEL_LOG_LEVEL_INFO, (__FILE__), (__LINE__), 0, (FMT)VA_ARGS(__VA_ARGS__))
-#define KLOG_WARNING(FMT, ...) kernel_log(KERNEL_LOG_LEVEL_WARNING, (__FILE__), (__LINE__), 0, (FMT)VA_ARGS(__VA_ARGS__))
-#define KLOG_ERROR(FMT, ...)   kernel_log(KERNEL_LOG_LEVEL_ERROR, (__FILE__), (__LINE__), 0, (FMT)VA_ARGS(__VA_ARGS__))
+#define KLOG_TRACE(FMT, ...)   kernel_log(KERNEL_LOG_LEVEL_TRACE, (__FILE__), (__LINE__), (SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
+#define KLOG_DEBUG(FMT, ...)   kernel_log(KERNEL_LOG_LEVEL_DEBUG, (__FILE__), (__LINE__), (SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
+#define KLOG_INFO(FMT, ...)    kernel_log(KERNEL_LOG_LEVEL_INFO, (__FILE__), (__LINE__), (SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
+#define KLOG_WARNING(FMT, ...) kernel_log(KERNEL_LOG_LEVEL_WARNING, (__FILE__), (__LINE__), (SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
+#define KLOG_ERROR(FMT, ...)   kernel_log(KERNEL_LOG_LEVEL_ERROR, (__FILE__), (__LINE__), (SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
 
 #define KLOGS_TRACE(SERVICE, FMT, ...)   kernel_log(KERNEL_LOG_LEVEL_TRACE, (__FILE__), (__LINE__), (SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
 #define KLOGS_DEBUG(SERVICE, FMT, ...)   kernel_log(KERNEL_LOG_LEVEL_DEBUG, (__FILE__), (__LINE__), (SERVICE), (FMT)VA_ARGS(__VA_ARGS__))

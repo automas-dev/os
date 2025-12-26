@@ -24,6 +24,9 @@
 #include "libc/string.h"
 #include "libk/defs.h"
 
+#undef SERVICE
+#define SERVICE "KERNEL"
+
 static kernel_t __kernel;
 
 extern _Noreturn void halt(void);
@@ -32,7 +35,7 @@ static void irq_install();
 static void setup_system_calls();
 
 void kernel_init() {
-    KLOGS_INFO("kernel", "Kernel Start");
+    KLOG_INFO("Kernel Start");
 
     // 8.1 Clear kernel struct
     kmemset(&__kernel, 0, sizeof(kernel_t));
@@ -41,20 +44,20 @@ void kernel_init() {
 
     // 8.2 Install ISR and IDT
     isr_install();
-    KLOGS_DEBUG("kernel", "isr init finished");
+    KLOG_DEBUG("isr init finished");
 
     // 8.3 Setup system calls
     setup_system_calls();
-    KLOGS_DEBUG("kernel", "system call init finished");
+    KLOG_DEBUG("system call init finished");
 
     // 8.4 Initialize kmalloc
     kmalloc_init(ADDR2PAGE(VADDR_RAM_BITMASKS) + ram_region_table_count());
-    KLOGS_DEBUG("kernel", "kmalloc init finished");
+    KLOG_DEBUG("kmalloc init finished");
 
     // TODO why should the kernel need system calls?
     // Init kernel memory after system calls are registered
     // memory_init(&__kernel.proc.memory, kernel_alloc_page);
-    // KLOGS_DEBUG("kernel", "memory init finished");
+    // KLOG_DEBUG("memory init finished");
 
     // 8.5 Setup event bus
     // Create ebus for kernel (target of queue_event)
@@ -63,39 +66,39 @@ void kernel_init() {
     }
 
     _libc_config_queue_event_call(kernel_queue_event);
-    KLOGS_DEBUG("kernel", "ebus init finished");
+    KLOG_DEBUG("ebus init finished");
 
     // 8.6 Create process manager
     pm_create(&__kernel.pm);
-    KLOGS_DEBUG("kernel", "process manager init finished");
+    KLOG_DEBUG("process manager init finished");
 
     // 8.7 Initialize Scheduler
     scheduler_init(&__kernel.scheduler, &__kernel.pm);
-    KLOGS_DEBUG("kernel", "scheduler init finished");
+    KLOG_DEBUG("scheduler init finished");
 
     // 8.8 Install IRQ
     // Init drivers and hardware interrupts
     // TODO move earlier (maybe after isr install) to get time for logs
     irq_install();
-    KLOGS_DEBUG("kernel", "irq init finished");
+    KLOG_DEBUG("irq init finished");
 
     // 8.9 Enable time in kernel logs
     kernel_log_time_enable();
-    KLOGS_DEBUG("kernel", "enabled kernel log time");
+    KLOG_DEBUG("enabled kernel log time");
 
     // 8.10 Mount disk
     __kernel.disk = disk_open(0, DISK_DRIVER_ATA);
     if (!__kernel.disk) {
         KPANIC("Failed to open ATA disk");
     }
-    KLOGS_DEBUG("kernel", "open ata disk finished");
+    KLOG_DEBUG("open ata disk finished");
 
     // 8.11 Mount filesystem
     __kernel.tar = tar_open(__kernel.disk);
     if (!__kernel.tar) {
         KPANIC("Failed to open tar");
     }
-    KLOGS_DEBUG("kernel", "open tar fs finished");
+    KLOG_DEBUG("open tar fs finished");
 }
 
 static void setup_system_calls() {
@@ -170,7 +173,7 @@ tar_fs_t * kernel_get_tar() {
 
 void tmp_register_signals_cb(signals_master_cb_t cb) {
     get_active_task()->signals_callback = cb;
-    KLOGS_DEBUG("kernel", "Attached master signal callback at %p\n", get_active_task()->signals_callback);
+    KLOG_DEBUG("Attached master signal callback at %p\n", get_active_task()->signals_callback);
 }
 
 kernel_t * get_kernel() {
@@ -187,17 +190,17 @@ process_t * kernel_find_pid(int pid) {
 
 static void irq_install() {
     enable_interrupts();
-    KLOGS_TRACE("kernel", "interrupts enabled");
+    KLOG_TRACE("interrupts enabled");
     /* IRQ0: timer */
     time_init(TIMER_FREQ_MS); // milliseconds
-    KLOGS_TRACE("kernel", "pit init finished");
+    KLOG_TRACE("pit init finished");
     /* IRQ1: keyboard */
     keyboard_init();
-    KLOGS_TRACE("kernel", "keyboard init finished");
+    KLOG_TRACE("keyboard init finished");
     /* IRQ14: ata disk */
     ata_init();
-    KLOGS_TRACE("kernel", "ata init finished");
+    KLOG_TRACE("ata init finished");
     /* IRQ8: real time clock */
     rtc_init(RTC_RATE_1024_HZ);
-    KLOGS_TRACE("kernel", "rtc init finished");
+    KLOG_TRACE("rtc init finished");
 }

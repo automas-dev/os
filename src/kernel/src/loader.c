@@ -26,6 +26,9 @@
 #include "process.h"
 #include "process_manager.h"
 
+#undef SERVICE
+#define SERVICE "LOADER"
+
 void kernel_init();
 
 static void map_kernel_table(mmu_table_t * table);
@@ -47,8 +50,9 @@ void __start() {
 
     kernel_log_init();
     kernel_log_set_level(KERNEL_LOG_LEVEL_DEBUG);
-    // KLOGS_DEBUG("loader", "vga init finished");
-    KLOGS_INFO("loader", "Loader Start");
+    // kernel_log_set_level(KERNEL_LOG_LEVEL_TRACE);
+    // KLOG_DEBUG("vga init finished");
+    KLOG_INFO("Loader Start");
 
     // 3. Initialize ram table (physical memory)
     void * ram_table = UINT2PTR(PADDR_RAM_TABLE);
@@ -57,7 +61,7 @@ void __start() {
         KPANIC("Failed to initialize RAM");
     }
 
-    KLOGS_DEBUG("loader", "ram table created");
+    KLOG_DEBUG("ram table created");
 
     boot_params_t * bparams = get_boot_params();
 
@@ -74,7 +78,7 @@ void __start() {
         }
     }
 
-    KLOGS_DEBUG("loader", "ram table init finished");
+    KLOG_DEBUG("ram table init finished");
 
     // 4. Initialize kernel virtual memory
     // 4.1 Create page dir
@@ -84,13 +88,13 @@ void __start() {
     // This needs to be disabled here because something around enable paging blocks if it's enabled
     start_now = 0;
 
-    KLOGS_DEBUG("loader", "page dir created");
+    KLOG_DEBUG("page dir created");
 
     // 4.2 Create first page table
     uint32_t first_table_addr = ram_page_palloc();
     mmu_dir_set(pdir, 0, first_table_addr, MMU_DIR_RW);
 
-    KLOGS_DEBUG("loader", "page table created");
+    KLOG_DEBUG("page table created");
 
     // 4.3 Map first page table
     mmu_table_t * first_table = UINT2PTR(first_table_addr);
@@ -100,38 +104,38 @@ void __start() {
     // 4.4 Map last table to dir for access to tables
     mmu_dir_set(pdir, MMU_DIR_SIZE - 1, PADDR_KERNEL_DIR, MMU_DIR_RW);
 
-    KLOGS_DEBUG("loader", "kernel page table finished");
+    KLOG_DEBUG("kernel page table finished");
 
     // 5. Initialize GDT
     init_gdt();
-    KLOGS_DEBUG("loader", "gdt init finished");
+    KLOG_DEBUG("gdt init finished");
 
     // 6. Initialize TSS
     init_tss();
-    KLOGS_DEBUG("loader", "tss init finished");
+    KLOG_DEBUG("tss init finished");
 
     // 7. Enable paging
     mmu_enable_paging(PADDR_KERNEL_DIR);
     // This needs to be enabled here because something around enable paging blocks if it's enabled
     start_now = 1;
-    KLOGS_DEBUG("loader", "paging enabled");
+    KLOG_DEBUG("paging enabled");
 
     // 8. Initialize kernel
     kernel_init();
-    KLOGS_DEBUG("loader", "kernel init finished");
+    KLOG_DEBUG("kernel init finished");
 
     // 9. Load init executable
     process_t * init = load_init();
     if (!init) {
         KPANIC("Failed to load init executable");
     }
-    KLOGS_DEBUG("loader", "load init finished");
+    KLOG_DEBUG("load init finished");
 
     // 10. Launch init (os main function)
     start_first_task(init);
-    KLOGS_WARNING("loader", "Returned from init");
+    KLOG_WARNING("Returned from init");
 
-    KLOGS_INFO("loader", "Halting");
+    KLOG_INFO("Halting");
     halt();
 }
 
