@@ -10,6 +10,8 @@ enum KERNEL_LOG_LEVEL {
     KERNEL_LOG_LEVEL_INFO,
     KERNEL_LOG_LEVEL_WARNING,
     KERNEL_LOG_LEVEL_ERROR,
+
+    KERNEL_LOG_LEVEL__LENGTH, // Number of log levels, used to bounds check name lookup
 };
 
 #define STRINGIZE(x)  STRINGIZE2(x)

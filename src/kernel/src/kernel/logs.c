@@ -16,6 +16,14 @@ int __level;
 
 static void put_time();
 
+static char * KERNEL_LOG_LEVEL_NAME[] = {
+    "TRACE",
+    "DEBUG",
+    "INFO",
+    "WARNING",
+    "ERROR",
+};
+
 void kernel_log_init() {
     __enabled      = 1;
     __time_enabled = 0;
@@ -52,6 +60,16 @@ void kernel_log(int level, const char * file, size_t lineno, const char * servic
     if (__time_enabled) {
         put_time();
     }
+
+    // Bounds check for name lookup
+    if (level < 0) {
+        level = 0;
+    }
+    else if (level > KERNEL_LOG_LEVEL__LENGTH) {
+        level = KERNEL_LOG_LEVEL__LENGTH;
+    }
+
+    printf("[%s]", KERNEL_LOG_LEVEL_NAME[level]);
 
     if (file) {
         if (kstrlen(file) > FILE_PREFIX_LENGTH) {
