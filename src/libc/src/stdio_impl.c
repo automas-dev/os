@@ -68,6 +68,20 @@ size_t vputlu(file_t * file, uint64_t num, uint8_t base, bool upper) {
     return file_write(file, 1, buff_len, buff);
 }
 
+size_t vputs(file_t * file, const char * str) {
+    if (!file || !str) {
+        return 0;
+    }
+
+    return file_write(file, 1, kstrlen(str), str);
+}
+
+size_t vaprintf(file_t * file, const char * fmt, ...) {
+    va_list params;
+    va_start(params, fmt);
+    return vprintf(file, fmt, params);
+}
+
 size_t vprintf(file_t * file, const char * fmt, va_list params) {
     size_t o_len = 0;
     while (*fmt) {

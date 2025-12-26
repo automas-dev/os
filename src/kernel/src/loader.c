@@ -12,10 +12,12 @@
 #include "cpu/mmu.h"
 #include "defs.h"
 #include "drivers/ram.h"
+#include "drivers/serial.h"
 #include "drivers/tar.h"
 #include "drivers/vga.h"
 #include "kernel.h"
 #include "kernel/device/screen.h"
+#include "kernel/device/serial.h"
 #include "kernel/logs.h"
 #include "kernel/memory.h"
 #include "kernel/panic.h"
@@ -32,12 +34,16 @@ static void id_map_page(mmu_table_t * table, size_t page);
 
 static process_t * load_init();
 
+extern volatile int start_now;
+
 void __start() {
+    start_now = 1;
     // 1. Load VGA driver and clear screen
     vga_init(UINT2PTR(PADDR_VGA));
 
     // 2. Setup kernel logging (screen only)
-    _libc_config_file_write_call(device_screen_write_raw);
+    serial_init(SERIAL_PORT_COM1);
+    _libc_config_file_write_call(device_serial_write_raw);
 
     kernel_log_init();
     kernel_log_set_level(KERNEL_LOG_LEVEL_DEBUG);
@@ -75,6 +81,9 @@ void __start() {
     mmu_dir_t * pdir = UINT2PTR(PADDR_KERNEL_DIR);
     mmu_dir_clear(pdir);
 
+    // This needs to be disabled here because something around enable paging blocks if it's enabled
+    start_now = 0;
+
     KLOGS_DEBUG("loader", "page dir created");
 
     // 4.2 Create first page table
@@ -103,6 +112,8 @@ void __start() {
 
     // 7. Enable paging
     mmu_enable_paging(PADDR_KERNEL_DIR);
+    // This needs to be enabled here because something around enable paging blocks if it's enabled
+    start_now = 1;
     KLOGS_DEBUG("loader", "paging enabled");
 
     // 8. Initialize kernel

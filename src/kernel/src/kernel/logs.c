@@ -2,7 +2,8 @@
 
 #include <stdarg.h>
 
-#include "drivers/vga.h"
+#include "cpu/mmu.h"
+#include "drivers/serial.h"
 #include "kernel/time.h"
 #include "libc/stdio.h"
 #include "libc/stdio_impl.h"
@@ -40,49 +41,33 @@ void kernel_log_set_level(int level) {
     __level = level;
 }
 
-void kernel_log(int level, const char * service, const char * fmt, ...) {
+volatile int start_now = 0;
+
+void kernel_log(int level, const char * file, size_t lineno, const char * service, const char * fmt, ...) {
     if (level < __level) {
         return;
     }
 
     if (__time_enabled) {
-        vga_color(VGA_FG_GREEN | VGA_BG_BLACK);
         put_time();
     }
 
-    vga_color(VGA_RESET);
-
-    if (service) {
-        vga_color(VGA_FG_MAGENTA);
-        vga_puts(service);
-        vga_puts(": ");
+    if (file) {
+        printf("[%s:%u]", file, lineno);
     }
 
-    // Message color
-    switch (level) {
-        default:
-        case KERNEL_LOG_LEVEL_TRACE:
-            vga_color(VGA_FG_CYAN | VGA_BG_BLACK);
-            break;
-        case KERNEL_LOG_LEVEL_DEBUG:
-            vga_color(VGA_FG_LIGHT_GRAY | VGA_BG_BLACK);
-            break;
-        case KERNEL_LOG_LEVEL_INFO:
-            vga_color(VGA_FG_WHITE | VGA_BG_BLACK);
-            break;
-        case KERNEL_LOG_LEVEL_WARNING:
-            vga_color(VGA_FG_LIGHT_BROWN | VGA_BG_BLACK);
-            break;
-        case KERNEL_LOG_LEVEL_ERROR:
-            vga_color(VGA_FG_LIGHT_RED | VGA_BG_BLACK);
-            break;
-    };
+    if (service) {
+        printf("[%s]", service);
+    }
+
+    serial_write_str(SERIAL_PORT_COM1, ": ");
 
     va_list params;
     va_start(params, fmt);
     vprintf(stdout, fmt, params);
-    vga_color(VGA_RESET);
-    vga_putc('\n');
+    if (start_now) {
+        serial_write_str(SERIAL_PORT_COM1, "\n");
+    }
 }
 
 static void put_time() {
@@ -90,5 +75,5 @@ static void put_time() {
     uint32_t s  = ms / 1e3;
     ms %= 1000;
 
-    printf("[%3u.%03u] ", s, ms);
+    printf("[%3u.%03u]", s, ms);
 }
