@@ -20,6 +20,7 @@ enum SERIAL_PORT {
 int serial_init(uint16_t port);
 
 char serial_read(uint16_t port);
+void serial_write_str(uint16_t port, const char * str);
 void serial_write(uint16_t port, const char * str, size_t count);
 
 #endif // DRIVER_SERIAL_H
