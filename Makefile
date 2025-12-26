@@ -10,7 +10,7 @@ QEMU = qemu-system-i386 -boot order=a
 
 # QEMUFLAGS = -m 4G -drive format=qcow2,file=drive.img -d int,cpu_reset -D qemu_log.txt -no-reboot
 # QEMUFLAGS = -m 1G -drive format=raw,file=drive.tar -d int,mmu -D qemu_log.txt -no-reboot -no-shutdown
-QEMUFLAGS = -m 1G -drive format=raw,file=build/os-image.bin,index=0,if=floppy -drive format=raw,file=build/apps.tar -d int,mmu -D qemu_log.txt -no-reboot -no-shutdown -chardev stdio,id=char0,logfile=serial.log,signal=off -serial chardev:char0
+QEMUFLAGS = -m 1G -drive format=raw,file=build/os-image.bin,index=0,if=floppy -drive format=raw,file=build/apps.tar -d int,mmu -D qemu_log.txt -no-reboot -no-shutdown -chardev stdio,id=char0,logfile=kernel.log,signal=off -serial chardev:char0
 
 # ===============
 #  LAUNCH & UTIL
