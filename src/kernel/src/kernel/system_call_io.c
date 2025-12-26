@@ -114,7 +114,7 @@ int sys_call_io_cb(uint16_t int_no, void * args_data, registers_t * regs) {
 
             io_device_t * d = h->device;
 
-            return d->write_fn(d->data, args->buff, args->count, args->pos);
+            return d->write_fn(d->device_data, args->buff, args->count, args->pos);
         } break;
 
         case SYS_INT_IO_SIZE: {
@@ -137,7 +137,7 @@ int sys_call_io_cb(uint16_t int_no, void * args_data, registers_t * regs) {
 
             io_device_t * d = h->device;
 
-            return d->size_fn(d->data);
+            return d->size_fn(d->device_data);
         } break;
     }
 

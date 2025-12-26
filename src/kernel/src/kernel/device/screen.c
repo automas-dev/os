@@ -18,14 +18,14 @@ io_device_t * device_screen_open() {
     return dev;
 }
 
-void device_screen_close(io_device_t * d) {
-    if (d) {
-        kfree(d);
+void device_screen_close(io_device_t * device) {
+    if (device) {
+        kfree(device);
     }
 }
 
 // ptr and pos not used
-static size_t _vga_write(void * ptr, const char * buff, size_t size, size_t pos) {
+static size_t _vga_write(void * device_data, const char * buff, size_t size, size_t pos) {
     return vga_write(buff, size);
 }
 

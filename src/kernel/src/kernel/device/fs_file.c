@@ -24,7 +24,7 @@ io_device_t * device_fs_file_open(const char * path, const char * mode) {
             return 0;
         }
 
-        dev->data = file;
+        dev->device_data = file;
     }
     return dev;
 }
