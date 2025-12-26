@@ -2,6 +2,7 @@
 
 #include <stdarg.h>
 
+#include "config.h"
 #include "cpu/mmu.h"
 #include "drivers/serial.h"
 #include "kernel/time.h"
@@ -53,6 +54,9 @@ void kernel_log(int level, const char * file, size_t lineno, const char * servic
     }
 
     if (file) {
+        if (kstrlen(file) > FILE_PREFIX_LENGTH) {
+            file += FILE_PREFIX_LENGTH;
+        }
         printf("[%s:%u]", file, lineno);
     }
 

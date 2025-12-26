@@ -28,6 +28,7 @@ if(CMAKE_ASM_NASM_COMPILER_LOADED)
 endif()
 
 # Create config.h with project version numbers
+string(LENGTH "${PROJECT_SOURCE_DIR}/src/" FILE_PREFIX_LENGTH)
 configure_file(cmake/config.h.in include/config.h)
 include_directories(PRIVATE ${CMAKE_BINARY_DIR}/include)
 

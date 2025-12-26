@@ -47,7 +47,7 @@ void __start() {
 
     kernel_log_init();
     kernel_log_set_level(KERNEL_LOG_LEVEL_DEBUG);
-    KLOGS_DEBUG("loader", "vga init finished");
+    // KLOGS_DEBUG("loader", "vga init finished");
     KLOGS_INFO("loader", "Loader Start");
 
     // 3. Initialize ram table (physical memory)
