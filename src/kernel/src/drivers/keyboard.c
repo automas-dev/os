@@ -4,10 +4,14 @@
 
 #include "cpu/isr.h"
 #include "cpu/ports.h"
+#include "kernel.h"
 #include "kernel/logs.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
 #include "libc/string.h"
+
+#undef SERVICE
+#define SERVICE "DRIVER/KEYBOARD"
 
 static bool     __e0_mode;
 static uint32_t __keystate[8];
@@ -21,9 +25,11 @@ static void    set_key_state(uint8_t keycode, bool state);
 static uint8_t get_mods();
 
 void keyboard_init() {
-    KLOGS_DEBUG("keyboard", "Register interrupt");
+    KLOG_DEBUG("Registering interrupt handler on IRQ 1");
     __e0_mode = false;
-    kmemset(__keystate, 0, sizeof(__keystate));
+    if (!kmemset(__keystate, 0, sizeof(__keystate))) {
+        KPANIC("Failed to clear keystate array");
+    }
     register_interrupt_handler(IRQ1, keyboard_callback);
 }
 
@@ -101,6 +107,8 @@ static void keyboard_callback(registers_t * regs) {
     }
 
     char c = keyboard_char(keycode, mods & KEY_MOD_SHIFT);
+
+    KLOG_TRACE("Keyboard interrupt callback scancode=0x%02X keycode=0x%02X c=%c press=%u", scancode, keycode, c, press);
 
     ebus_event_t event;
     event.event_id     = EBUS_EVENT_KEY;
