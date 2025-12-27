@@ -253,9 +253,13 @@ size_t ata_sect_read(ata_t * drive, uint8_t * buff, size_t sect_count, uint32_t 
         KLOG_WARNING("Read start lba %u is past last sector %u of drive %u", lba, drive->sect_count, drive->id);
         return 0;
     }
-    else if (lba + sect_count > drive->sect_count) {
+    if (lba + sect_count > drive->sect_count) {
         KLOG_WARNING("Read end lba %u past last sector %u, truncating to %u of drive %u", lba + sect_count, drive->sect_count, drive->sect_count - lba, drive->id);
         sect_count = drive->sect_count - lba;
+    }
+    if (!sect_count) {
+        KLOG_WARNING("Read sector count is 0 of drive %u", lba + sect_count, drive->sect_count, drive->sect_count - lba, drive->id);
+        return 0;
     }
 
     software_reset(drive);
