@@ -4,8 +4,8 @@
 
 #include "cpu/isr.h"
 #include "cpu/ports.h"
-#include "kernel.h"
 #include "kernel/logs.h"
+#include "kernel/panic.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
 #include "libc/string.h"
