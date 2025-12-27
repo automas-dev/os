@@ -126,54 +126,54 @@ size_t vprintf(file_t * file, const char * fmt, va_list params) {
                 }
                 case 'd': {
                     if (is_long) {
-                        int64_t arg = va_arg(params, int);
+                        int64_t arg = va_arg(params, int64_t);
                         o_len += padded_long_int(file, width, left_align, arg, 10, false, lead_zero);
                     }
                     else {
-                        int32_t arg = va_arg(params, int);
+                        int32_t arg = va_arg(params, int32_t);
                         o_len += padded_int(file, width, left_align, arg, 10, false, lead_zero);
                     }
                 } break;
                 case 'u': {
                     if (is_long) {
-                        uint64_t arg = va_arg(params, unsigned int);
+                        uint64_t arg = va_arg(params, uint64_t);
                         o_len += padded_long_uint(file, width, left_align, arg, 10, false, lead_zero);
                     }
                     else {
-                        uint32_t arg = va_arg(params, unsigned int);
+                        uint32_t arg = va_arg(params, uint32_t);
                         o_len += padded_uint(file, width, left_align, arg, 10, false, lead_zero);
                     }
                 } break;
                 case 'p': {
                     if (is_long) {
-                        uint64_t arg = va_arg(params, unsigned int);
+                        uint64_t arg = va_arg(params, uint64_t);
                         o_len += file_write(file, 1, 2, "0x");
                         o_len += padded_long_uint(file, width, left_align, arg, 16, false, true);
                     }
                     else {
-                        uint32_t arg = va_arg(params, unsigned int);
+                        uint32_t arg = va_arg(params, uint32_t);
                         o_len += file_write(file, 1, 2, "0x");
                         o_len += padded_uint(file, width, left_align, arg, 16, false, true);
                     }
                 } break;
                 case 'o': {
                     if (is_long) {
-                        uint64_t arg = va_arg(params, int);
+                        uint64_t arg = va_arg(params, uint64_t);
                         o_len += padded_long_uint(file, width, left_align, arg, 8, false, lead_zero);
                     }
                     else {
-                        uint32_t arg = va_arg(params, int);
+                        uint32_t arg = va_arg(params, uint32_t);
                         o_len += padded_uint(file, width, left_align, arg, 8, false, lead_zero);
                     }
                 } break;
                 case 'x':
                 case 'X': {
                     if (is_long) {
-                        uint64_t arg = va_arg(params, int);
+                        uint64_t arg = va_arg(params, uint64_t);
                         o_len += padded_long_uint(file, width, left_align, arg, 16, *fmt == 'X', lead_zero);
                     }
                     else {
-                        uint32_t arg = va_arg(params, int);
+                        uint32_t arg = va_arg(params, uint32_t);
                         o_len += padded_uint(file, width, left_align, arg, 16, *fmt == 'X', lead_zero);
                     }
                 } break;
