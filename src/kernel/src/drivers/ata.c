@@ -13,7 +13,7 @@
 #include "libc/string.h"
 
 #undef SERVICE
-#define SERVICE "ATA"
+#define SERVICE "DRIVER/ATA"
 
 // https://wiki.osdev.org/ATA_PIO_Mode
 
