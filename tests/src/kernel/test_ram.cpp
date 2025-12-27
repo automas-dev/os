@@ -32,6 +32,7 @@ TEST(RamStatic, ram_init) {
     EXPECT_NE(0, ram_init(0, (void *)1));
     EXPECT_NE(0, ram_init(&ram, 0));
 
+    kmemset_fake.return_val = (void *)1;
     EXPECT_EQ(0, ram_init(&ram, bitmasks.data()));
     EXPECT_EQ(1, kmemset_fake.call_count);
 }

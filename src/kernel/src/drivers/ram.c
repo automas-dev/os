@@ -1,7 +1,11 @@
 #include "drivers/ram.h"
 
 #include "cpu/mmu.h"
+#include "kernel/logs.h"
 #include "libc/string.h"
+
+#undef SERVICE
+#define SERVICE "DRIVER/RAM"
 
 #define REGION_MAX_PAGE_COUNT 0x8000
 #define REGION_MAX_SIZE       (REGION_MAX_PAGE_COUNT * PAGE_SIZE)
@@ -23,7 +27,12 @@ static void fill_bitmask(void * bitmask, size_t page_count);
 static void add_memory_at(size_t start, uint64_t base, uint64_t length);
 
 int ram_init(ram_table_t * ram_table, void * bitmasks) {
-    if (!ram_table || !bitmasks) {
+    if (!ram_table) {
+        KLOG_ERROR("Tried to initialize with null table");
+        return -1;
+    }
+    if (!bitmasks) {
+        KLOG_ERROR("Tried to initialize with null bitmasks");
         return -1;
     }
 
@@ -31,27 +40,43 @@ int ram_init(ram_table_t * ram_table, void * bitmasks) {
     __region_table_count = 0;
     __bitmask            = bitmasks;
 
-    kmemset(__region_table, 0, sizeof(ram_table_t));
+    if (!kmemset(__region_table, 0, sizeof(ram_table_t))) {
+        KLOG_ERROR("Failed to clear region table");
+        return -1;
+    }
 
     return 0;
 }
 
 int ram_region_add_memory(uint64_t base, uint64_t length) {
-    if (!base || !length || base & 0xfff) {
+    if (!base) {
+        KLOG_ERROR("Tried to add region with 0 base");
+        return -1;
+    }
+    if (!length) {
+        KLOG_ERROR("Tried to add region with 0 length");
+        return -1;
+    }
+    if (base & 0xfff) {
+        KLOG_ERROR("Tried to add region with misaligned base");
         return -1;
     }
 
     if (mmu_paging_enabled()) {
+        KLOG_ERROR("Tried to add region with paging enabled");
         return -1;
     }
+    KLOG_DEBUG("Adding ram region base=0x%lX length=0x%lX", base, length);
 
     size_t split_count = length / REGION_MAX_SIZE;
 
     if (__region_table_count + split_count >= REGION_TABLE_SIZE) {
+        KLOG_ERROR("Split count %u with region table count %u will exceed region table size %u", split_count, __region_table_count, REGION_TABLE_SIZE);
         return -1;
     }
 
     if (length < PAGE_SIZE * 2) {
+        KLOG_ERROR("Region length %lu is less than 2 pages", length);
         return -1;
     }
 
@@ -68,7 +93,10 @@ int ram_region_add_memory(uint64_t base, uint64_t length) {
             size_t to_move = (__region_table_count - i) * sizeof(ram_table_entry_t);
 
             ram_table_entry_t * dest = &__region_table->entries[i + split_count + 1];
-            kmemmove(dest, entry, to_move);
+            if (!kmemmove(dest, entry, to_move)) {
+                KLOG_ERROR("Failed to move %u bytes in memory from %p to %p", to_move, entry, dest);
+                return -1;
+            }
 
             add_memory_at(i, base, length);
 
@@ -109,6 +137,7 @@ uint32_t ram_page_alloc() {
     int region_i = find_free_region();
 
     if (region_i < 0) {
+        KLOG_ERROR("Failed to find region to allocate from");
         return 0;
     }
 
@@ -118,8 +147,11 @@ uint32_t ram_page_alloc() {
     int    bit_i   = find_free_bit(bitmask, entry->page_count);
 
     if (bit_i < 0) {
+        KLOG_ERROR("Failed to find page to allocate from region %u", region_i);
         return 0;
     }
+
+    KLOG_TRACE("Allocating new ram page %u in region %d from virtual space", bit_i, region_i);
 
     set_bit_used(bitmask, bit_i);
     entry->free_count--;
@@ -135,6 +167,7 @@ uint32_t ram_page_palloc() {
     int region_i = find_free_region();
 
     if (region_i < 0) {
+        KLOG_ERROR("Failed to find region to allocate from");
         return 0;
     }
 
@@ -144,20 +177,30 @@ uint32_t ram_page_palloc() {
     int    bit_i   = find_free_bit(bitmask, entry->page_count);
 
     if (bit_i < 0) {
+        KLOG_ERROR("Failed to find page to allocate from region %u", region_i);
         return 0;
     }
 
     set_bit_used(bitmask, bit_i);
     entry->free_count--;
 
+    KLOG_TRACE("Allocating new ram page %d in region %d from physical space, region free count is now %u of %u", bit_i, region_i, entry->free_count, entry->page_count);
+
     return (entry->addr_flags & MASK_ADDR) + PAGE_SIZE * bit_i;
 }
 
 int ram_page_free(uint32_t addr) {
+    // TODO added this later but didn't check if this case is valid
+    if (!addr) {
+        KLOG_ERROR("Tried to free address 0");
+        return -1;
+    }
+
     size_t bit_i    = 0;
     int    region_i = find_addr_entry(addr, &bit_i);
 
     if (region_i < 0) {
+        KLOG_ERROR("Failed to find region for address 0x%X to free", addr);
         return -1;
     }
 
@@ -166,11 +209,14 @@ int ram_page_free(uint32_t addr) {
     void * bitmask = __bitmask + PAGE_SIZE * region_i;
 
     if (is_bit_free(bitmask, bit_i)) {
+        KLOG_ERROR("Page %u in region %d for address 0x%XX is already free", bit_i, region_i, addr);
         return -1;
     }
 
     set_bit_free(bitmask, bit_i);
     entry->free_count++;
+
+    KLOG_TRACE("Free ram page %u in region %d with address 0x%X from virtual space, region free count is now %u of %u", bit_i, region_i, addr, entry->free_count, entry->page_count);
 
     return 0;
 }
