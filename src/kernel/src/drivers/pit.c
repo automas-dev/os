@@ -3,7 +3,11 @@
 #include "cpu/isr.h"
 #include "cpu/ports.h"
 #include "kernel/logs.h"
+#include "kernel/panic.h"
 #include "libc/string.h"
+
+#undef SERVICE
+#define SERVICE "DRIVER/PIT"
 
 #define PIT_CHANNEL_0_PORT 0x40
 #define PIT_CHANNEL_1_PORT 0x41
@@ -28,7 +32,10 @@ typedef struct _channel {
 static pit_channel_t __channels[3];
 
 void pit_init() {
-    kmemset(__channels, 0, sizeof(__channels));
+    KLOG_DEBUG("Initialize PIT driver");
+    if (!kmemset(__channels, 0, sizeof(__channels))) {
+        KPANIC("Failed to clear channels array");
+    }
 
     __channels[0].channel = PIT_CHANNEL_0;
     __channels[1].channel = PIT_CHANNEL_1;
@@ -36,7 +43,9 @@ void pit_init() {
 }
 
 int pit_write_channel(uint8_t channel, uint8_t access_mode, uint8_t channel_mode, uint16_t reload_value) {
+    KLOG_TRACE("Write channel %u access_mode=0x%02X channel_mode=0x%02X reload_value=0x%04X", channel, access_mode, channel_mode, reload_value);
     if (channel > 2) {
+        KLOG_ERROR("Attempt write to invalid channel %u, must be < 3", channel);
         return -1;
     }
 
@@ -59,7 +68,9 @@ int pit_write_channel(uint8_t channel, uint8_t access_mode, uint8_t channel_mode
 }
 
 // uint8_t pit_read_channel(uint8_t channel) {
+//     KLOG_TRACE("Read channel %u", channel);
 //     if (channel > 2) {
+//         KLOG_ERROR("Attempt read from invalid channel %u, must be < 3", channel);
 //         return 0;
 //     }
 
@@ -77,7 +88,9 @@ int pit_write_channel(uint8_t channel, uint8_t access_mode, uint8_t channel_mode
 // }
 
 // int pit_read_count(uint8_t channel) {
-//     if (channel < 0 || channel > 2) {
+//     KLOG_TRACE("Read count channel %u", channel);
+//     if (channel > 2) {
+//         KLOG_ERROR("Attempt read count from invalid channel %u, must be < 3", channel);
 //         return -1;
 //     }
 

@@ -3,8 +3,12 @@
 #include "cpu/idt.h"
 #include "cpu/ports.h"
 #include "kernel.h"
+#include "kernel/logs.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
+
+#undef SERVICE
+#define SERVICE "DRIVER/ISR"
 
 // static void print_trace(registers_t *);
 
@@ -204,11 +208,13 @@ void irq_handler(registers_t r) {
 }
 
 void disable_interrupts() {
+    KLOG_TRACE("Disabling interrupts");
     asm("cli");
 }
 
 void enable_interrupts() {
     asm("sti");
+    KLOG_TRACE("Enabled interrupts");
 }
 
 static void print_cr0(uint32_t cr0) {
