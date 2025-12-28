@@ -31,8 +31,8 @@ Execution of the first 512 bytes "boot sector".
 Loader starts in raw memory before paging is enabled. After paging is enabled,
 initialize the kernel then load and launch init program.
 
-1. Load VGA driver and clear screen
-2. Setup kernel logging (screen only)
+1. Setup kernel logging (serial only)
+2. Load VGA driver and clear screen
 3. Initialize ram table (physical memory)
 4. Initialize kernel virtual memory
    1. Create page dir
