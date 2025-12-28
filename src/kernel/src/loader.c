@@ -47,13 +47,13 @@ void __start() {
     serial_init(SERIAL_PORT_COM1);
     _libc_config_file_write_call(device_serial_write_raw);
 
-    // kernel_log_set_level(KERNEL_LOG_LEVEL_DEBUG);
-    kernel_log_set_level(KERNEL_LOG_LEVEL_TRACE);
-    // KLOG_DEBUG("vga init finished");
+    kernel_log_set_level(KERNEL_LOG_LEVEL_DEBUG);
+    // kernel_log_set_level(KERNEL_LOG_LEVEL_TRACE);
     KLOG_INFO("Loader Start");
 
     // 2. Load VGA driver and clear screen
     vga_init(UINT2PTR(PADDR_VGA));
+    KLOG_DEBUG("vga init finished");
 
     // 3. Initialize ram table (physical memory)
     void * ram_table = UINT2PTR(PADDR_RAM_TABLE);
