@@ -25,12 +25,13 @@ static void    set_key_state(uint8_t keycode, bool state);
 static uint8_t get_mods();
 
 void keyboard_init() {
-    KLOG_DEBUG("Registering interrupt handler on IRQ 1");
     __e0_mode = false;
     if (!kmemset(__keystate, 0, sizeof(__keystate))) {
         KPANIC("Failed to clear keystate array");
     }
+    KLOG_DEBUG("Registering interrupt handler on IRQ 1");
     register_interrupt_handler(IRQ1, keyboard_callback);
+    KLOG_DEBUG("Initialized driver");
 }
 
 static bool get_key_state(uint8_t keycode) {

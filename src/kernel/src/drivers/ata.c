@@ -152,6 +152,7 @@ void ata_init() {
     /* Primary Drive */
     KLOG_DEBUG("Registering interrupt handler on IRQ 14");
     register_interrupt_handler(IRQ14, ata_callback);
+    KLOG_DEBUG("Initialized driver");
 }
 
 size_t ata_size(ata_t * drive) {

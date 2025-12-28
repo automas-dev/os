@@ -64,6 +64,8 @@ void rtc_init(rtc_rate_t rate) {
 
     __frequency = 32768 >> (rate - 1);
     KLOG_DEBUG("RTC frequency is %u hz", __frequency);
+
+    KLOG_DEBUG("Initialized driver");
 }
 
 rtc_time_t * rtc_time() {

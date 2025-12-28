@@ -32,7 +32,6 @@ typedef struct _channel {
 static pit_channel_t __channels[3];
 
 void pit_init() {
-    KLOG_DEBUG("Initialize PIT driver");
     if (!kmemset(__channels, 0, sizeof(__channels))) {
         KPANIC("Failed to clear channels array");
     }
@@ -40,6 +39,8 @@ void pit_init() {
     __channels[0].channel = PIT_CHANNEL_0;
     __channels[1].channel = PIT_CHANNEL_1;
     __channels[2].channel = PIT_CHANNEL_2;
+
+    KLOG_DEBUG("Initialized driver");
 }
 
 int pit_write_channel(uint8_t channel, uint8_t access_mode, uint8_t channel_mode, uint16_t reload_value) {
