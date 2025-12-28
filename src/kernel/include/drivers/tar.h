@@ -64,7 +64,6 @@ void tar_close(tar_fs_t * tar);
 
 size_t       tar_file_count(tar_fs_t * tar);
 const char * tar_file_name(tar_fs_t * tar, size_t i);
-// size_t       tar_file_size(tar_fs_t * tar, size_t i);
 
 tar_stat_t * tar_stat_file_i(tar_fs_t * tar, size_t i, tar_stat_t * stat);
 tar_stat_t * tar_stat_file(tar_fs_t * tar, const char * filename, tar_stat_t * stat);

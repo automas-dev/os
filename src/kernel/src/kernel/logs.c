@@ -60,6 +60,9 @@ void kernel_log(int level, const char * file, size_t lineno, const char * servic
     if (__time_enabled) {
         put_time();
     }
+    // else {
+    //     puts("[0.000]");
+    // }
 
     // Bounds check for name lookup
     if (level < 0) {
@@ -97,5 +100,6 @@ static void put_time() {
     uint32_t s  = ms / 1e3;
     ms %= 1000;
 
-    printf("[%3u.%03u]", s, ms);
+    // printf("[%3u.%03u]", s, ms);
+    printf("[%u.%03u]", s, ms);
 }
