@@ -4,6 +4,10 @@
 
 #include "cpu/isr.h"
 #include "cpu/ports.h"
+#include "kernel/logs.h"
+
+#undef SERVICE
+#define SERVICE "DRIVER/RTC"
 
 #define RTC_REG_PORT  0x70
 #define RTC_DATA_PORT 0x71
@@ -34,12 +38,15 @@ static uint8_t read_rtc(uint8_t reg);
 // }
 
 static void rtc_callback(registers_t * regs) {
+    // TODO log registers
+    KLOG_TRACE("rtc callback");
     port_byte_out(RTC_REG_PORT, RTC_REG_C);
     port_byte_in(RTC_DATA_PORT);
     __ticks++;
 }
 
 void rtc_init(rtc_rate_t rate) {
+    KLOG_DEBUG("Registering interrupt handler on IRQ 8");
     register_interrupt_handler(IRQ8, rtc_callback);
 
     disable_interrupts();
@@ -56,10 +63,15 @@ void rtc_init(rtc_rate_t rate) {
     enable_interrupts();
 
     __frequency = 32768 >> (rate - 1);
+    KLOG_DEBUG("RTC frequency is %u hz", __frequency);
 }
 
 rtc_time_t * rtc_time() {
-    while (read_in_progress());
+    if (read_in_progress()) {
+        KLOG_TRACE("Waiting for read in progress");
+        while (read_in_progress());
+        KLOG_TRACE("Finished for read in progress");
+    }
 
     __time.second = read_rtc(0x00);
     __time.minute = read_rtc(0x02);
@@ -69,6 +81,9 @@ rtc_time_t * rtc_time() {
     __time.year   = read_rtc(0x09);
 
     // TODO there's a lot more
+
+    // TODO this is wrong
+    KLOG_TRACE("Time is %u-%02u-%02u %02u:%02u:%02u", __time.year, __time.month, __time.day, __time.hour, __time.minute, __time.second);
 
     return &__time;
 }
