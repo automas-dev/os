@@ -3,15 +3,25 @@
 #include "drivers/vga.h"
 #include "kernel.h"
 #include "kernel/device/fs_file.h"
+#include "kernel/logs.h"
 #include "libc/datastruct/array.h"
 #include "libk/defs.h"
 #include "process.h"
+
+#undef SERVICE
+#define SERVICE "SYSCALL/IO"
 
 int sys_call_io_cb(uint16_t int_no, void * args_data, registers_t * regs) {
     process_t * proc       = get_current_process();
     arr_t *     io_handles = &proc->io_handles;
 
+    KLOG_TRACE("Call from pid %u interrupt number 0x%X", proc->pid, int_no);
+
     switch (int_no) {
+        default: {
+            KLOG_WARNING("Invalid interrupt number 0x%X", int_no);
+            break;
+        }
         case SYS_INT_IO_OPEN: {
             struct _args {
                 const char * path;

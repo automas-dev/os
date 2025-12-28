@@ -14,20 +14,29 @@
 #include "libk/defs.h"
 #include "process.h"
 
+#undef SERVICE
+#define SERVICE "SYSCALL/PROCESS"
+
 int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
-    int res = 0;
+    process_t * proc = get_current_process();
+    int         res  = 0;
+
+    KLOG_TRACE("Call from pid %u interrupt number 0x%X", proc->pid, int_no);
 
     switch (int_no) {
+        default: {
+            KLOG_WARNING("Invalid interrupt number 0x%X", int_no);
+            break;
+        }
 
             // TODO this isn't fully updated with task switching
 
         case SYS_INT_PROC_EXIT: {
-            KLOGS_DEBUG("SC_PROC", "System call proc exit");
+            KLOG_DEBUG("System call proc exit");
             struct _args {
                 uint8_t code;
             } * args = (struct _args *)args_data;
             printf("Proc exit with code %u\n", args->code);
-            process_t * proc = get_current_process();
             enable_interrupts();
 
             ebus_event_t event           = {0};
@@ -43,7 +52,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             // TODO this isn't fully updated with task switching
 
         case SYS_INT_PROC_ABORT: {
-            KLOGS_DEBUG("SC_PROC", "System call proc abort");
+            KLOG_DEBUG("System call proc abort");
             struct _args {
                 uint8_t      code;
                 const char * msg;
@@ -64,7 +73,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
         } break;
 
         case SYS_INT_PROC_PANIC: {
-            KLOGS_DEBUG("SC_PROC", "System call proc panic");
+            KLOG_DEBUG("System call proc panic");
             struct _args {
                 const char * msg;
                 const char * file;
@@ -90,7 +99,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
         } break;
 
         case SYS_INT_PROC_REG_SIG: {
-            KLOGS_DEBUG("SC_PROC", "System call proc sig");
+            KLOG_DEBUG("System call proc sig");
             struct _args {
                 signals_master_cb_t cb;
             } * args = (struct _args *)args_data;
@@ -98,16 +107,16 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
         } break;
 
         case SYS_INT_PROC_GETPID: {
-            // KLOGS_DEBUG("SC_PROC", "System call proc getpid");
+            // KLOG_DEBUG("System call proc getpid");
             process_t * p = get_current_process();
             if (!p) {
                 KPANIC("Failed to find current process");
             }
-            res = p->pid;
+            return p->pid;
         } break;
 
         case SYS_INT_PROC_QUEUE_EVENT: {
-            // KLOGS_DEBUG("SC_PROC", "System call proc queue event");
+            // KLOG_DEBUG("System call proc queue event");
             struct _args {
                 ebus_event_t * event;
             } * args = (struct _args *)args_data;
@@ -123,14 +132,13 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
         } break;
 
         case SYS_INT_PROC_YIELD: {
-            // KLOGS_DEBUG("SC_PROC", "System call proc yield");
+            // KLOG_DEBUG("System call proc yield");
             struct _args {
                 int            filter;
                 ebus_event_t * event_out;
             } * args = (struct _args *)args_data;
 
             // TODO clear iret from stack?
-            process_t * proc   = get_current_process();
             proc->filter_event = args->filter;
             proc->state        = (args->filter ? PROCESS_STATE_WAITING : PROCESS_STATE_SUSPENDED);
             // process_yield(proc, regs->esp, regs->eip, args->filter);
@@ -168,7 +176,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
                 size_t       argc;
                 char **      argv;
             } * args = (struct _args *)args_data;
-            KLOGS_DEBUG("SC_PROC", "System call proc exec \"%s\" argc=%d", args->filename, args->argc);
+            KLOG_DEBUG("System call proc exec \"%s\" argc=%d", args->filename, args->argc);
 
             return kernel_exec(args->filename, args->argc, args->argv);
         } break;
@@ -177,11 +185,11 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             struct _args {
                 int pid;
             } * args = (struct _args *)args_data;
-            KLOGS_DEBUG("SC_PROC", "System call set foreground pid %d", args->pid);
+            KLOG_DEBUG("System call set foreground pid %d", args->pid);
 
             return pm_set_foreground_proc(kernel_get_proc_man(), args->pid);
         } break;
     }
 
-    return res;
+    return 0;
 }
