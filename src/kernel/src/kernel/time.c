@@ -9,6 +9,9 @@
 #include "libc/proc.h"
 #include "libc/stdio.h"
 
+#undef SERVICE
+#define SERVICE "KERNEL/TIME"
+
 // https://wiki.osdev.org/PIT
 
 #define BASE_FREQ 1193180
@@ -26,10 +29,13 @@ static arr_t __timers; // timer_t
 
 static void timer_callback(registers_t * regs) {
     __tick++;
+    KLOG_TRACE("Timer callback, next tick is %u", __tick);
+
     for (int i = 0; i < arr_size(&__timers); i++) {
         timer_t * timer = arr_at(&__timers, i);
         timer->count--;
         if (timer->count == 0) {
+            KLOG_TRACE("Timer %d finished, sending ebus event", timer->id);
             ebus_event_t e;
             e.event_id   = EBUS_EVENT_TIMER;
             e.timer.id   = timer->id;
@@ -49,10 +55,12 @@ void time_init(uint32_t freq) {
     pit_init();
 
     if (arr_create(&__timers, 4, sizeof(timer_t))) {
+        KLOG_ERROR("Failed to create timers array");
         return;
     }
 
     /* Install the function we just wrote */
+    KLOG_DEBUG("Registering interrupt handler on IRQ 0");
     register_interrupt_handler(IRQ0, timer_callback);
 
     /* Get the PIT value: hardware clock at 1193180 Hz */
@@ -60,6 +68,8 @@ void time_init(uint32_t freq) {
 
     // pit_write_channel(0, PIT_ACCESS_MODE_LOW_HIGH, PIT_CHANNEL_MODE_3_SQUARE_WAVE_GEN, divisor);
     pit_write_channel(0, PIT_ACCESS_MODE_LOW_HIGH, PIT_CHANNEL_MODE_2_RATE_GEN, divisor);
+
+    KLOG_DEBUG("Initialized time");
 }
 
 int time_start_timer(uint32_t ticks) {
@@ -67,8 +77,10 @@ int time_start_timer(uint32_t ticks) {
     t.id    = __next_id++;
     t.count = ticks;
     if (arr_insert(&__timers, arr_size(&__timers), &t)) {
+        KLOG_ERROR("Failed to insert into timers array");
         return -1;
     }
+    KLOG_DEBUG("Starting timer %d of %u ticks", t.id, t.count);
     return t.id;
 }
 
@@ -88,6 +100,7 @@ void time_stop_timer(int id) {
             return;
         }
     }
+    KLOG_WARNING("Failed to stop non-existing timer %d", id);
 }
 
 void sleep(uint32_t ms) {
