@@ -3,6 +3,9 @@
 #include "cpu/ports.h"
 #include "libc/string.h"
 
+// WARNING serial driver is used in logging, so be careful about where you log
+// so you don't get an infinite loop.
+
 int serial_init(uint16_t port) {
     port_byte_out(port + 1, 0x00); // Disable all interrupts
     port_byte_out(port + 3, 0x80); // Enable DLAB (set baud rate divisor)
