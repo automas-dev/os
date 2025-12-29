@@ -39,6 +39,6 @@ add_custom_target(${PROJECT_NAME}_all
     kernel
     libc
     libk
-    memory_alloc
-    process
+    # memory_alloc
+    # process
 )
