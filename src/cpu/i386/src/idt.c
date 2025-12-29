@@ -4,20 +4,20 @@
 #define high_16(address) (uint16_t)(((address) >> 16) & 0xFFFF)
 
 #define IDT_ENTRIES 256
-idt_gate_t     idt[IDT_ENTRIES];
-idt_register_t idt_reg;
+static idt_gate_t     __idt[IDT_ENTRIES];
+static idt_register_t __idt_reg;
 
 void set_idt_gate(int n, uint32_t handler) {
-    idt[n].low_offset  = low_16(handler);
-    idt[n].sel         = KERNEL_CS;
-    idt[n].always0     = 0;
-    idt[n].flags       = 0x8E;
-    idt[n].high_offset = high_16(handler);
+    __idt[n].low_offset  = low_16(handler);
+    __idt[n].sel         = KERNEL_CS;
+    __idt[n].always0     = 0;
+    __idt[n].flags       = 0x8E;
+    __idt[n].high_offset = high_16(handler);
 }
 
 void set_idt() {
-    idt_reg.base  = (uint32_t)&idt;
-    idt_reg.limit = IDT_ENTRIES * sizeof(idt_gate_t) - 1;
-    /* Don't make the mistake of loading &idt -- always load &idt_reg */
-    asm volatile("lidtl (%0)" : : "r"(&idt_reg));
+    __idt_reg.base  = (uint32_t)&__idt;
+    __idt_reg.limit = IDT_ENTRIES * sizeof(idt_gate_t) - 1;
+    /* Don't make the mistake of loading &__idt -- always load &__idt_reg */
+    asm volatile("lidtl (%0)" : : "r"(&__idt_reg));
 }

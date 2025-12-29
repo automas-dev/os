@@ -1,218 +1,153 @@
+/**
+ * @brief Higher kernel operates in virtual memory after paging is enabled.
+ *
+ * Documentation moved to design/boot_stages.md
+ */
+
 #include "kernel.h"
 
-#include "commands.h"
-#include "config.h"
-#include "cpu/gdt.h"
-#include "cpu/isr.h"
-#include "cpu/mmu.h"
-#include "cpu/ports.h"
-#include "cpu/tss.h"
 #include "defs.h"
 #include "drivers/ata.h"
 #include "drivers/keyboard.h"
+#include "drivers/ram.h"
 #include "drivers/ramdisk.h"
 #include "drivers/rtc.h"
-#include "drivers/timer.h"
-#include "drivers/vga.h"
-#include "idle.h"
-#include "io/file.h"
-#include "kernel/boot_params.h"
-#include "kernel/system_call.h"
+#include "exec.h"
+#include "kernel/logs.h"
+#include "kernel/panic.h"
 #include "kernel/system_call_io.h"
 #include "kernel/system_call_mem.h"
 #include "kernel/system_call_proc.h"
-#include "kernel/system_call_stdio.h"
-#include "libc/memory.h"
+#include "kernel/time.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
 #include "libc/string.h"
 #include "libk/defs.h"
-#include "libk/sys_call.h"
-#include "process.h"
-#include "process_manager.h"
-#include "ram.h"
-#include "term.h"
+
+#undef SERVICE
+#define SERVICE "KERNEL"
 
 static kernel_t __kernel;
 
 extern _Noreturn void halt(void);
 
-static void id_map_range(mmu_table_t * table, size_t start, size_t end);
-static void id_map_page(mmu_table_t * table, size_t page);
-static void cursor();
 static void irq_install();
-static int  kill(size_t argc, char ** argv);
-static int  try_switch(size_t argc, char ** argv);
-static void map_first_table(mmu_table_t * table);
+static void setup_system_calls();
 
-extern void jump_kernel_mode(void * fn);
+void kernel_init() {
+    KLOG_INFO("Kernel Start");
 
-static void foo_task();
-static void bar_task();
-
-void kernel_main() {
-    init_vga(UINT2PTR(PADDR_VGA));
-    vga_clear();
-
+    // 8.1 Clear kernel struct
     kmemset(&__kernel, 0, sizeof(kernel_t));
 
-    boot_params_t * bparams = get_boot_params();
+    __kernel.esp0 = VADDR_ISR_STACK;
 
-    // Init RAM
-    __kernel.ram_table_addr = PADDR_RAM_TABLE;
-    ram_init((void *)__kernel.ram_table_addr, (void *)VADDR_RAM_BITMASKS);
-
-    for (size_t i = 0; i < bparams->mem_entries_count; i++) {
-        upper_ram_t * entry = &bparams->mem_entries[i];
-
-        // End of second stage kernel
-        if (entry->base_addr <= 0x9fbff) {
-            continue;
-        }
-
-        if (entry->type == RAM_TYPE_USABLE || entry->type == RAM_TYPE_ACPI_RECLAIMABLE) {
-            ram_region_add_memory(entry->base_addr, entry->length);
-        }
-    }
-
-    // Init Page Dir
-    __kernel.cr3     = PADDR_KERNEL_DIR;
-    mmu_dir_t * pdir = (mmu_dir_t *)__kernel.cr3;
-    mmu_dir_clear(pdir);
-
-    // Init first table
-    uint32_t first_table_addr = ram_page_palloc();
-    mmu_dir_set(pdir, 0, first_table_addr, MMU_DIR_RW);
-
-    // Map first table
-    mmu_table_t * first_table = UINT2PTR(first_table_addr);
-    mmu_table_clear(first_table);
-    map_first_table(first_table);
-
-    // Map last table to dir for access to tables
-    mmu_dir_set(pdir, MMU_DIR_SIZE - 1, __kernel.cr3, MMU_DIR_RW);
-
-    // Enter Paging
-    mmu_enable_paging(__kernel.cr3);
-
-    // GDT & TSS
-    init_gdt();
-    init_tss();
-
-    // Kernel process used for memory allocation
-    __kernel.proc.next_heap_page = ADDR2PAGE(VADDR_RAM_BITMASKS) + ram_region_table_count();
-    __kernel.proc.cr3            = PADDR_KERNEL_DIR;
-    __kernel.proc.esp0           = VADDR_ISR_STACK;
-    __kernel.proc.state          = PROCESS_STATE_LOADED;
-    set_active_task(&__kernel.proc);
-
-    // Set initial ESP0 before first task switch
-    tss_set_esp0(VADDR_ISR_STACK);
-
+    // 8.2 Install ISR and IDT
     isr_install();
+    KLOG_DEBUG("isr init finished");
 
-    init_system_call(IRQ16);
-    system_call_register(SYS_INT_FAMILY_IO, sys_call_io_cb);
-    system_call_register(SYS_INT_FAMILY_MEM, sys_call_mem_cb);
-    system_call_register(SYS_INT_FAMILY_PROC, sys_call_proc_cb);
-    system_call_register(SYS_INT_FAMILY_STDIO, sys_call_tmp_stdio_cb);
+    // 8.3 Setup system calls
+    setup_system_calls();
+    KLOG_DEBUG("system call init finished");
 
+    // 8.4 Initialize kmalloc
+    kmalloc_init(ADDR2PAGE(VADDR_RAM_BITMASKS) + ram_region_table_count());
+    KLOG_DEBUG("kmalloc init finished");
+
+    // TODO why should the kernel need system calls?
     // Init kernel memory after system calls are registered
-    memory_init(&__kernel.kernel_memory, _sys_page_alloc);
-    init_malloc(&__kernel.kernel_memory);
+    // memory_init(&__kernel.proc.memory, kernel_alloc_page);
+    // KLOG_DEBUG("memory init finished");
 
-    pm_create(&__kernel.pm);
-
-    process_t * idle = init_idle();
-    printf("Idle task pid is %u\n", idle->pid);
-    __kernel.pm.idle_task   = idle;
-    __kernel.proc.next_proc = __kernel.pm.idle_task;
-    // pm_add_proc(&__kernel.pm, &__kernel.proc);
-    pm_add_proc(&__kernel.pm, idle);
-    // __kernel.pm.task_begin  = &__kernel.proc;
-
-    if (ebus_create(&__kernel.event_bus, 4096)) {
+    // 8.5 Setup event bus
+    // Create ebus for kernel (target of queue_event)
+    if (ebus_create(&__kernel.event_queue, 4096)) {
         KPANIC("Failed to init ebus\n");
     }
 
+    _libc_config_queue_event_call(kernel_queue_event);
+    KLOG_DEBUG("ebus init finished");
+
+    // 8.6 Create process manager
+    pm_create(&__kernel.pm);
+    KLOG_DEBUG("process manager init finished");
+
+    // 8.7 Initialize Scheduler
+    scheduler_init(&__kernel.scheduler, &__kernel.pm);
+    KLOG_DEBUG("scheduler init finished");
+
+    // 8.8 Install IRQ
+    // Init drivers and hardware interrupts
+    // TODO move earlier (maybe after isr install) to get time for logs
     irq_install();
+    KLOG_DEBUG("irq init finished");
 
-    vga_puts("Welcome to kernel v" PROJECT_VERSION "\n");
+    // 8.9 Enable time in kernel logs
+    kernel_log_time_enable();
+    KLOG_DEBUG("enabled kernel log time");
 
-    term_init();
-    if (arr_size(&__kernel.pm.task_list) == 0) {
-        KPANIC("No process");
-    }
-
-    commands_init();
-
-    term_command_add("exit", kill);
-
-    ramdisk_create(4096);
-
+    // 8.10 Mount disk
     __kernel.disk = disk_open(0, DISK_DRIVER_ATA);
     if (!__kernel.disk) {
         KPANIC("Failed to open ATA disk");
     }
+    KLOG_DEBUG("open ata disk finished");
 
+    // 8.11 Mount filesystem
     __kernel.tar = tar_open(__kernel.disk);
     if (!__kernel.tar) {
         KPANIC("Failed to open tar");
     }
+    KLOG_DEBUG("open tar fs finished");
+}
 
-    process_t * foo_proc = kmalloc(sizeof(process_t));
-    if (process_create(foo_proc)) {
-        KPANIC("Failed to create foo task");
+static void setup_system_calls() {
+    system_call_init(IRQ16);
+    system_call_register(SYS_INT_FAMILY_IO, sys_call_io_cb);
+    system_call_register(SYS_INT_FAMILY_MEM, sys_call_mem_cb);
+    system_call_register(SYS_INT_FAMILY_PROC, sys_call_proc_cb);
+}
+
+int kernel_exec(const char * filename, size_t argc, char ** argv) {
+    tar_stat_t stat;
+    if (!tar_stat_file(kernel_get_tar(), filename, &stat)) {
+        puts("Failed to find file\n");
+        return -1;
     }
-    process_set_entrypoint(foo_proc, foo_task);
-    foo_proc->state = PROCESS_STATE_LOADED;
-    pm_add_proc(&__kernel.pm, foo_proc);
 
-    process_t * bar_proc = kmalloc(sizeof(process_t));
-    if (process_create(bar_proc)) {
-        KPANIC("Failed to create bar task");
+    uint8_t * buff = kmalloc(stat.size);
+    if (!buff) {
+        return -1;
     }
-    process_set_entrypoint(bar_proc, bar_task);
-    bar_proc->state = PROCESS_STATE_LOADED;
-    pm_add_proc(&__kernel.pm, bar_proc);
 
-    pm_resume_process(&__kernel.pm, __kernel.pm.idle_task->pid, 0);
-
-    KPANIC("You shouldn't be here!");
-}
-
-static void foo_task() {
-    for (;;) {
-        // printf("foo %u\n", getpid());
-        ebus_event_t event;
-        int          ev = pull_event(EBUS_EVENT_KEY, &event);
-        // if (ev == EBUS_EVENT_KEY) {
-        //     printf("Foo got event %u\n", ev);
-        // }
+    tar_fs_file_t * file = tar_file_open(kernel_get_tar(), filename);
+    if (!file) {
+        kfree(buff);
+        return -1;
     }
-}
 
-static void bar_task() {
-    for (;;) {
-        // printf("bar %u\n", getpid());
-        ebus_event_t event;
-        int          ev = pull_event(EBUS_EVENT_ANY, &event);
-        // if (ev == EBUS_EVENT_KEY) {
-        //     printf("Bar got event %u\n", ev);
-        // }
+    if (!tar_file_read(file, buff, stat.size)) {
+        tar_file_close(file);
+        kfree(buff);
+        return -1;
     }
+
+    int pid = command_exec(buff, filename, stat.size, argc, argv);
+
+    if (pid < 0) {
+        tar_file_close(file);
+        kfree(buff);
+        return -1;
+    }
+
+    tar_file_close(file);
+    kfree(buff);
+
+    return pid;
 }
 
-int kernel_switch_task(int next_pid) {
-    return pm_resume_process(&__kernel.pm, next_pid, 0);
-}
-
-mmu_dir_t * get_kernel_dir() {
-    return (mmu_dir_t *)__kernel.cr3;
-}
-
-mmu_table_t * get_kernel_table() {
-    return (mmu_table_t *)VADDR_KERNEL_TABLE;
+int kernel_switch_task() {
+    return scheduler_run(&__kernel.scheduler);
 }
 
 process_t * get_current_process() {
@@ -220,7 +155,12 @@ process_t * get_current_process() {
 }
 
 ebus_t * get_kernel_ebus() {
-    return &__kernel.event_bus;
+    return &__kernel.event_queue;
+}
+
+void kernel_queue_event(ebus_event_t * event) {
+    ebus_push(&__kernel.event_queue, event);
+    pm_push_event(&__kernel.pm, event);
 }
 
 disk_t * kernel_get_disk() {
@@ -233,47 +173,11 @@ tar_fs_t * kernel_get_tar() {
 
 void tmp_register_signals_cb(signals_master_cb_t cb) {
     get_active_task()->signals_callback = cb;
-    printf("Attached master signal callback at %p\n", get_active_task()->signals_callback);
+    KLOG_DEBUG("Attached master signal callback at %p\n", get_active_task()->signals_callback);
 }
 
-int kernel_add_task(process_t * proc) {
-    return pm_add_proc(&__kernel.pm, proc);
-}
-
-int kernel_next_task() {
-    return pm_resume_process(&__kernel.pm, get_active_task()->pid, 0);
-}
-
-int kernel_close_process(process_t * proc) {
-    if (!proc) {
-        return -1;
-    }
-
-    proc->state = PROCESS_STATE_DEAD;
-
-    process_t * next = pm_get_next(&__kernel.pm);
-    if (!next) {
-        next = __kernel.pm.idle_task;
-    }
-
-    return 0;
-}
-
-NO_RETURN void kernel_panic(const char * msg, const char * file, unsigned int line) {
-    vga_color(VGA_FG_WHITE | VGA_BG_RED);
-    vga_puts("[KERNEL PANIC]");
-    if (file) {
-        vga_putc('[');
-        vga_puts(file);
-        vga_puts("]:");
-        vga_putu(line);
-    }
-    if (msg) {
-        vga_putc(' ');
-        vga_puts(msg);
-    }
-    vga_cursor_hide();
-    halt();
+kernel_t * get_kernel() {
+    return &__kernel;
 }
 
 proc_man_t * kernel_get_proc_man() {
@@ -284,88 +188,19 @@ process_t * kernel_find_pid(int pid) {
     return pm_find_pid(&__kernel.pm, pid);
 }
 
-void * kmalloc(size_t size) {
-    return memory_alloc(&__kernel.kernel_memory, size);
-}
-
-void * krealloc(void * ptr, size_t size) {
-    return memory_realloc(&__kernel.kernel_memory, ptr, size);
-}
-
-void kfree(void * ptr) {
-    memory_free(&__kernel.kernel_memory, ptr);
-}
-
-static void cursor() {
-    vga_cursor(3, 3);
-
-    vga_cursor_hide();
-    vga_cursor_show();
-    vga_cursor(vga_cursor_row(), vga_cursor_col());
-}
-
 static void irq_install() {
     enable_interrupts();
+    KLOG_TRACE("interrupts enabled");
     /* IRQ0: timer */
-    init_timer(TIMER_FREQ_MS); // milliseconds
+    time_init(TIMER_FREQ_MS); // milliseconds
+    KLOG_TRACE("pit init finished");
     /* IRQ1: keyboard */
-    init_keyboard();
+    keyboard_init();
+    KLOG_TRACE("keyboard init finished");
     /* IRQ14: ata disk */
-    init_ata();
+    ata_init();
+    KLOG_TRACE("ata init finished");
     /* IRQ8: real time clock */
-    init_rtc(RTC_RATE_1024_HZ);
-}
-
-static int kill(size_t argc, char ** argv) {
-    printf("Leaving process now\n");
-    kernel_exit();
-    KPANIC("Never return!");
-    return 0;
-}
-
-static void map_first_table(mmu_table_t * table) {
-    // null page 0
-    mmu_table_set(table, 0, 0, 0);
-
-    // Page Directory
-    mmu_table_set(table, 1, __kernel.cr3, MMU_DIR_RW);
-
-    // Create first table
-    mmu_table_set(table, 2, __kernel.ram_table_addr, MMU_DIR_RW);
-
-    // Stack
-    id_map_range(table, 3, 6);
-
-    // Kernel
-    id_map_range(table, 7, 0x9e);
-
-    // VGA
-    id_map_page(table, 0xb8);
-
-    // Kernel Table
-    mmu_table_set(table, ADDR2PAGE(VADDR_KERNEL_TABLE), (uint32_t)table, MMU_TABLE_RW);
-
-    // RAM region bitmasks
-    ram_table_t * ram_table = (ram_table_t *)(__kernel.ram_table_addr);
-
-    for (size_t i = 0; i < ram_region_table_count(); i++) {
-        uint32_t bitmask_addr = ram_table->entries[i].addr_flags & MASK_ADDR;
-        mmu_table_set(table, ADDR2PAGE(VADDR_RAM_BITMASKS) + i, bitmask_addr, MMU_TABLE_RW);
-    }
-}
-
-static void id_map_range(mmu_table_t * table, size_t start, size_t end) {
-    if (end > 1023) {
-        KPANIC("End is past table limits");
-        end = 1023;
-    }
-
-    while (start <= end) {
-        id_map_page(table, start);
-        start++;
-    }
-}
-
-static void id_map_page(mmu_table_t * table, size_t page) {
-    mmu_table_set(table, page, page << 12, MMU_TABLE_RW);
+    rtc_init(RTC_RATE_1024_HZ);
+    KLOG_TRACE("rtc init finished");
 }

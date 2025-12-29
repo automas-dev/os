@@ -10,16 +10,22 @@ QEMU = qemu-system-i386 -boot order=a
 
 # QEMUFLAGS = -m 4G -drive format=qcow2,file=drive.img -d int,cpu_reset -D qemu_log.txt -no-reboot
 # QEMUFLAGS = -m 1G -drive format=raw,file=drive.tar -d int,mmu -D qemu_log.txt -no-reboot -no-shutdown
-QEMUFLAGS = -m 1G -drive format=raw,file=build/os-image.bin,index=0,if=floppy -drive format=raw,file=build/apps.tar -d int,mmu -D qemu_log.txt -no-reboot -no-shutdown
+QEMUFLAGS = -m 1G \
+	-drive format=raw,file=build/os-image.bin,index=0,if=floppy \
+	-drive format=raw,file=build/apps.tar \
+	-d int,mmu \
+	-D qemu_log.txt \
+	-no-reboot -no-shutdown \
+	-chardev stdio,id=char0,logfile=kernel.log,signal=off -serial chardev:char0
 
 # ===============
 #  LAUNCH & UTIL
 # ===============
 setup:
-	cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+	cmake -S . -B build -GNinja -DCMAKE_BUILD_TYPE=Debug
 
 build:
-	cmake --build build
+	cmake --build build -j
 
 run:
 	$(QEMU) $(QEMUFLAGS)
@@ -32,7 +38,7 @@ run-debug:
 
 debug:
 	$(QEMU) -s -S $(QEMUFLAGS) &
-	$(GDB) -ex "target remote localhost:1234" -ex "symbol-file build/src/kernel/kernel.elf" -ex "b kernel_main" -ex "b isr_handler"
+	$(GDB) -ex "target remote localhost:1234" -ex "symbol-file build/src/kernel/kernel.elf" -ex "add-symbol-file build/src/apps/foo/foo.elf" -ex "b kernel_main" -ex "b isr_handler"
 
 boot-debug:
 	$(QEMU) -s -S $(QEMUFLAGS) &

@@ -1,17 +1,17 @@
 #include "paging.h"
 
+#include "drivers/ram.h"
 #include "libc/string.h"
-#include "ram.h"
 
 typedef struct {
     uint32_t addr;
     size_t   count;
 } page_user_t;
 
-static page_user_t temp_pages[VADDR_TMP_PAGE_COUNT];
+static page_user_t __temp_pages[VADDR_TMP_PAGE_COUNT];
 
 void paging_init() {
-    kmemset(temp_pages, 0, sizeof(temp_pages));
+    kmemset(__temp_pages, 0, sizeof(__temp_pages));
 }
 
 void * paging_temp_map(uint32_t paddr) {
@@ -21,8 +21,8 @@ void * paging_temp_map(uint32_t paddr) {
 
     // Return one if already exists
     for (size_t i = 0; i < VADDR_TMP_PAGE_COUNT; i++) {
-        if (temp_pages[i].addr == paddr) {
-            temp_pages[i].count++;
+        if (__temp_pages[i].addr == paddr) {
+            __temp_pages[i].count++;
             size_t table_i = ADDR2PAGE(VADDR_TMP_PAGE) + i;
             return UINT2PTR(PAGE2ADDR(table_i));
         }
@@ -30,9 +30,9 @@ void * paging_temp_map(uint32_t paddr) {
 
     // Find a free temp page to use
     for (size_t i = 0; i < VADDR_TMP_PAGE_COUNT; i++) {
-        if (temp_pages[i].count < 1) {
-            temp_pages[i].addr  = paddr;
-            temp_pages[i].count = 1;
+        if (__temp_pages[i].count < 1) {
+            __temp_pages[i].addr  = paddr;
+            __temp_pages[i].count = 1;
 
             size_t table_i = ADDR2PAGE(VADDR_TMP_PAGE) + i;
 
@@ -53,12 +53,12 @@ void paging_temp_free(uint32_t paddr) {
     }
 
     for (size_t i = 0; i < VADDR_TMP_PAGE_COUNT; i++) {
-        if (temp_pages[i].addr == paddr) {
-            if (temp_pages[i].count < 1) {
+        if (__temp_pages[i].addr == paddr) {
+            if (__temp_pages[i].count < 1) {
                 return;
             }
 
-            temp_pages[i].count--;
+            __temp_pages[i].count--;
 
             break;
         }
@@ -69,7 +69,7 @@ size_t paging_temp_available() {
     size_t free = 0;
 
     for (size_t i = 0; i < VADDR_TMP_PAGE_COUNT; i++) {
-        if (!temp_pages[i].count) {
+        if (!__temp_pages[i].count) {
             free++;
         }
     }

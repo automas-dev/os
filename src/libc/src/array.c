@@ -118,8 +118,12 @@ static void * arr_at_no_limit(const arr_t * arr, size_t i) {
 }
 
 static int grow_array(arr_t * arr) {
-    size_t new_size = arr->size + (arr->size / 2);
-    void * new_data = prealloc(arr->data, new_size);
+    size_t grow_count = arr->size / 2;
+    if (!grow_count) {
+        grow_count = 1;
+    }
+    size_t new_size = arr->size + grow_count;
+    void * new_data = prealloc(arr->data, new_size * arr->elem_size);
     if (!new_data) {
         return -1;
     }

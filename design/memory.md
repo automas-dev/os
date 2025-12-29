@@ -24,10 +24,9 @@ at address 0x500.
 
 | start | size | description        |
 | ----- | ---- | ------------------ |
-| 0     | 4    | GDT table address  |
-| 4     | 2    | Low Memory Size    |
-| 6     | 2    | Memory Entry Count |
-| 8     | x    | Memory Map Entries |
+| 0     | 2    | Low Memory Size    |
+| 2     | 2    | Memory Entry Count |
+| 4     | x    | Memory Map Entries |
 
 x is the value of Memory Entry Count * 24
 
@@ -53,6 +52,14 @@ Region Type can be one of the following
 | 3    | ACPI Reclaimable | Usable   |
 | 4    | ACPI NVS         | Reserved |
 | 5    | Bad Memory       | Reserved |
+
+ACPI 3.0 Extended Attributes
+
+| bit    | description                  |
+| ------ | ---------------------------- |
+| 0      | entry should be ignored if 0 |
+| 1      | entry is non-volatile if 1   |
+| 2 - 31 | undefined                    |
 
 ## Protected Mode
 
@@ -105,7 +112,7 @@ directory.
 | 0x0009f000 | 0x000b7fff | 0x00019    |               | _temp pages for mapping_                                  |
 | 0x000b8000 | 0x000b8fff | 0x00001    | 0x000b8000    | VGA Memory                                                |
 | 0x000b9000 | 0x000b9fff | 0x00001    |               | First page table (kernel's page) of any page directory    |
-| 0x000ba000 | x          | <= 0x00200 |               | ram region bitmasks                                       |
+| 0x000ba000 | x - 1      | <= 0x00200 |               | ram region bitmasks                                       |
 | x          | y - 1      |            |               | _free memory for kmalloc (remainder of first page table)_ |
 | y          | 0x003fffff |            |               | _kernel stack (grows down)_                               |
 | 0x00400000 | 0xffffffff | 0xffb00    |               | _free memory for user (second+ page tables)_              |

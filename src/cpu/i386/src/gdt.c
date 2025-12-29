@@ -6,10 +6,10 @@ extern void load_gdt(uint32_t limit, uint32_t base);
 
 #define GDT_N 7
 
-static gdt_entry_t gdt[GDT_N];
+static gdt_entry_t __gdt[GDT_N];
 
 void init_gdt() {
-    kmemset(gdt, 0, GDT_N * sizeof(gdt_entry_t));
+    kmemset(__gdt, 0, GDT_N * sizeof(gdt_entry_t));
 
     gdt_set(GDT_ENTRY_INDEX_KERNEL_CODE, 0, 0xfffff, GDT_PRESET_KERNEL_CODE_ACCESS, GDT_PRESET_KERNEL_CODE_FLAGS);
     gdt_set(GDT_ENTRY_INDEX_KERNEL_DATA, 0, 0xfffff, GDT_PRESET_KERNEL_DATA_ACCESS, GDT_PRESET_KERNEL_DATA_FLAGS);
@@ -18,7 +18,7 @@ void init_gdt() {
     gdt_set(GDT_ENTRY_INDEX_KERNEL_TSS, 0, 0xfffff, GDT_PRESET_KERNEL_TSS_ACCESS, GDT_PRESET_KERNEL_TSS_FLAGS);
     gdt_set(GDT_ENTRY_INDEX_USER_TSS, 0, 0xfffff, GDT_PRESET_USER_TSS_ACCESS, GDT_PRESET_USER_TSS_FLAGS);
 
-    load_gdt(GDT_N * 64 - 1, PTR2UINT(gdt));
+    load_gdt(GDT_N * 64 - 1, PTR2UINT(__gdt));
 }
 
 size_t gdt_entry_count() {
@@ -30,7 +30,7 @@ gdt_entry_t * gdt_get_entry(size_t i) {
         return 0;
     }
 
-    return &gdt[i];
+    return &__gdt[i];
 }
 
 int gdt_set(size_t i, uint64_t base, uint64_t limit, uint8_t access, uint8_t flags) {
@@ -38,7 +38,7 @@ int gdt_set(size_t i, uint64_t base, uint64_t limit, uint8_t access, uint8_t fla
         return -1;
     }
 
-    gdt_entry_t * gdt_entry = &gdt[i];
+    gdt_entry_t * gdt_entry = &__gdt[i];
     gdt_entry->limit_low    = limit & 0xffff;
     gdt_entry->base_low     = base & 0xffffff;
     gdt_entry->access       = access;
@@ -54,7 +54,7 @@ int gdt_set_base(size_t i, uint64_t base) {
         return -1;
     }
 
-    gdt_entry_t * gdt_entry = &gdt[i];
+    gdt_entry_t * gdt_entry = &__gdt[i];
     gdt_entry->base_low     = base & 0xffffff;
     gdt_entry->base_high    = (base >> 24) & 0xff;
 
@@ -66,7 +66,7 @@ int gdt_set_limit(size_t i, uint64_t limit) {
         return -1;
     }
 
-    gdt_entry_t * gdt_entry = &gdt[i];
+    gdt_entry_t * gdt_entry = &__gdt[i];
     gdt_entry->limit_low    = limit & 0xffff;
     gdt_entry->limit_high   = (limit >> 16) & 0xf;
 
@@ -78,7 +78,7 @@ int gdt_set_access(size_t i, uint8_t access) {
         return -1;
     }
 
-    gdt_entry_t * gdt_entry = &gdt[i];
+    gdt_entry_t * gdt_entry = &__gdt[i];
     gdt_entry->access       = access;
 
     return 0;
@@ -89,7 +89,7 @@ int gdt_set_flags(size_t i, uint8_t flags) {
         return -1;
     }
 
-    gdt_entry_t * gdt_entry = &gdt[i];
+    gdt_entry_t * gdt_entry = &__gdt[i];
     gdt_entry->flags        = flags;
 
     return 0;

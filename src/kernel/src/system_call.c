@@ -1,28 +1,42 @@
-#include "kernel/system_call.h"
+#include "system_call.h"
 
 #include "cpu/isr.h"
 #include "drivers/vga.h"
+#include "kernel.h"
+#include "kernel/logs.h"
 #include "libc/memory.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
 #include "libc/string.h"
 #include "libk/defs.h"
+#include "process.h"
+
+#undef SERVICE
+#define SERVICE "SYSCALL"
 
 #define MAX_CALLBACKS 0x100
-sys_call_handler_t callbacks[MAX_CALLBACKS];
+static sys_call_handler_t __callbacks[MAX_CALLBACKS];
 
 static void callback(registers_t * regs);
 
-void init_system_call(uint8_t isr_interrupt_no) {
-    kmemset(callbacks, 0, sizeof(callbacks));
+void system_call_init(uint8_t isr_interrupt_no) {
+    if (!kmemset(__callbacks, 0, sizeof(__callbacks))) {
+        KLOG_ERROR("Failed to clear memory of callback handlers array");
+        KPANIC("Failed to clear callback handlers array");
+    }
+    KLOG_DEBUG("Registering interrupt handler on IRQ %u", isr_interrupt_no);
     register_interrupt_handler(isr_interrupt_no, callback);
+
+    KLOG_DEBUG("Initialized system calls");
 }
 
 void system_call_register(uint8_t family, sys_call_handler_t handler) {
-    if (family > MAX_CALLBACKS) {
+    KLOG_DEBUG("Registering handler for family 0x%02X", family);
+    if (family >= MAX_CALLBACKS) {
+        KLOG_ERROR("Cannot register handler for family 0x%02X, must be < 0x%X", family, MAX_CALLBACKS);
         PANIC("Out of range interrupt family");
     }
-    callbacks[family] = handler;
+    __callbacks[family] = handler;
 }
 
 static void callback(registers_t * regs) {
@@ -31,17 +45,20 @@ static void callback(registers_t * regs) {
     uint16_t int_no = regs->eax & 0xffff;
     uint8_t  family = (regs->eax >> 8) & 0xff;
 
+    // if (family != 0x01 && family != 0x10) {
+    //     process_t * proc = get_current_process();
+    //     KLOG_DEBUG("Got system call 0x%04x from PID %u", (int)int_no, proc->pid);
+    // }
+
     void * args_data = UINT2PTR(regs->ebx);
 
-    sys_call_handler_t handler = callbacks[family];
+    sys_call_handler_t handler = __callbacks[family];
 
     if (handler) {
         res = handler(int_no, args_data, regs);
     }
     else {
-        vga_puts("Unknown interrupt: 0x");
-        vga_putx(int_no);
-        // print_trace(&regs);
+        KLOG_ERROR("Failed to find handler for interrupt 0x%04X", int_no);
         PANIC("UNKNOWN INTERRUPT");
     }
 

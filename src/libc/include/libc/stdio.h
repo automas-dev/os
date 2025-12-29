@@ -6,10 +6,16 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "libc/file.h"
+
 #ifndef TESTING
 
-size_t itoa(int32_t n, char * str);
-size_t ltoa(int64_t n, char * str);
+extern file_t _stdin;
+#define stdin (&_stdin)
+extern file_t _stdout;
+#define stdout (&_stdout)
+extern file_t _stderr;
+#define stderr (&_stderr)
 
 size_t puts(const char * str);
 size_t putc(char c);
@@ -18,8 +24,10 @@ size_t putli(int64_t num, uint8_t base, bool upper);
 size_t putu(uint32_t num, uint8_t base, bool upper);
 size_t putlu(uint64_t num, uint8_t base, bool upper);
 
+char   getc();
+size_t gets(size_t size, char * buff);
+
 size_t printf(const char * fmt, ...);
-size_t vprintf(const char * fmt, va_list params);
 
 size_t print_hexblock(const uint8_t * data, size_t count, size_t addr_offset);
 

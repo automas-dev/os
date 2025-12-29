@@ -5,7 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/src/**",
                 "${workspaceFolder}/tests/src/**",
-                "${workspaceFolder}/tests/build/_deps/fff-src"
+                "${workspaceFolder}/tests/build/_deps/fff-src",
+                "${workspaceFolder}/tests/build/_deps/googletest-src/googletest/include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

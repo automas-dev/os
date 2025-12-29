@@ -7,13 +7,14 @@
 #include "cpu/ports.h"
 #include "debug.h"
 #include "drivers/disk.h"
+#include "drivers/ram.h"
 #include "drivers/rtc.h"
 #include "drivers/tar.h"
-#include "drivers/timer.h"
 #include "drivers/vga.h"
 #include "ebus.h"
 #include "exec.h"
 #include "kernel.h"
+#include "kernel/time.h"
 #include "libc/datastruct/array.h"
 #include "libc/memory.h"
 #include "libc/proc.h"
@@ -22,8 +23,6 @@
 #include "libc/string.h"
 #include "paging.h"
 #include "process.h"
-#include "ram.h"
-#include "term.h"
 
 bool debug = false;
 
@@ -147,10 +146,10 @@ static int port_in_cmd(size_t argc, char ** argv) {
 }
 
 static int time_cmd(size_t argc, char ** argv) {
-    uint32_t ticks = get_ticks();
-    uint32_t s     = get_time_s();
-    uint32_t ms    = get_time_ms();
-    uint32_t ns    = get_time_ns();
+    uint32_t ticks = time_ticks();
+    uint32_t s     = time_s();
+    uint32_t ms    = time_ms();
+    uint32_t ns    = time_ns();
     printf("System ticks: %u ~= %u ns ~= %u ms ~= %u s\n", ticks, ns, ms, s);
     printf("RTC time: %u us = %u ms = %u s\n", time_us(), time_ms(), time_s());
     return 0;
@@ -175,11 +174,11 @@ static int sleep_cmd(size_t argc, char ** argv) {
     handler.event_id       = EBUS_EVENT_TIMER;
 
     sleep_handler = ebus_register_handler(get_kernel_ebus(), &handler);
-    start_timer_ms(1000);
+    time_start_timer_ms(1000);
 }
 
 static int ret_cmd(size_t argc, char ** argv) {
-    printf("Last command exit code was %u\n", term_last_ret);
+    // printf("Last command exit code was %u\n", term_last_ret);
     return 0;
 }
 
@@ -764,7 +763,7 @@ static int command_lookup(size_t argc, char ** argv) {
         return 1;
     }
 
-    int res = command_exec(buff, stat.size, argc, argv);
+    int res = command_exec(buff, filename, stat.size, argc, argv);
 
     if (!buff) {
         return 0;
@@ -777,32 +776,32 @@ static int command_lookup(size_t argc, char ** argv) {
 }
 
 void commands_init() {
-    set_command_lookup(command_lookup);
+    // set_command_lookup(command_lookup);
 
-    term_command_add("currdir", currdir);
-    term_command_add("pid", currproc);
-    term_command_add("hotswap", hotswap);
-    term_command_add("procswap", procswap);
+    // term_command_add("currdir", currdir);
+    // term_command_add("pid", currproc);
+    // term_command_add("hotswap", hotswap);
+    // term_command_add("procswap", procswap);
 
-    term_command_add("clear", clear_cmd);
-    term_command_add("echo", echo_cmd);
-    term_command_add("debug", debug_cmd);
-    term_command_add("atoi", atoi_cmd);
-    term_command_add("outb", port_out_cmd);
-    term_command_add("inb", port_in_cmd);
-    term_command_add("time", time_cmd);
-    term_command_add("sleep", sleep_cmd);
-    term_command_add("ret", ret_cmd);
-    // term_command_add("format", format_cmd);
-    // term_command_add("mount", mount_cmd);
-    // term_command_add("unmount", unmount_cmd);
-    // term_command_add("mem", mem_cmd);
-    term_command_add("ls", ls_cmd);
-    term_command_add("stat", stat_cmd);
-    // term_command_add("status", status_cmd);
-    term_command_add("read", fs_read_cmd);
-    term_command_add("cat", fs_cat_cmd);
-    // term_command_add("read", disk_read_cmd);
-    term_command_add("write", disk_write_cmd);
-    term_command_add("size", disk_size_cmd);
+    // term_command_add("clear", clear_cmd);
+    // term_command_add("echo", echo_cmd);
+    // term_command_add("debug", debug_cmd);
+    // term_command_add("atoi", atoi_cmd);
+    // term_command_add("outb", port_out_cmd);
+    // term_command_add("inb", port_in_cmd);
+    // term_command_add("time", time_cmd);
+    // term_command_add("sleep", sleep_cmd);
+    // term_command_add("ret", ret_cmd);
+    // // term_command_add("format", format_cmd);
+    // // term_command_add("mount", mount_cmd);
+    // // term_command_add("unmount", unmount_cmd);
+    // // term_command_add("mem", mem_cmd);
+    // term_command_add("ls", ls_cmd);
+    // term_command_add("stat", stat_cmd);
+    // // term_command_add("status", status_cmd);
+    // term_command_add("read", fs_read_cmd);
+    // term_command_add("cat", fs_cat_cmd);
+    // // term_command_add("read", disk_read_cmd);
+    // term_command_add("write", disk_write_cmd);
+    // term_command_add("size", disk_size_cmd);
 }

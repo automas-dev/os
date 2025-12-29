@@ -9,7 +9,7 @@
 #define REGION_MAX_SIZE       (REGION_MAX_PAGE_COUNT * PAGE_SIZE)
 
 extern "C" {
-#include "ram.h"
+#include "drivers/ram.h"
 
 // 1 page for each region in the table + 1 for alignment
 #define BITMASK_SIZE (REGION_TABLE_SIZE * PAGE_SIZE + PAGE_SIZE)
@@ -32,6 +32,7 @@ TEST(RamStatic, ram_init) {
     EXPECT_NE(0, ram_init(0, (void *)1));
     EXPECT_NE(0, ram_init(&ram, 0));
 
+    kmemset_fake.return_val = (void *)1;
     EXPECT_EQ(0, ram_init(&ram, bitmasks.data()));
     EXPECT_EQ(1, kmemset_fake.call_count);
 }

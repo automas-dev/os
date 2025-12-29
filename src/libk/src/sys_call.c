@@ -19,38 +19,42 @@ int _sys_io_close(int handle) {
     return send_call(SYS_INT_IO_CLOSE, handle);
 }
 
-int _sys_io_read(int handle, char * buff, size_t count) {
-    return send_call(SYS_INT_IO_READ, handle, buff, count);
+int _sys_io_read(int handle, char * buff, size_t count, size_t pos) {
+    return send_call(SYS_INT_IO_READ, handle, buff, count, pos);
 }
 
-int _sys_io_write(int handle, const char * buff, size_t count) {
-    return send_call(SYS_INT_IO_WRITE, handle, buff, count);
+int _sys_io_write(int handle, const char * buff, size_t count, size_t pos) {
+    return send_call(SYS_INT_IO_WRITE, handle, buff, count, pos);
 }
 
-int _sys_io_seek(int handle, int pos, int seek) {
-    return send_call(SYS_INT_IO_SEEK, handle, pos, seek);
+int _sys_io_size(int handle) {
+    return send_call(SYS_INT_IO_SIZE, handle);
 }
 
-int _sys_io_tell(int handle) {
-    return send_call(SYS_INT_IO_TELL, handle);
+void * _sys_mem_malloc(size_t size) {
+    return UINT2PTR(send_call(SYS_INT_MEM_MALLOC, size));
 }
 
-void * _sys_page_alloc(size_t count) {
-    return UINT2PTR(send_call(SYS_INT_MEM_PAGE_ALLOC, count));
+void * _sys_mem_realloc(void * ptr, size_t size) {
+    return UINT2PTR(send_call(SYS_INT_MEM_REALLOC, ptr, size));
+}
+
+void _sys_mem_free(void * ptr) {
+    send_call(SYS_INT_MEM_FREE, ptr);
 }
 
 void _sys_proc_exit(uint8_t code) {
-    _sys_puts("libk: Proc exit\n");
+    // _sys_puts("libk: Proc exit\n");
     send_call_noret(SYS_INT_PROC_EXIT, code);
 }
 
 void _sys_proc_abort(uint8_t code, const char * msg) {
-    _sys_puts("libk: Proc abort\n");
+    // _sys_puts("libk: Proc abort\n");
     send_call_noret(SYS_INT_PROC_ABORT, code, msg);
 }
 
 void _sys_proc_panic(const char * msg, const char * file, unsigned int line) {
-    _sys_puts("libk: Proc panic\n");
+    // _sys_puts("libk: Proc panic\n");
     send_call_noret(SYS_INT_PROC_PANIC, msg, file, line);
 }
 
@@ -70,10 +74,10 @@ int _sys_yield(int filter, ebus_event_t * event_out) {
     return send_call(SYS_INT_PROC_YIELD, filter, event_out);
 }
 
-size_t _sys_putc(char c) {
-    return send_call(SYS_INT_STDIO_PUTC, c);
+int _sys_proc_exec(const char * filename, int argc, char ** argv) {
+    return send_call(SYS_INT_PROC_EXEC, filename, argc, argv);
 }
 
-size_t _sys_puts(const char * str) {
-    return send_call(SYS_INT_STDIO_PUTS, str);
+int _sys_proc_set_foreground(int pid) {
+    return send_call(SYS_INT_PROC_SET_FOREGROUND, pid);
 }

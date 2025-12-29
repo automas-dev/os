@@ -1,5 +1,6 @@
 BasedOnStyle: Google
 AccessModifierOffset: -4
+AlignArrayOfStructures: Left
 AlignConsecutiveAssignments: Consecutive
 AlignConsecutiveBitFields: AcrossEmptyLines
 AlignConsecutiveDeclarations: Consecutive

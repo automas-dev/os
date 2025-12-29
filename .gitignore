@@ -1,9 +1,9 @@
 *.bin
 *.o
 *.elf
+*.log
 
 build/
-drive/
 drive.img
 drive.tar
 qemu_log.txt

@@ -5,19 +5,28 @@
 #include <stdint.h>
 
 #include "ebus.h"
+#include "kernel/device/io.h"
+#include "kernel/io_buffer.h"
 #include "libc/datastruct/array.h"
+#include "libc/file.h"
 #include "memory_alloc.h"
+
+#define IO_BUFFER_SIZE 512
 
 typedef void (*signals_master_cb_t)(int);
 
-enum HANDLE_TYPE {
-    HANDLE_TYPE_FREE = 0,
-    HANDLE_TYPE_FILE,
-};
+// enum HANDLE_TYPE {
+//     HANDLE_TYPE_FREE = 0,
+//     HANDLE_TYPE_FILE,
+//     HANDLE_TYPE_DIR,
+// };
 
 typedef struct _handle {
     int id;
-    int type;
+    int flags;
+    // int type;
+
+    io_device_t * device;
 } handle_t;
 
 enum PROCESS_STATE {
@@ -26,6 +35,7 @@ enum PROCESS_STATE {
     PROCESS_STATE_LOADED,
     PROCESS_STATE_SUSPENDED,
     PROCESS_STATE_WAITING,
+    // PROCESS_STATE_WAITING_STDIN,
     PROCESS_STATE_RUNNING,
     PROCESS_STATE_DEAD,
     PROCESS_STATE_ERROR,
@@ -42,6 +52,11 @@ typedef struct _process {
 
     // TODO heap & stack limits
 
+    char *  filepath;
+    int     argc;
+    char ** argv;
+    int     status_code;
+
     signals_master_cb_t signals_callback;
     arr_t               io_handles; // array<handle_t>
     ebus_t              event_queue;
@@ -49,7 +64,8 @@ typedef struct _process {
 
     uint32_t           filter_event;
     enum PROCESS_STATE state;
-    struct _process *  next_proc;
+
+    io_buffer_t * io_buffer;
 } process_t;
 
 /**
@@ -134,6 +150,10 @@ int process_grow_stack(process_t * proc);
  */
 int process_load_heap(process_t * proc, const char * buff, size_t size);
 
+int process_add_handle(process_t * proc, int id, int flags, io_device_t * device);
+
+handle_t * process_get_handle(process_t * proc, int id);
+
 /**
  * @brief Set the next PID value. All future PID's will be incremented from
  * here.
@@ -144,8 +164,11 @@ int process_load_heap(process_t * proc, const char * buff, size_t size);
  */
 void set_next_pid(uint32_t next);
 
+void set_next_handle_id(uint32_t next);
+
 extern void        set_active_task(process_t * active);
 extern process_t * get_active_task(void);
 extern void        switch_task(process_t * proc);
+extern void        start_first_task(process_t * proc);
 
 #endif // KERNEL_PROCESS_H
