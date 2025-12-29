@@ -8,6 +8,7 @@ macro(add_app target)
 
     add_custom_command(OUTPUT ${APPS_BASE_DIR}/${target}
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/${target}.bin ${APPS_BASE_DIR}/${target}
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/${target}.elf ${APPS_BASE_DIR}/${target}.elf
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${target}.bin)
 
     add_custom_target(${target}_app
