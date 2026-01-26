@@ -17,14 +17,14 @@ static ram_table_t * __region_table;
 static size_t        __region_table_count;
 static void *        __bitmask;
 
-static int  find_addr_entry(uint32_t addr, size_t * out_bit_i);
-static int  find_free_bit(const void * bitmask, size_t page_count);
-static int  find_free_region();
-static void set_bit_used(void * bitmask, size_t bit);
-static void set_bit_free(void * bitmask, size_t bit);
-static int  is_bit_free(void * bitmask, size_t bit);
-static void fill_bitmask(void * bitmask, size_t page_count);
-static void add_memory_at(size_t start, uint64_t base, uint64_t length);
+static int find_addr_entry(uint32_t addr, size_t * out_bit_i);
+static int find_free_bit(const void * bitmask, size_t page_count);
+static int find_free_region();
+static int set_bit_used(void * bitmask, size_t bit);
+static int set_bit_free(void * bitmask, size_t bit);
+static int is_bit_free(void * bitmask, size_t bit);
+static int fill_bitmask(void * bitmask, size_t page_count);
+static int add_memory_at(size_t start, uint64_t base, uint64_t length);
 
 int ram_init(ram_table_t * ram_table, void * bitmasks) {
     if (!ram_table) {
@@ -211,7 +211,7 @@ int ram_page_free(uint32_t addr) {
     void * bitmask = __bitmask + PAGE_SIZE * region_i;
 
     if (is_bit_free(bitmask, bit_i)) {
-        KLOG_ERROR("Page %u in region %d for address 0x%XX is already free", bit_i, region_i, addr);
+        KLOG_ERROR("Page %u in region %d for address 0x%X is already free", bit_i, region_i, addr);
         return -1;
     }
 
@@ -224,6 +224,14 @@ int ram_page_free(uint32_t addr) {
 }
 
 static int find_addr_entry(uint32_t addr, size_t * out_bit_i) {
+    if (!addr) {
+        KLOG_ERROR("Searching for null address");
+        return -1;
+    }
+    if (!out_bit_i) {
+        KLOG_ERROR("Output pointer is null");
+        return -1;
+    }
     for (size_t i = 0; i < __region_table_count; i++) {
         ram_table_entry_t * entry = &__region_table->entries[i];
 
@@ -237,10 +245,20 @@ static int find_addr_entry(uint32_t addr, size_t * out_bit_i) {
         }
     }
 
+    KLOG_ERROR("Failed to find entry for address %p", addr);
+
     return -1;
 }
 
 static int find_free_bit(const void * bitmask, size_t page_count) {
+    if (!bitmask) {
+        KLOG_ERROR("Tried to find bitmask of null pointer");
+        return -1;
+    }
+    if (!page_count) {
+        KLOG_WARNING("Trying to find free bit form 0 pages");
+        return -1;
+    }
     const char * bitmask_data = bitmask;
 
     for (size_t i = 1; i < page_count; i++) {
@@ -251,6 +269,8 @@ static int find_free_bit(const void * bitmask, size_t page_count) {
             return i;
         }
     }
+
+    KLOG_ERROR("Failed to find free bit in bitmask %p", bitmask);
 
     return -1;
 }
@@ -264,28 +284,49 @@ static int find_free_region() {
         }
     }
 
+    KLOG_ERROR("Failed to find free region");
+
     return -1;
 }
 
-static void set_bit_used(void * bitmask, size_t bit) {
+static int set_bit_used(void * bitmask, size_t bit) {
+    if (!bitmask) {
+        KLOG_ERROR("Tried to set used bit of null bitmask");
+        return -1;
+    }
+
     char * bitmask_data = bitmask;
 
     size_t byte = bit / 8;
     bit         = bit % 8;
 
     bitmask_data[byte] &= ~(1 << bit);
+
+    return 0;
 }
 
-static void set_bit_free(void * bitmask, size_t bit) {
+static int set_bit_free(void * bitmask, size_t bit) {
+    if (!bitmask) {
+        KLOG_ERROR("Tried to set free bit of null bitmask");
+        return -1;
+    }
+
     char * bitmask_data = bitmask;
 
     size_t byte = bit / 8;
     bit         = bit % 8;
 
     bitmask_data[byte] |= 1 << bit;
+
+    return 0;
 }
 
 static int is_bit_free(void * bitmask, size_t bit) {
+    if (!bitmask) {
+        KLOG_ERROR("Tried to check if bit is used of null bitmask");
+        return 0;
+    }
+
     char * bitmask_data = bitmask;
 
     size_t byte = bit / 8;
@@ -302,7 +343,16 @@ static int is_bit_free(void * bitmask, size_t bit) {
  * @param bitmask pointer to the bitmask
  * @param page_count number of pages in region including the bitmask page
  */
-static void fill_bitmask(void * bitmask, size_t page_count) {
+static int fill_bitmask(void * bitmask, size_t page_count) {
+    if (!bitmask) {
+        KLOG_ERROR("Trying to fill bitmask of null pointer");
+        return -1;
+    }
+    if (!page_count) {
+        KLOG_WARNING("Trying to fill bitmask for 0 pages");
+        return -1;
+    }
+
     unsigned char * bitmask_data = (unsigned char *)bitmask;
 
     size_t bytes    = page_count / 8;
@@ -322,9 +372,12 @@ static void fill_bitmask(void * bitmask, size_t page_count) {
     }
 
     bitmask_data[0] &= 0xfe;
+
+    return 0;
 }
 
-static void add_memory_at(size_t start, uint64_t base, uint64_t length) {
+static int add_memory_at(size_t start, uint64_t base, uint64_t length) {
+    // TODO what are invalid inputs?
     size_t split_count = length / REGION_MAX_SIZE;
 
     for (size_t i = 0; i <= split_count; i++) {
@@ -345,4 +398,6 @@ static void add_memory_at(size_t start, uint64_t base, uint64_t length) {
 
         base += REGION_MAX_SIZE;
     }
+
+    return 0;
 }

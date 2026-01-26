@@ -109,24 +109,31 @@ static void setup_system_calls() {
 }
 
 int kernel_exec(const char * filename, size_t argc, char ** argv) {
+    if (!filename) {
+        KLOG_ERROR("Missing filename");
+        return -1;
+    }
     tar_stat_t stat;
     if (!tar_stat_file(kernel_get_tar(), filename, &stat)) {
-        puts("Failed to find file\n");
+        KLOG_ERROR("Failed to find file %s to execute", filename);
         return -1;
     }
 
     uint8_t * buff = kmalloc(stat.size);
     if (!buff) {
+        KLOG_ERROR("Failed to malloc buffer of size %u", stat.size);
         return -1;
     }
 
     tar_fs_file_t * file = tar_file_open(kernel_get_tar(), filename);
     if (!file) {
+        KLOG_ERROR("Failed to open file %s", filename);
         kfree(buff);
         return -1;
     }
 
     if (!tar_file_read(file, buff, stat.size)) {
+        KLOG_ERROR("Failed to read from file %s", filename);
         tar_file_close(file);
         kfree(buff);
         return -1;
@@ -135,6 +142,7 @@ int kernel_exec(const char * filename, size_t argc, char ** argv) {
     int pid = command_exec(buff, filename, stat.size, argc, argv);
 
     if (pid < 0) {
+        KLOG_ERROR("Failed to execute file %s", filename);
         tar_file_close(file);
         kfree(buff);
         return -1;
@@ -159,8 +167,13 @@ ebus_t * get_kernel_ebus() {
 }
 
 void kernel_queue_event(ebus_event_t * event) {
-    ebus_push(&__kernel.event_queue, event);
-    pm_push_event(&__kernel.pm, event);
+    if (ebus_push(&__kernel.event_queue, event)) {
+        KLOG_ERROR("Failed to push event to kernel event queue");
+        return;
+    }
+    if (pm_push_event(&__kernel.pm, event)) {
+        KLOG_ERROR("Failed to push event to process manager");
+    }
 }
 
 disk_t * kernel_get_disk() {
