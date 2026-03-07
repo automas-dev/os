@@ -1,16 +1,35 @@
 # os
 
-~~Following the tutorials under https://github.com/cfenollosa/os-tutorial~~
+Hobby i386 kernel / operating system.
 
-Active and planned work is tracked in [notes.md](notes.md)
+Project Structure
 
-For current specs see
+```plaintext
+├── archlinux         # i386 cross compiler install for archlinux
+├── cmake             # Cmake utilities
+├── CMakeLists.txt    # Project cmake
+├── design            # Design concepts and implementation references
+├── docs              # MKDocs site generation
+├── install_cross.sh  # i386 cross compiler install for Ubuntu
+├── Makefile          # Build, test and emulator commands
+├── notes.md          # Active and planned work
+├── README.md         # Project readme
+├── src               # OS source code
+│   ├── apps            # User space programs
+│   ├── boot            # Boot loader
+│   ├── cpu             # CPU architecture specific code (i386)
+│   ├── ebus            # Event bus
+│   ├── kernel          # Loader & Kernel
+│   ├── libc            # C Library
+│   ├── libk            # Kernel Library
+│   └── util            # Macros, types and address defs
+└── tests             # OS tests
+```
 
-- [boot.md](design/boot.md)
-- ~~[filesystem.md](design/filesystem.md)~~
-- [memory.md](design/memory.md)
-- [process.md](design/process.md)
-- [system_call.md](design/system_call.md)
+This project started by following the tutorials under
+[https://github.com/cfenollosa/os-tutorial](https://github.com/cfenollosa/os-tutorial)
+but has diverged quite a bit since. Some components are still mostly the same
+(eg. [src/boot/](src/boot/)).
 
 ## Goals
 
@@ -100,17 +119,29 @@ make setup
 
 ### Building
 
+The os image can be found at `build/os-image.bin`, with an elf for the kernel
+at `build/src/kernel/kernel.elf` for debug symbols. Apps are combined in a
+tar file at `build/apps.tar` which is mounted by the kernel at runtime.
+
 ```sh
 make build
 ```
 
 ### Running
 
+QEMU is used for cpu emulation and kernel execution. I'm using QEMU emulator
+version 10.1.0 (Debian 1:10.1.0+ds-5ubuntu2.4) but other versions should work.
+Logs will be written to stdout and `kernel.log` Qemu logs are written to
+`qemu_logs.txt`
+
 ```sh
 make run
 ```
 
 Once running, use the `help` command to see what you can do.
+
+Kernel log level can be adjusted in
+[src/kernel/src/loader.c](src/kernel/src/loader.c) in the function `__start`
 
 ### Testing
 
