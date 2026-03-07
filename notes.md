@@ -1,4 +1,4 @@
-# Notes and ToDos for active and planned future work
+# Notes & Work Planning
 
 This is a list of all active and planned work. They can be removed once they are
 checked off. Use the task template bellow for larger tasks that need some design
