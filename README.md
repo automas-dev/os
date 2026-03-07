@@ -2,32 +2,8 @@
 
 Hobby i386 kernel / operating system.
 
-Project Structure
-
-```plaintext
-├── .github/          # CI build, lint, testing and release
-├── .vscode/          # VSCode editor config, build task and launch profile
-├── archlinux/        # i386 cross compiler install for archlinux
-├── cmake/            # Cmake utilities
-├── design/           # Design concepts and implementation references
-├── docs/             # MKDocs site generation
-├── .clang-format     # Formatter config
-├── CMakeLists.txt    # Project cmake
-├── install_cross.sh  # i386 cross compiler install for Ubuntu
-├── Makefile          # Build, test and emulator commands
-├── notes.md          # Active and planned work
-├── README.md         # Project readme
-├── src/              # OS source code
-│   ├── apps/           # User space programs
-│   ├── boot/           # Boot loader
-│   ├── cpu/            # CPU architecture specific code (i386)
-│   ├── ebus/           # Event bus
-│   ├── kernel/         # Loader & Kernel
-│   ├── libc/           # C Library
-│   ├── libk/           # Kernel Library
-│   └── util/           # Macros, types and address defs
-└── tests/            # OS tests
-```
+- [Active and planned work](notes.md)
+- [Design concepts and implementation references](design/)
 
 This project started by following the tutorials under
 [https://github.com/cfenollosa/os-tutorial](https://github.com/cfenollosa/os-tutorial)
