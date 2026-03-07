@@ -50,8 +50,8 @@ void vga_clear() {
 }
 
 void vga_put(int index, char c, unsigned char attr) {
-    // idk if this is too much
-    KLOG_TRACE("Put character 0x%X (%c) to index %d with attr 0x%X", c, c, index, attr);
+    // This is way to much
+    // KLOG_TRACE("Put character 0x%X (%c) to index %d with attr 0x%X", c, c, index, attr);
     index *= 2;
     __screen[index]     = c;
     __screen[index + 1] = attr;

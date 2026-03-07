@@ -6,10 +6,10 @@
 #include "cpu/isr.h"
 #include "defs.h"
 
-typedef int (*sys_call_handler_t)(uint16_t interrupt_no, void * args_data, registers_t * regs);
+typedef int (*sys_call_handler_t)(uint32_t call_id, void * args_data, registers_t * regs);
 
 void system_call_init(uint8_t isr_interrupt_no);
 
-void system_call_register(uint8_t family, sys_call_handler_t handler);
+void system_call_register(uint16_t family, sys_call_handler_t handler);
 
 #endif // SYSTEM_CALL_H

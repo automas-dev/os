@@ -11,18 +11,18 @@
 #undef SERVICE
 #define SERVICE "SYSCALL/IO"
 
-int sys_call_io_cb(uint16_t int_no, void * args_data, registers_t * regs) {
+int sys_call_io_cb(uint32_t call_id, void * args_data, registers_t * regs) {
     process_t * proc       = get_current_process();
     arr_t *     io_handles = &proc->io_handles;
 
-    KLOG_TRACE("Call from pid %u interrupt number 0x%X", proc->pid, int_no);
+    KLOG_TRACE("Call id 0x%X from pid %u", call_id, proc->pid);
 
-    switch (int_no) {
+    switch (call_id) {
         default: {
-            KLOG_WARNING("Invalid interrupt number 0x%X", int_no);
+            KLOG_WARNING("Invalid call id 0x%X", call_id);
             break;
         }
-        case SYS_INT_IO_OPEN: {
+        case SYS_CALL_IO_OPEN: {
             struct _args {
                 const char * path;
                 const char * mode;
@@ -40,7 +40,7 @@ int sys_call_io_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             return process_add_handle(proc, -1, 0, d);
         } break;
 
-            // case SYS_INT_IO_CLOSE: {
+            // case SYS_CALL_IO_CLOSE: {
             //     struct _args {
             //         int handle;
             //     } * args = (struct _args *)args_data;
@@ -60,7 +60,7 @@ int sys_call_io_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             //     return 0;
             // } break;
 
-        case SYS_INT_IO_READ: {
+        case SYS_CALL_IO_READ: {
             struct _args {
                 int    handle;
                 char * buff;
@@ -104,7 +104,7 @@ int sys_call_io_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             // return d->read_fn(d->data, args->buff, args->count, args->pos);
         } break;
 
-        case SYS_INT_IO_WRITE: {
+        case SYS_CALL_IO_WRITE: {
             struct _args {
                 int          handle;
                 const char * buff;
@@ -127,7 +127,7 @@ int sys_call_io_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             return d->write_fn(d->device_data, args->buff, args->count, args->pos);
         } break;
 
-        case SYS_INT_IO_SIZE: {
+        case SYS_CALL_IO_SIZE: {
             struct _args {
                 int          handle;
                 const char * buff;

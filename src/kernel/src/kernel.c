@@ -103,9 +103,9 @@ void kernel_init() {
 
 static void setup_system_calls() {
     system_call_init(IRQ16);
-    system_call_register(SYS_INT_FAMILY_IO, sys_call_io_cb);
-    system_call_register(SYS_INT_FAMILY_MEM, sys_call_mem_cb);
-    system_call_register(SYS_INT_FAMILY_PROC, sys_call_proc_cb);
+    system_call_register(SYS_CALL_FAMILY_IO, sys_call_io_cb);
+    system_call_register(SYS_CALL_FAMILY_MEM, sys_call_mem_cb);
+    system_call_register(SYS_CALL_FAMILY_PROC, sys_call_proc_cb);
 }
 
 int kernel_exec(const char * filename, size_t argc, char ** argv) {

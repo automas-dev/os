@@ -29,6 +29,7 @@ static arr_t __timers; // timer_t
 
 static void timer_callback(registers_t * regs) {
     __tick++;
+    // TODO  is this is way too much
     KLOG_TRACE("Timer callback, next tick is %u", __tick);
 
     for (int i = 0; i < arr_size(&__timers); i++) {

@@ -17,21 +17,21 @@
 #undef SERVICE
 #define SERVICE "SYSCALL/PROCESS"
 
-int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
+int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
     process_t * proc = get_current_process();
     int         res  = 0;
 
-    KLOG_TRACE("Call from pid %u interrupt number 0x%X", proc->pid, int_no);
+    KLOG_TRACE("Call id 0x%X from pid %u", call_id, proc->pid);
 
-    switch (int_no) {
+    switch (call_id) {
         default: {
-            KLOG_WARNING("Invalid interrupt number 0x%X", int_no);
+            KLOG_WARNING("Invalid call id 0x%X", call_id);
             break;
         }
 
             // TODO this isn't fully updated with task switching
 
-        case SYS_INT_PROC_EXIT: {
+        case SYS_CALL_PROC_EXIT: {
             KLOG_DEBUG("System call proc exit");
             struct _args {
                 uint8_t code;
@@ -51,7 +51,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
 
             // TODO this isn't fully updated with task switching
 
-        case SYS_INT_PROC_ABORT: {
+        case SYS_CALL_PROC_ABORT: {
             KLOG_DEBUG("System call proc abort");
             struct _args {
                 uint8_t      code;
@@ -72,7 +72,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             KPANIC("Unexpected return from kernel_switch_task");
         } break;
 
-        case SYS_INT_PROC_PANIC: {
+        case SYS_CALL_PROC_PANIC: {
             KLOG_DEBUG("System call proc panic");
             struct _args {
                 const char * msg;
@@ -98,7 +98,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             }
         } break;
 
-        case SYS_INT_PROC_REG_SIG: {
+        case SYS_CALL_PROC_REG_SIG: {
             KLOG_DEBUG("System call proc sig");
             struct _args {
                 signals_master_cb_t cb;
@@ -106,7 +106,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             tmp_register_signals_cb(args->cb);
         } break;
 
-        case SYS_INT_PROC_GETPID: {
+        case SYS_CALL_PROC_GETPID: {
             // KLOG_DEBUG("System call proc getpid");
             process_t * p = get_current_process();
             if (!p) {
@@ -115,7 +115,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             return p->pid;
         } break;
 
-        case SYS_INT_PROC_QUEUE_EVENT: {
+        case SYS_CALL_PROC_QUEUE_EVENT: {
             // KLOG_DEBUG("System call proc queue event");
             struct _args {
                 ebus_event_t * event;
@@ -131,7 +131,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             kernel_queue_event(args->event);
         } break;
 
-        case SYS_INT_PROC_YIELD: {
+        case SYS_CALL_PROC_YIELD: {
             // KLOG_DEBUG("System call proc yield");
             struct _args {
                 int            filter;
@@ -170,7 +170,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             return has_event;
         } break;
 
-        case SYS_INT_PROC_EXEC: {
+        case SYS_CALL_PROC_EXEC: {
             struct _args {
                 const char * filename;
                 size_t       argc;
@@ -181,7 +181,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             return kernel_exec(args->filename, args->argc, args->argv);
         } break;
 
-        case SYS_INT_PROC_SET_FOREGROUND: {
+        case SYS_CALL_PROC_SET_FOREGROUND: {
             struct _args {
                 int pid;
             } * args = (struct _args *)args_data;
