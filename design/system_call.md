@@ -92,7 +92,7 @@ int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
             KLOG_WARNING("Invalid call id 0x%X", call_id);
             break;
         }
-        
+
         // Logic for call id
         case SYS_CALL_MEM_MALLOC: {
             // va args from send_call or send_call_noret

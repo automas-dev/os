@@ -15,7 +15,7 @@ the reload value, reading the current count, etc.
 
 Each channel counts down, starting at the reload value, and when they reach 0
 the output is switched (low -> high or high -> low). In most cases the channel
-is then set to the reload value. 
+is then set to the reload value.
 
 TODO in what cases is the reload value not used when a channel reaches 0?
 
