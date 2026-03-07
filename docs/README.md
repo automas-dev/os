@@ -5,5 +5,5 @@ generated from markdown files in the project root along with design docs.
 
 - [Project Readme](../README.md)
 - [Notes & Work Planning](../notes.md)
-- [Loader Notes](../loader_ntoes.md)
+- [Loader Notes](../loader_notes.md)
 - [Design Docs](../design/)
