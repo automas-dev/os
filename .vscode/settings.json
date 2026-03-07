@@ -1,4 +1,7 @@
 {
+    "files.associations": {
+        ".clang-format": "yaml"
+    },
     "coverage-gutters.coverageReportFileName": "tests/build/os_test_coverage/index.html",
     "coverage-gutters.coverageBaseDir": "tests/build"
 }
