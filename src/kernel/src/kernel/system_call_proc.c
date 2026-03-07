@@ -19,7 +19,6 @@
 
 int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
     process_t * proc = get_current_process();
-    int         res  = 0;
 
     KLOG_TRACE("Call id 0x%X from pid %u", call_id, proc->pid);
 
