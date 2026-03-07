@@ -1,5 +1,4 @@
-
-# Structure
+# Filesystem
 
 - Blocks are 64 bytes each
 - Block groups have 256 blocks (max addressable with 8 bits)
