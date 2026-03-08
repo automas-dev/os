@@ -30,41 +30,66 @@ typedef struct _handle {
 } handle_t;
 
 enum PROCESS_STATE {
+    /// Process struct is created but nothing is loaded
     PROCESS_STATE_STARTING = 0,
+    /// Resources are being allocated for the process
     PROCESS_STATE_LOADING,
+    /// Ready to start but not yet started
     PROCESS_STATE_LOADED,
+    /// Execution suspended, no events waited for
     PROCESS_STATE_SUSPENDED,
+    /// Execution suspended, waiting for event
     PROCESS_STATE_WAITING,
-    // PROCESS_STATE_WAITING_STDIN,
+    /// This is the curent active process running
     PROCESS_STATE_RUNNING,
+    /// Execution has finished, resources have not been freed
     PROCESS_STATE_DEAD,
+    /// Kernel error, resources have not been freed. User errors are noted in status_code
     PROCESS_STATE_ERROR,
 };
 
 typedef struct _process {
+    /// Page directory physical address
     uint32_t cr3;
+    /// Process stack pointer
     uint32_t esp;
+    /// Kernel stack pointer?
     uint32_t esp0;
 
+    /// Process id
     uint32_t pid;
+    /// Virtual address of the next page to be allocated for the heap
     uint32_t next_heap_page;
+    /// Number of pages allocated to the stack
     uint32_t stack_page_count;
 
     // TODO heap & stack limits
 
-    char *  filepath;
-    int     argc;
+    /// String path to executable file on filesystem
+    char * filepath;
+    /// Number of arguments, at least 1 (for filename)
+    int argc;
+    /// Arguments to process, first arg is filename
     char ** argv;
-    int     status_code;
+    /// Exit code after execution
+    int status_code;
 
+    /// Optional callback address for receiving signals from kernel
     signals_master_cb_t signals_callback;
-    arr_t               io_handles; // array<handle_t>
-    ebus_t              event_queue;
-    memory_t            memory;
+    /// array<handle_t> of open io handles, access to io methods, state and driver
+    arr_t io_handles; // array<handle_t>
+    /// event bus for this process
+    ebus_t event_queue;
+    /// Memory allocation from the kernel (for malloc in kernel instead of libc)
+    memory_t memory;
 
-    uint32_t           filter_event;
+    /// Event type being waited on by process if state is PROCESS_STATE_WAITING
+    uint32_t filter_event;
+    /// Current state of process (eg. loading, running, waiting, dead, etc.)
     enum PROCESS_STATE state;
 
+    /// Array of circular buffers used to store data being sent to each handle.
+    /// If a buffee is filled it ... (tbd, drops input or pops oldest?)
     io_buffer_t * io_buffer;
 } process_t;
 
