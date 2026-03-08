@@ -273,7 +273,7 @@ int process_resume(process_t * proc, const ebus_event_t * event) {
         return -1;
     }
     if (proc->state < PROCESS_STATE_LOADED) {
-        KLOG_ERROR("Process not yet started");
+        KLOG_ERROR("Process not yet loaded");
         return -1;
     }
     if (proc->state >= PROCESS_STATE_DEAD) {
