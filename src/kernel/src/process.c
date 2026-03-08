@@ -285,7 +285,14 @@ int process_resume(process_t * proc, const ebus_event_t * event) {
     if (!active_before) {
         KPANIC("Failed to find active task");
     }
-    active_before->state = PROCESS_STATE_SUSPENDED;
+
+    if (active_before->state == PROCESS_STATE_RUNNING) {
+        KLOG_TRACE("Setting state of active process %u to suspended", active_before->pid);
+        active_before->state = PROCESS_STATE_SUSPENDED;
+    }
+    else {
+        KLOG_TRACE("Skip updating active process %u status because it's not running, got %u", active_before->pid, active_before->state);
+    }
 
     KLOG_TRACE("Setting process state for pid %u to SUSPENDED", active_before->pid);
 
