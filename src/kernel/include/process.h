@@ -63,6 +63,9 @@ typedef struct _process {
     /// Number of pages allocated to the stack
     uint32_t stack_page_count;
 
+    /// PID of parent process (0 is no parent)
+    uint32_t parent_pid;
+
     // TODO heap & stack limits
 
     /// String path to executable file on filesystem

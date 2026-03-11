@@ -49,23 +49,9 @@ The TSS entry will need to be updated with the new process' esp0.
 TODO : the ESP0 might be better stored in the kernel instead of the process if
 the process page dir does not include a stack for the kernel (eg. isr stack).
 
+TODO : parent pid
+
 # Old
-
-## Process Struct
-
-| Start | Size | Description              |
-| ----- | ---- | ------------------------ |
-| 0     | 4    | Process Id (PID)         |
-| 4     | 4    | Next Heap Page           |
-| 8     | 4    | Stack Page Count         |
-| 16    | 4    | Page Directory (CR3)     |
-| 12    | 4    | Stack Pointer (ESP)      |
-| 20    | 4    | ISR Stack Pointer (ESP0) |
-| 24    | 4    | Signal Callback Function |
-| 28    | 4    | Pointer to next Process  |
-
-- `Size` is in bytes.
-- PID 0 is reserved for the kernel, the first proc will be pid 1
 
 ## Memory
 

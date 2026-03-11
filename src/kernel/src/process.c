@@ -77,6 +77,8 @@ int process_create(process_t * proc) {
     proc->next_heap_page   = ADDR2PAGE(VADDR_USER_MEM);
     proc->stack_page_count = 1;
 
+    // TODO parent process pid
+
     if (paging_temp_free(proc->cr3)) {
         KLOG_ERROR("Failed to free temporary page");
         ram_page_free(proc->cr3);
