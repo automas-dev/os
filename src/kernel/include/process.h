@@ -94,6 +94,9 @@ typedef struct _process {
     /// Array of circular buffers used to store data being sent to each handle.
     /// If a buffee is filled it ... (tbd, drops input or pops oldest?)
     io_buffer_t * io_buffer;
+
+    struct _process * next;
+    struct _process * prev;
 } process_t;
 
 /**
@@ -181,6 +184,9 @@ int process_load_heap(process_t * proc, const char * buff, size_t size);
 int process_add_handle(process_t * proc, int id, int flags, io_device_t * device);
 
 handle_t * process_get_handle(process_t * proc, int id);
+
+int process_link(process_t * proc, process_t * next);
+int process_unlink(process_t * proc);
 
 /**
  * @brief Set the next PID value. All future PID's will be incremented from

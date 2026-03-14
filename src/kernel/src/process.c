@@ -557,6 +557,48 @@ static int open_stdio_handles(process_t * proc) {
     return 0;
 }
 
+int process_link(process_t * proc, process_t * next) {
+    if (!proc) {
+        KLOG_ERROR("Process struct is null pointer");
+        return -1;
+    }
+    if (!next) {
+        KLOG_ERROR("Next process struct is null pointer");
+        return -1;
+    }
+    if (proc->next && proc->next->prev != proc) {
+        KLOG_ERROR("proc has a bad link, next does not link back to proc");
+        return -1;
+    }
+
+    next->prev = proc;
+    next->next = proc->next;
+
+    proc->next->prev = next;
+    proc->next       = next;
+
+    return 0;
+}
+
+int process_unlink(process_t * proc) {
+    if (!proc) {
+        KLOG_ERROR("Process struct is null pointer");
+        return -1;
+    }
+    if (!proc->prev || !proc->next) {
+        KLOG_ERROR("Process struct is not linked");
+        return -1;
+    }
+
+    proc->prev->next = proc->next;
+    proc->next->prev = proc->prev;
+
+    proc->next = 0;
+    proc->prev = 0;
+
+    return 0;
+}
+
 static uint32_t __pid;
 
 static uint32_t next_pid() {

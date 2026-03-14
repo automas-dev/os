@@ -10,8 +10,6 @@
 #undef SERVICE
 #define SERVICE "KERNEL/PROCESS_MANAGER"
 
-static int pid_arr_index(arr_t * arr, int pid);
-
 int pm_create(proc_man_t * pm) {
     if (!pm) {
         KLOG_ERROR("Process manager struct is a null pointer");
@@ -20,11 +18,6 @@ int pm_create(proc_man_t * pm) {
 
     if (!kmemset(pm, 0, sizeof(proc_man_t))) {
         KLOG_ERROR("Failed to clear process manager struct");
-        return -1;
-    }
-
-    if (arr_create(&pm->task_list, 4, sizeof(process_t *))) {
-        KLOG_ERROR("Failed to create process manager task list array");
         return -1;
     }
 
@@ -40,21 +33,32 @@ process_t * pm_find_pid(proc_man_t * pm, int pid) {
         KLOG_WARNING("Find takes a pid >= 0, got %d", pid);
         return 0;
     }
-
-    int i = pid_arr_index(&pm->task_list, pid);
-    if (i < 0) {
-        // TODO should this be warning or debug / trace?
-        KLOG_WARNING("Failed to find process pid %d", pid);
+    if (!pm->first_task) {
+        KLOG_WARNING("No processes exist in process manager, can't find pid %d", pid);
         return 0;
     }
 
-    process_t * proc;
-    if (arr_get(&pm->task_list, i, &proc)) {
-        KLOG_ERROR("Failed to get process for index %d", i);
-        return 0;
+    if (pm->foreground_task && pm->foreground_task->pid == pid) {
+        KLOG_TRACE("Returning foreground task for pid %u", pid);
+        return pm->foreground_task;
     }
 
-    return proc;
+    process_t * proc = pm->first_task;
+    if (proc->pid == pid) {
+        KLOG_TRACE("Returning first task for pid %u", pid);
+        return proc;
+    }
+    proc = proc->next;
+
+    while (proc != pm->first_task) {
+        if (proc->pid == pid) {
+            return proc;
+        }
+
+        proc = proc->next;
+    }
+
+    return 0;
 }
 
 int pm_add_proc(proc_man_t * pm, process_t * proc) {
@@ -67,12 +71,27 @@ int pm_add_proc(proc_man_t * pm, process_t * proc) {
         return -1;
     }
 
-    if (arr_insert(&pm->task_list, arr_size(&pm->task_list), &proc)) {
-        KLOG_ERROR("Failed to insert process pid %u into process manager", proc->pid);
-        return -1;
+    if (!pm->first_task) {
+        KLOG_INFO("Assigning first process to be %u", proc->pid);
+        pm->first_task      = proc;
+        pm->foreground_task = proc;
+
+        // Link to self
+        proc->next = proc;
+        proc->prev = proc;
+        return 0;
+    }
+    else if (pm->first_task->next == pm->first_task) {
+        KLOG_DEBUG("Assigning second process to be %u", proc->pid);
+        pm->first_task->next = proc;
+        pm->first_task->prev = proc;
+
+        proc->next = pm->first_task;
+        proc->prev = pm->first_task;
     }
 
-    return 0;
+    KLOG_DEBUG("Linking last task %u to new process %u", proc->prev->pid, proc->pid);
+    return process_link(proc->prev, proc);
 }
 
 int pm_remove_proc(proc_man_t * pm, int pid) {
@@ -90,13 +109,23 @@ int pm_remove_proc(proc_man_t * pm, int pid) {
         return -1;
     }
 
-    int i = pid_arr_index(&pm->task_list, pid);
-    if (i < 0 || arr_remove(&pm->task_list, i, 0)) {
-        KLOG_ERROR("Failed to remove process from task list array");
+    process_t * proc = pm_find_pid(pm, pid);
+    if (!proc) {
+        KLOG_ERROR("Failed to find process for pid %u", pid);
         return -1;
     }
 
-    return 0;
+    if (proc == pm->first_task) {
+        KLOG_ERROR("Cannot remove first process");
+        return -1;
+    }
+
+    if (proc == pm->foreground_task) {
+        KLOG_ERROR("Cannot remove foreground process");
+        return -1;
+    }
+
+    return process_unlink(proc);
 }
 
 int pm_set_foreground_proc(proc_man_t * pm, int pid) {
@@ -146,81 +175,46 @@ process_t * pm_get_next(proc_man_t * pm) {
         return 0;
     }
 
-    int i = pid_arr_index(&pm->task_list, get_active_task()->pid);
-    if (i < 0) {
-        KLOG_ERROR("Failed to fin index of current task");
-        return 0;
-    }
+    process_t * proc = pm->foreground_task->next;
 
-    int start_i = i++;
+    while (proc != pm->foreground_task) {
+        if (PROCESS_STATE_LOADED <= proc->state <= PROCESS_STATE_DEAD) {
+            uint32_t filter_event = 0;
+            if (ebus_queue_size(&proc->event_queue) > 0) {
+                ebus_event_t event;
+                if (ebus_peek(&proc->event_queue, &event)) {
+                    filter_event = event.event_id;
+                    KLOG_TRACE("Process %u has ready event of type %u", proc->pid, event.event_id);
+                }
+                else {
+                    KLOG_ERROR("Failed to peek at process event queue which has length %u", ebus_queue_size(&proc->event_queue));
+                }
+            }
 
-    while (i != start_i) {
-        if (i >= arr_size(&pm->task_list)) {
-            i = 0;
-        }
-
-        process_t * proc;
-        if (arr_get(&pm->task_list, i, &proc)) {
-            KPANIC("Failed to get proc");
-            return 0;
-        }
-
-        KLOG_TRACE("PID %u is state %x", proc->pid, proc->state);
-
-        // if (proc->state == PROCESS_STATE_WAITING_STDIN) {
-        //     KLOG_DEBUG("Process waiting for stdin");
-        //     if (io_buffer_length(proc->io_buffer) > 0) {
-        //         KLOG_DEBUG("Process is waiting for stdin and has %u ready", io_buffer_length(proc->io_buffer));
-        //         return proc;
-        //     }
-        // }
-
-        if (proc->state == PROCESS_STATE_WAITING && ebus_queue_size(&proc->event_queue) > 0) {
-            ebus_event_t event;
-            if (ebus_peek(&proc->event_queue, &event) > 0) {
-                proc->state = PROCESS_STATE_SUSPENDED;
+            if (!proc->filter_event || proc->filter_event == filter_event) {
+                // TODO need to pop event from queue, then remove this if block
+                if (filter_event) {
+                    KLOG_WARNING("YOU NEED TO POP EBUS EVENT %u", filter_event);
+                }
+                return proc;
+            }
+            else {
+                KLOG_TRACE("Process with pid %u does not match filter event %u, waiting for %u", proc->pid, filter_event, proc->filter_event);
             }
         }
-
-        if (proc->state == PROCESS_STATE_LOADED || proc->state == PROCESS_STATE_SUSPENDED || proc->state == PROCESS_STATE_RUNNING) {
-            return proc;
+        else {
+            KLOG_TRACE("Process with pid %u is not alive", proc->pid);
         }
 
-        i++;
+        proc = proc->next;
+    };
+
+    if (PROCESS_STATE_LOADED <= proc->state <= PROCESS_STATE_DEAD) {
+        KLOG_TRACE("Next process is the foreground process with pid %u", proc->pid);
+        return proc;
     }
 
-    process_t * active = get_active_task();
-    if (PROCESS_STATE_LOADED <= active->state <= PROCESS_STATE_DEAD) {
-        return active;
-    }
-
-    KPANIC("Process Loop!");
-
-    return 0;
-}
-
-static int pid_arr_index(arr_t * arr, int pid) {
-    if (!arr) {
-        KLOG_ERROR("Array is a null pointer");
-        return -1;
-    }
-    if (pid < 0) {
-        KLOG_WARNING("PID array find index takes a pid >= 0, got %d", pid);
-        return -1;
-    }
-
-    for (int i = 0; i < arr_size(arr); i++) {
-        process_t * proc;
-        arr_get(arr, i, &proc);
-
-        if (proc->pid == pid) {
-            return i;
-        }
-    }
-
-    KLOG_ERROR("Failed to find index of pid %u", pid);
-
-    return -1;
+    KPANIC("Could not find process to resume");
 }
 
 int pm_push_event(proc_man_t * pm, ebus_event_t * event) {
@@ -233,51 +227,29 @@ int pm_push_event(proc_man_t * pm, ebus_event_t * event) {
         return -1;
     }
 
-    if (event->event_id = EBUS_EVENT_KEY) {
-        process_t * foreground = pm->foreground_task;
-
-        KLOG_TRACE("Foreground is %u", foreground->pid);
-
-        // if (event->key.event == KEY_EVENT_PRESS) {
-        //     if (io_buffer_push(foreground->io_buffer, event->key.c)) {
-        //         KLOG_WARNING("Failed to push key into io buffer");
-        //         return -1;
-        //     }
-        //     KLOG_TRACE("IO buffer is size %u", io_buffer_length(foreground->io_buffer));
-        // }
-
-        if (ebus_push(&foreground->event_queue, event)) {
-            KLOG_ERROR("Failed to push event to ebus for foreground process");
+    if (pm->first_task->filter_event == event->event_id) {
+        if (ebus_push(&pm->first_task->event_queue, event)) {
+            KLOG_ERROR("Failed to push event of type %u to first task %u", event->event_id, pm->first_task->pid);
             return -1;
         }
     }
-    else {
-        process_t * active = get_active_task();
 
-        for (size_t i = 0; i < arr_size(&pm->task_list); i++) {
-            process_t * proc;
-            arr_get(&pm->task_list, i, &proc);
+    process_t * proc = pm->first_task->next;
 
-            if (proc->pid == active->pid) {
-                continue;
+    while (proc != pm->first_task) {
+        if (proc->filter_event == event->event_id) {
+            if (ebus_push(&proc->event_queue, event)) {
+                KLOG_ERROR("Failed to push event of type %u to process %u", event->event_id, proc->pid);
+                return -1;
             }
 
-            if (proc->state <= PROCESS_STATE_LOADED || proc->state >= PROCESS_STATE_DEAD) {
-                continue;
-            }
-
-            if (proc->filter_event == event->event_id) {
-                KLOG_DEBUG("Process %u was waiting for %u and got it", proc->pid, proc->filter_event);
-                if (ebus_push(&proc->event_queue, event)) {
-                    KLOG_ERROR("Failed to push event to ebus for process %u", proc->pid);
-                    return -1;
-                }
-
-                if (proc->state == PROCESS_STATE_WAITING) {
-                    proc->state = PROCESS_STATE_SUSPENDED;
-                }
+            if (proc->state == PROCESS_STATE_WAITING) {
+                KLOG_TRACE("Setting process state to suspended for pid %u", proc->pid);
+                proc->state = PROCESS_STATE_SUSPENDED;
             }
         }
+
+        proc = proc->next;
     }
 
     return 0;

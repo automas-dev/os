@@ -5,11 +5,10 @@
 #include <stdint.h>
 
 #include "ebus.h"
-#include "libc/datastruct/array.h"
 #include "process.h"
 
 typedef struct _proc_man {
-    arr_t       task_list; // process_t *
+    process_t * first_task;
     process_t * foreground_task;
 } proc_man_t;
 
