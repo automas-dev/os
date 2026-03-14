@@ -82,12 +82,14 @@ typedef struct _process {
     /// array<handle_t> of open io handles, access to io methods, state and driver
     arr_t io_handles; // array<handle_t>
     /// event bus for this process
-    ebus_t event_queue;
+    // ebus_t event_queue;
     /// Memory allocation from the kernel (for malloc in kernel instead of libc)
     memory_t memory;
 
     /// Event type being waited on by process if state is PROCESS_STATE_WAITING
     uint32_t filter_event;
+    /// Event matching filter_event if one is ready 
+    ebus_event_t next_event;
     /// Current state of process (eg. loading, running, waiting, dead, etc.)
     enum PROCESS_STATE state;
 

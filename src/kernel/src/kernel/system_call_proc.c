@@ -138,21 +138,27 @@ int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
             } * args = (struct _args *)args_data;
 
             // TODO clear iret from stack?
+            kmemset(&proc->next_event, 0, sizeof(ebus_event_t));
             proc->filter_event = args->filter;
             proc->state        = (args->filter ? PROCESS_STATE_WAITING : PROCESS_STATE_SUSPENDED);
             // process_yield(proc, regs->esp, regs->eip, args->filter);
             enable_interrupts();
             process_t * next      = pm_get_next(kernel_get_proc_man());
             int         has_event = 0;
-            if (ebus_queue_size(&next->event_queue) > 0) {
-                // KLOGS_DEBUG("SC_PROC", "Got %u events", ebus_queue_size(&next->event_queue));
-                if (ebus_pop(&next->event_queue, args->event_out)) {
-                    KPANIC("Yea, that didn't work");
+            if (next->filter_event) {
+                if (next->next_event.event_id != next->filter_event) {
+                    KPANIC("Tried to resume process but the event does not match filter");
                 }
-                has_event = 1;
+                if (args->event_out) {
+                    // TODO log
+                    kmemcpy(&next->next_event, args->event_out, sizeof(ebus_event_t));
+                }
+                next->filter_event        = 0;
+                next->next_event.event_id = 0;
+                has_event                 = 1;
             }
             // KLOGS_DEBUG("SC_PROC", "Switching from process %u to %u", proc->pid, next->pid);
-            if (pm_resume_process(kernel_get_proc_man(), next->pid, 0)) {
+            if (pm_resume_process(kernel_get_proc_man(), next->pid)) {
                 KPANIC("Failed to resume process");
             }
 

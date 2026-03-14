@@ -112,7 +112,7 @@ int command_exec(uint8_t * buff, const char * filepath, size_t size, size_t argc
         return -1;
     }
 
-    if (pm_resume_process(kernel_get_proc_man(), proc->pid, 0)) {
+    if (pm_resume_process(kernel_get_proc_man(), proc->pid)) {
         KLOG_ERROR("Failed to resume process %u", proc->pid);
         if (process_free(proc)) {
             KPANIC("Failed to free process while handling resume error");

@@ -149,7 +149,7 @@ int pm_set_foreground_proc(proc_man_t * pm, int pid) {
     return 0;
 }
 
-int pm_resume_process(proc_man_t * pm, int pid, ebus_event_t * event) {
+int pm_resume_process(proc_man_t * pm, int pid) {
     if (!pm) {
         KLOG_ERROR("Process manager struct is a null pointer");
         return -1;
@@ -166,7 +166,14 @@ int pm_resume_process(proc_man_t * pm, int pid, ebus_event_t * event) {
         return -1;
     }
 
-    return process_resume(proc, event);
+    if (proc->filter_event > 0) {
+        // TODO assert next_event has an event of the correct type
+        // TODO push to process next_event instead of event_queue
+        // TODO clear next_event before resuming process
+        // TODO does process state need updating? - probably not
+    }
+
+    return process_resume(proc, 0);
 }
 
 process_t * pm_get_next(proc_man_t * pm) {
@@ -179,28 +186,19 @@ process_t * pm_get_next(proc_man_t * pm) {
 
     while (proc != pm->foreground_task) {
         if (PROCESS_STATE_LOADED <= proc->state <= PROCESS_STATE_DEAD) {
-            uint32_t filter_event = 0;
-            if (ebus_queue_size(&proc->event_queue) > 0) {
-                ebus_event_t event;
-                if (ebus_peek(&proc->event_queue, &event)) {
-                    filter_event = event.event_id;
-                    KLOG_TRACE("Process %u has ready event of type %u", proc->pid, event.event_id);
-                }
-                else {
-                    KLOG_ERROR("Failed to peek at process event queue which has length %u", ebus_queue_size(&proc->event_queue));
-                }
-            }
-
-            if (!proc->filter_event || proc->filter_event == filter_event) {
-                // TODO need to pop event from queue, then remove this if block
-                if (filter_event) {
-                    KLOG_WARNING("YOU NEED TO POP EBUS EVENT %u", filter_event);
-                }
+            if (proc->filter_event == proc->next_event.event_id) {
                 return proc;
             }
-            else {
-                KLOG_TRACE("Process with pid %u does not match filter event %u, waiting for %u", proc->pid, filter_event, proc->filter_event);
-            }
+            // if (!proc->filter_event || proc->filter_event == filter_event) {
+            //     // TODO need to pop event from queue, then remove this if block
+            //     if (filter_event) {
+            //         KLOG_WARNING("YOU NEED TO POP EBUS EVENT %u", filter_event);
+            //     }
+            //     return proc;
+            // }
+            // else {
+            //     KLOG_TRACE("Process with pid %u does not match filter event %u, waiting for %u", proc->pid, filter_event, proc->filter_event);
+            // }
         }
         else {
             KLOG_TRACE("Process with pid %u is not alive", proc->pid);
@@ -226,22 +224,26 @@ int pm_push_event(proc_man_t * pm, ebus_event_t * event) {
         KLOG_ERROR("Event is a null pointer");
         return -1;
     }
+    if (!event->event_id) {
+        KLOG_ERROR("Event id must be non-zero");
+        return -1;
+    }
 
     if (pm->first_task->filter_event == event->event_id) {
-        if (ebus_push(&pm->first_task->event_queue, event)) {
-            KLOG_ERROR("Failed to push event of type %u to first task %u", event->event_id, pm->first_task->pid);
-            return -1;
+        if (!pm->first_task->next_event.event_id) {
+            KLOG_WARNING("Replacing event %u with %u for process %u", pm->first_task->next_event.event_id, event->event_id, pm->first_task->pid);
         }
+        kmemcpy(event, &pm->first_task->next_event, sizeof(ebus_event_t));
     }
 
     process_t * proc = pm->first_task->next;
 
     while (proc != pm->first_task) {
         if (proc->filter_event == event->event_id) {
-            if (ebus_push(&proc->event_queue, event)) {
-                KLOG_ERROR("Failed to push event of type %u to process %u", event->event_id, proc->pid);
-                return -1;
+            if (!proc->next_event.event_id) {
+                KLOG_WARNING("Replacing event %u with %u for process %u", proc->next_event.event_id, event->event_id, proc->pid);
             }
+            kmemcpy(event, &proc->next_event, sizeof(ebus_event_t));
 
             if (proc->state == PROCESS_STATE_WAITING) {
                 KLOG_TRACE("Setting process state to suspended for pid %u", proc->pid);

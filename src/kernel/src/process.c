@@ -91,16 +91,16 @@ int process_create(process_t * proc) {
         return -1;
     }
 
-    if (ebus_create(&proc->event_queue, 4096)) {
-        KLOG_ERROR("Failed to create ebus for process event queue");
-        arr_free(&proc->io_handles);
-        ram_page_free(proc->cr3);
-        return -1;
-    }
+    // if (ebus_create(&proc->event_queue, 4096)) {
+    //     KLOG_ERROR("Failed to create ebus for process event queue");
+    //     arr_free(&proc->io_handles);
+    //     ram_page_free(proc->cr3);
+    //     return -1;
+    // }
 
     if (memory_init(&proc->memory, kernel_alloc_page)) {
         KLOG_ERROR("Failed to initialize malloc for process");
-        ebus_free(&proc->event_queue);
+        // ebus_free(&proc->event_queue);
         arr_free(&proc->io_handles);
         ram_page_free(proc->cr3);
         return -1;
@@ -109,7 +109,7 @@ int process_create(process_t * proc) {
     proc->io_buffer = io_buffer_create(IO_BUFFER_SIZE);
     if (!proc->io_buffer) {
         KLOG_ERROR("Failed to create io buffer");
-        ebus_free(&proc->event_queue);
+        // ebus_free(&proc->event_queue);
         arr_free(&proc->io_handles);
         ram_page_free(proc->cr3);
         return -1;
@@ -117,7 +117,7 @@ int process_create(process_t * proc) {
 
     if (open_stdio_handles(proc)) {
         KLOG_ERROR("Failed to open stdio handles");
-        ebus_free(&proc->event_queue);
+        // ebus_free(&proc->event_queue);
         arr_free(&proc->io_handles);
         ram_page_free(proc->cr3);
         io_buffer_free(proc->io_buffer);
@@ -133,7 +133,7 @@ int process_free(process_t * proc) {
         return -1;
     }
 
-    ebus_free(&proc->event_queue);
+    // ebus_free(&proc->event_queue);
     arr_free(&proc->io_handles);
 
     mmu_dir_t * dir = paging_temp_map(proc->cr3);
