@@ -33,7 +33,9 @@ int _sys_proc_getpid(void);
 
 void _sys_register_signals(void * callback);
 void _sys_queue_event(ebus_event_t * event);
-int  _sys_yield(int filter, ebus_event_t * event_out);
+void _sys_yield(void);
 int  _sys_proc_set_foreground(int pid);
+
+int _sys_event_pull(int filter, ebus_event_t * event_out);
 
 #endif // LIBK_SYS_CALL_H

@@ -70,8 +70,8 @@ void _sys_queue_event(ebus_event_t * event) {
     send_call(SYS_CALL_PROC_QUEUE_EVENT, event);
 }
 
-int _sys_yield(int filter, ebus_event_t * event_out) {
-    return send_call(SYS_CALL_PROC_YIELD, filter, event_out);
+void _sys_yield() {
+    send_call(SYS_CALL_PROC_YIELD);
 }
 
 int _sys_proc_exec(const char * filename, int argc, char ** argv) {
@@ -80,4 +80,8 @@ int _sys_proc_exec(const char * filename, int argc, char ** argv) {
 
 int _sys_proc_set_foreground(int pid) {
     return send_call(SYS_CALL_PROC_SET_FOREGROUND, pid);
+}
+
+int _sys_event_pull(int filter, ebus_event_t * event_out) {
+    return send_call(SYS_CALL_EVENT_PULL);
 }

@@ -87,8 +87,8 @@ typedef struct _process {
     memory_t memory;
 
     /// Event type being waited on by process if state is PROCESS_STATE_WAITING
-    uint32_t filter_event;
-    /// Event matching filter_event if one is ready 
+    ebus_event_t filter_event;
+    /// Event matching filter_event if one is ready
     ebus_event_t next_event;
     /// Current state of process (eg. loading, running, waiting, dead, etc.)
     enum PROCESS_STATE state;
