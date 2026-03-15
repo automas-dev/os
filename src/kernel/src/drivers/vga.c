@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "DRIVER/VGA"
+
 #include "drivers/vga.h"
 
 #include "cpu/ports.h"
@@ -6,9 +8,6 @@
 
 // WARNING vga driver was previously used in logging, so be careful using it for
 // log outputs.
-
-#undef SERVICE
-#define SERVICE "DRIVER/VGA"
 
 #define REG_SCREEN_CTRL 0x3d4
 #define REG_SCREEN_DATA 0x3d5

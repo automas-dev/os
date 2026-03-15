@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "KERNEL/PROCESS"
+
 #include "process.h"
 
 #include "cpu/mmu.h"
@@ -10,9 +12,6 @@
 #include "libc/string.h"
 #include "libk/sys_call.h"
 #include "paging.h"
-
-#undef SERVICE
-#define SERVICE "KERNEL/PROCESS"
 
 static int open_stdio_handles(process_t * proc);
 

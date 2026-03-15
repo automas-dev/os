@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "DRIVER/TAR"
+
 #include "drivers/tar.h"
 
 #include <stdint.h>
@@ -8,9 +10,6 @@
 #include "libc/proc.h"
 #include "libc/stdio.h"
 #include "libc/string.h"
-
-#undef SERVICE
-#define SERVICE "DRIVER/TAR"
 
 typedef struct {
     char filename[100];

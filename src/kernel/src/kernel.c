@@ -3,6 +3,7 @@
  *
  * Documentation moved to design/boot_stages.md
  */
+#define KLOG_SERVICE "KERNEL"
 
 #include "kernel.h"
 
@@ -23,9 +24,6 @@
 #include "libc/stdio.h"
 #include "libc/string.h"
 #include "libk/defs.h"
-
-#undef SERVICE
-#define SERVICE "KERNEL"
 
 static kernel_t __kernel;
 

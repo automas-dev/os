@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "SYSCALL"
+
 #include "system_call.h"
 
 #include "cpu/isr.h"
@@ -10,9 +12,6 @@
 #include "libc/string.h"
 #include "libk/defs.h"
 #include "process.h"
-
-#undef SERVICE
-#define SERVICE "SYSCALL"
 
 #define MAX_CALLBACKS 0x100
 static sys_call_handler_t __callbacks[MAX_CALLBACKS];

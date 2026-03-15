@@ -1,3 +1,4 @@
+#define KLOG_SERVICE "KERNEL/TIME"
 #include "kernel/time.h"
 
 #include "cpu/isr.h"
@@ -8,9 +9,6 @@
 #include "libc/datastruct/array.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
-
-#undef SERVICE
-#define SERVICE "KERNEL/TIME"
 
 // https://wiki.osdev.org/PIT
 

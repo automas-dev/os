@@ -1,11 +1,10 @@
+#define KLOG_SERVICE "DRIVER/RAM"
+
 #include "drivers/ram.h"
 
 #include "cpu/mmu.h"
 #include "kernel/logs.h"
 #include "libc/string.h"
-
-#undef SERVICE
-#define SERVICE "DRIVER/RAM"
 
 #define REGION_MAX_PAGE_COUNT 0x8000
 #define REGION_MAX_SIZE       (REGION_MAX_PAGE_COUNT * PAGE_SIZE)

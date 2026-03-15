@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "SYSCALL/PROCESS"
+
 #include "kernel/system_call_proc.h"
 
 #include <stddef.h>
@@ -13,9 +15,6 @@
 #include "libc/string.h"
 #include "libk/defs.h"
 #include "process.h"
-
-#undef SERVICE
-#define SERVICE "SYSCALL/PROCESS"
 
 int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
     process_t * proc = get_current_process();
@@ -131,48 +130,15 @@ int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
         } break;
 
         case SYS_CALL_PROC_YIELD: {
-            // KLOG_DEBUG("System call proc yield");
-            struct _args {
-                int            filter;
-                ebus_event_t * event_out;
-            } * args = (struct _args *)args_data;
+            proc->filter_event.event_id = 0;
+            proc->next_event.event_id   = 0;
+            proc->state                 = PROCESS_STATE_SUSPENDED;
 
-            // TODO clear iret from stack?
-            kmemset(&proc->next_event, 0, sizeof(ebus_event_t));
-            proc->filter_event = args->filter;
-            proc->state        = (args->filter ? PROCESS_STATE_WAITING : PROCESS_STATE_SUSPENDED);
-            // process_yield(proc, regs->esp, regs->eip, args->filter);
             enable_interrupts();
-            process_t * next      = pm_get_next(kernel_get_proc_man());
-            int         has_event = 0;
-            if (next->filter_event) {
-                if (next->next_event.event_id != next->filter_event) {
-                    KPANIC("Tried to resume process but the event does not match filter");
-                }
-                if (args->event_out) {
-                    // TODO log
-                    kmemcpy(&next->next_event, args->event_out, sizeof(ebus_event_t));
-                }
-                next->filter_event        = 0;
-                next->next_event.event_id = 0;
-                has_event                 = 1;
-            }
-            // KLOGS_DEBUG("SC_PROC", "Switching from process %u to %u", proc->pid, next->pid);
+            process_t * next = pm_get_next(kernel_get_proc_man());
             if (pm_resume_process(kernel_get_proc_man(), next->pid)) {
                 KPANIC("Failed to resume process");
             }
-
-            // TODO return 1 for event out
-            // proc = get_current_process();
-            // if (ebus_queue_size(&proc->event_queue) > 0) {
-            //     if (ebus_pop(&proc->event_queue, args->event_out)) {
-            //         return -1;
-            //     }
-            //     if (args->event_out) {
-            //         return args->event_out->event_id;
-            //     }
-            // }
-            return has_event;
         } break;
 
         case SYS_CALL_PROC_EXEC: {

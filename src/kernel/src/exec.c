@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "KERNEL/EXEC"
+
 #include "exec.h"
 
 #include "cpu/mmu.h"
@@ -11,9 +13,6 @@
 #include "libc/string.h"
 #include "paging.h"
 #include "process.h"
-
-#undef SERVICE
-#define SERVICE "KERNEL/EXEC"
 
 typedef int (*ff_t)(size_t argc, char ** argv);
 

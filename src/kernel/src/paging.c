@@ -1,11 +1,10 @@
+#define KLOG_SERVICE "KERNEL/PAGING"
+
 #include "paging.h"
 
 #include "drivers/ram.h"
 #include "kernel/logs.h"
 #include "libc/string.h"
-
-#undef SERVICE
-#define SERVICE "KERNEL/PAGING"
 
 typedef struct {
     uint32_t addr;

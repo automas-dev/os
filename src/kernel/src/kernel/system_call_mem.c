@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "SYSCALL/MEMORY"
+
 #include "kernel/system_call_mem.h"
 
 #include <stddef.h>
@@ -7,9 +9,6 @@
 #include "libk/defs.h"
 #include "memory_alloc.h"
 #include "process.h"
-
-#undef SERVICE
-#define SERVICE "SYSCALL/MEMORY"
 
 int sys_call_mem_cb(uint32_t call_id, void * args_data, registers_t * regs) {
     process_t * proc = get_current_process();

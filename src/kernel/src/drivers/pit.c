@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "DRIVER/PIT"
+
 #include "drivers/pit.h"
 
 #include "cpu/isr.h"
@@ -5,9 +7,6 @@
 #include "kernel/logs.h"
 #include "kernel/panic.h"
 #include "libc/string.h"
-
-#undef SERVICE
-#define SERVICE "DRIVER/PIT"
 
 #define PIT_CHANNEL_0_PORT 0x40
 #define PIT_CHANNEL_1_PORT 0x41

@@ -4,6 +4,7 @@
  *
  * Documentation moved to design/boot_stages.md
  */
+#define KLOG_SERVICE "LOADER"
 
 #include <stdint.h>
 
@@ -26,9 +27,6 @@
 #include "process.h"
 #include "process_manager.h"
 
-#undef SERVICE
-#define SERVICE "LOADER"
-
 void kernel_init();
 
 static void map_kernel_table(mmu_table_t * table);
@@ -47,7 +45,8 @@ void __start() {
     serial_init(SERIAL_PORT_COM1);
     _libc_config_file_write_call(device_serial_write_raw);
 
-    kernel_log_set_level(KERNEL_LOG_LEVEL_DEBUG);
+    // THIS WAS REPLACED WITH KLOG_LEVEL MACRO
+    // kernel_log_set_level(KERNEL_LOG_LEVEL_DEBUG);
     // kernel_log_set_level(KERNEL_LOG_LEVEL_TRACE);
     KLOG_INFO("Loader Start");
 

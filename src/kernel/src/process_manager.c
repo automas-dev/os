@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "KERNEL/PROCESS_MANAGER"
+
 #include "process_manager.h"
 
 #include "drivers/keyboard.h"
@@ -6,9 +8,6 @@
 #include "libc/proc.h"
 #include "libc/stdio.h"
 #include "libc/string.h"
-
-#undef SERVICE
-#define SERVICE "KERNEL/PROCESS_MANAGER"
 
 int pm_create(proc_man_t * pm) {
     if (!pm) {
@@ -166,7 +165,7 @@ int pm_resume_process(proc_man_t * pm, int pid) {
         return -1;
     }
 
-    if (proc->filter_event > 0) {
+    if (proc->filter_event.event_id) {
         // TODO assert next_event has an event of the correct type
         // TODO push to process next_event instead of event_queue
         // TODO clear next_event before resuming process
@@ -186,19 +185,9 @@ process_t * pm_get_next(proc_man_t * pm) {
 
     while (proc != pm->foreground_task) {
         if (PROCESS_STATE_LOADED <= proc->state <= PROCESS_STATE_DEAD) {
-            if (proc->filter_event == proc->next_event.event_id) {
+            if (proc->filter_event.event_id == proc->next_event.event_id) {
                 return proc;
             }
-            // if (!proc->filter_event || proc->filter_event == filter_event) {
-            //     // TODO need to pop event from queue, then remove this if block
-            //     if (filter_event) {
-            //         KLOG_WARNING("YOU NEED TO POP EBUS EVENT %u", filter_event);
-            //     }
-            //     return proc;
-            // }
-            // else {
-            //     KLOG_TRACE("Process with pid %u does not match filter event %u, waiting for %u", proc->pid, filter_event, proc->filter_event);
-            // }
         }
         else {
             KLOG_TRACE("Process with pid %u is not alive", proc->pid);
@@ -229,7 +218,7 @@ int pm_push_event(proc_man_t * pm, ebus_event_t * event) {
         return -1;
     }
 
-    if (pm->first_task->filter_event == event->event_id) {
+    if (pm->first_task->filter_event.event_id == event->event_id) {
         if (!pm->first_task->next_event.event_id) {
             KLOG_WARNING("Replacing event %u with %u for process %u", pm->first_task->next_event.event_id, event->event_id, pm->first_task->pid);
         }
@@ -239,7 +228,7 @@ int pm_push_event(proc_man_t * pm, ebus_event_t * event) {
     process_t * proc = pm->first_task->next;
 
     while (proc != pm->first_task) {
-        if (proc->filter_event == event->event_id) {
+        if (proc->filter_event.event_id == event->event_id) {
             if (!proc->next_event.event_id) {
                 KLOG_WARNING("Replacing event %u with %u for process %u", proc->next_event.event_id, event->event_id, proc->pid);
             }

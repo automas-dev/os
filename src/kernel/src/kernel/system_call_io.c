@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "SYSCALL/IO"
+
 #include "kernel/system_call_io.h"
 
 #include "drivers/vga.h"
@@ -7,9 +9,6 @@
 #include "libc/datastruct/array.h"
 #include "libk/defs.h"
 #include "process.h"
-
-#undef SERVICE
-#define SERVICE "SYSCALL/IO"
 
 int sys_call_io_cb(uint32_t call_id, void * args_data, registers_t * regs) {
     process_t * proc       = get_current_process();
