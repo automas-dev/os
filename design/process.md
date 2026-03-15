@@ -51,6 +51,38 @@ the process page dir does not include a stack for the kernel (eg. isr stack).
 
 TODO : parent pid
 
+## Ring Scheduler
+
+There needs to be some intermediate task scheduler until a more complete one is
+implemented (similar to how malloc needed an intermediate). This intermediate
+scheduler will be a ring scheduler.
+
+Each process is in a linked list with a pointer to the next process (and
+previous for list removal). When a task switch is performed, the next process
+in checked for fulfillment of the event filter. This is repeated until a ready
+to run task is found.
+
+> [!WARNING] There must be at least one process ready to run
+>
+> There must always be a "next" task ready to run. In the case where the current
+> process is yielding with an event filter, another process must be ready to
+> launch. This will most likely be init, so there needs to be some documentation
+> for init behavior written which includes that it must never yield with an
+> event filter.
+
+### Process Manager
+
+has pointer to first and foreground processes
+
+### Searching for PID
+
+starts at foreground task
+
+### Event Filter Fulfillment
+
+When the task filter is 0 or there is an event with matching id to filter type.
+
+
 # Old
 
 ## Memory
