@@ -199,19 +199,17 @@ void term_run() {
     for (;;) {
         ebus_event_t event;
         if (pull_event(EBUS_EVENT_KEY, &event)) {
-            // printf("Got event type 0x%04x\n", event.event_id);
-            if (event.event_id == EBUS_EVENT_KEY) {
-                key_cb(event.key.keycode, event.key.c, event.key.event, event.key.mods);
-                // printf("Got key %c %x %x\n", event.key.c, event.key.keycode, event.key.scancode);
-                // if (event.key.event == 0) {
-                //     putc(event.key.c);
-                // }
+            // printf("Got event type 0x%04x located at %p\n", event.event_id, &event);
+            key_cb(event.key.keycode, event.key.c, event.key.event, event.key.mods);
+            // printf("Got key %c keycode 0x%x scancode 0x%x location %p\n", event.key.c, event.key.keycode, event.key.scancode, &event);
+            // if (event.key.event == 0) {
+            //     putc(event.key.c);
+            // }
 
-                // char c = getc();
-                // if (c) {
-                //     key_char_cb(c);
-                // }
-            }
+            // char c = getc();
+            // if (c) {
+            //     key_char_cb(c);
+            // }
         }
         term_update();
     }
