@@ -1,4 +1,5 @@
 #define KLOG_SERVICE "KERNEL/PROCESS_MANAGER"
+// #define KLOG_LEVEL   KLOG_LEVEL_TRACE
 
 #include "process_manager.h"
 
@@ -38,24 +39,21 @@ process_t * pm_find_pid(proc_man_t * pm, int pid) {
     }
 
     if (pm->foreground_task && pm->foreground_task->pid == pid) {
-        KLOG_TRACE("Returning foreground task for pid %u", pid);
         return pm->foreground_task;
     }
 
     process_t * proc = pm->first_task;
     if (proc->pid == pid) {
-        KLOG_TRACE("Returning first task for pid %u", pid);
         return proc;
     }
-    proc = proc->next;
 
-    while (proc != pm->first_task) {
+    do {
         if (proc->pid == pid) {
             return proc;
         }
 
         proc = proc->next;
-    }
+    } while (proc != pm->first_task);
 
     return 0;
 }
@@ -80,17 +78,27 @@ int pm_add_proc(proc_man_t * pm, process_t * proc) {
         proc->prev = proc;
         return 0;
     }
-    else if (pm->first_task->next == pm->first_task) {
-        KLOG_DEBUG("Assigning second process to be %u", proc->pid);
-        pm->first_task->next = proc;
-        pm->first_task->prev = proc;
 
-        proc->next = pm->first_task;
-        proc->prev = pm->first_task;
+    if (pm_find_pid(pm, proc->pid)) {
+        KLOG_WARNING("Tried to add process %u to manager, already added", proc->pid);
+        return 0;
     }
 
-    KLOG_DEBUG("Linking last task %u to new process %u", proc->prev->pid, proc->pid);
-    return process_link(proc->prev, proc);
+    process_t * prev = pm->first_task->prev;
+    KLOG_TRACE("Using process %u as previous to first task %u", prev->pid, pm->first_task->pid);
+
+    prev->next           = proc;
+    pm->first_task->prev = proc;
+
+    proc->next = pm->first_task;
+    proc->prev = prev;
+
+    process_t * p = pm->first_task;
+    do {
+        KLOG_TRACE("Link %u n %u p %u", p->pid, p->next->pid, p->prev->pid);
+        p = p->next;
+    } while (p != pm->first_task);
+    return 0;
 }
 
 int pm_remove_proc(proc_man_t * pm, int pid) {
@@ -183,21 +191,35 @@ process_t * pm_get_next(proc_man_t * pm) {
 
     process_t * proc = pm->foreground_task->next;
 
-    while (proc != pm->foreground_task) {
+    // KLOG_TRACE("Start looking for next process");
+
+    do {
+        // KLOG_TRACE("Looking at pid %u in state %u to see if it's ready", proc->pid, proc->state);
+
         if (PROCESS_STATE_LOADED <= proc->state <= PROCESS_STATE_DEAD) {
-            if (proc->filter_event.event_id == proc->next_event.event_id) {
+            if (!proc->filter_event.event_id) {
+                // KLOG_TRACE("Process %u has no filter event, so it's ready", proc->pid);
                 return proc;
             }
+            // This handles the above case but is split for trace log
+            if (proc->filter_event.event_id == proc->next_event.event_id) {
+                KLOG_TRACE("Process %u has ready event %u", proc->pid, proc->next_event.event_id);
+                return proc;
+            }
+            // KLOG_TRACE("Process %u is not ready, waiting for %u", proc->pid, proc->filter_event.event_id);
         }
         else {
-            KLOG_TRACE("Process with pid %u is not alive", proc->pid);
+            // KLOG_TRACE("Process with pid %u is not alive", proc->pid);
         }
 
+        // KLOG_TRACE("Going to next process %u, fg is %u", proc->next->pid, pm->foreground_task->pid);
         proc = proc->next;
-    };
+    } while (proc != pm->foreground_task->next);
+
+    // KLOG_TRACE("Finish looking for next process");
 
     if (PROCESS_STATE_LOADED <= proc->state <= PROCESS_STATE_DEAD) {
-        KLOG_TRACE("Next process is the foreground process with pid %u", proc->pid);
+        // KLOG_TRACE("Next process is the foreground process with pid %u", proc->pid);
         return proc;
     }
 
@@ -218,30 +240,35 @@ int pm_push_event(proc_man_t * pm, ebus_event_t * event) {
         return -1;
     }
 
-    if (pm->first_task->filter_event.event_id == event->event_id) {
-        if (!pm->first_task->next_event.event_id) {
-            KLOG_WARNING("Replacing event %u with %u for process %u", pm->first_task->next_event.event_id, event->event_id, pm->first_task->pid);
-        }
-        kmemcpy(event, &pm->first_task->next_event, sizeof(ebus_event_t));
-    }
+    KLOG_TRACE("Start push event %u", event->event_id);
 
-    process_t * proc = pm->first_task->next;
+    process_t * proc = pm->first_task;
 
-    while (proc != pm->first_task) {
+    do {
         if (proc->filter_event.event_id == event->event_id) {
-            if (!proc->next_event.event_id) {
+            KLOG_TRACE("Push event %u to %u", event->event_id, proc->pid);
+            if (proc->next_event.event_id) {
                 KLOG_WARNING("Replacing event %u with %u for process %u", proc->next_event.event_id, event->event_id, proc->pid);
             }
-            kmemcpy(event, &proc->next_event, sizeof(ebus_event_t));
+            kmemcpy(&proc->next_event, event, sizeof(ebus_event_t));
+
+            if (event->event_id == EBUS_EVENT_KEY) {
+                KLOG_TRACE("Push scancode 0x%x results in 0x%x", event->key.scancode, proc->next_event.key.scancode);
+            }
 
             if (proc->state == PROCESS_STATE_WAITING) {
                 KLOG_TRACE("Setting process state to suspended for pid %u", proc->pid);
                 proc->state = PROCESS_STATE_SUSPENDED;
             }
         }
+        else {
+            KLOG_TRACE("Event %u did not match pid %u waiting on %u", event->event_id, proc->pid, proc->filter_event.event_id);
+        }
 
         proc = proc->next;
-    }
+    } while (proc != pm->first_task);
+
+    KLOG_TRACE("Finish push event %u", event->event_id);
 
     return 0;
 }

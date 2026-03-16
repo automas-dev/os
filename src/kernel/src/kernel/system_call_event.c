@@ -1,4 +1,5 @@
 #define KLOG_SERVICE "SYSCALL/EVENT"
+// #define KLOG_LEVEL   KERNEL_LOG_LEVEL_TRACE
 
 #include "kernel/system_call_event.h"
 
@@ -34,27 +35,33 @@ int sys_call_event_cb(uint32_t call_id, void * args_data, registers_t * regs) {
                 ebus_event_t * event_out;
             } * args = (struct _args *)args_data;
 
+            if (!args->filter) {
+                KLOG_WARNING("Event pul system call with no filter");
+                return 1;
+            }
+
             proc->next_event.event_id   = 0;
             proc->filter_event.event_id = args->filter;
             proc->state                 = PROCESS_STATE_WAITING;
 
             enable_interrupts();
             process_t * next = pm_get_next(kernel_get_proc_man());
-            KLOG_DEBUG("Switching from process %u to %u", proc->pid, next->pid);
             if (pm_resume_process(kernel_get_proc_man(), next->pid)) {
                 KPANIC("Failed to resume process");
             }
 
-            if (next->next_event.event_id != next->filter_event.event_id != args->filter) {
+            proc = get_current_process();
+
+            // args->filter doesn't appear to be valid here, why not?
+            if (!(proc->next_event.event_id == proc->filter_event.event_id)) {
                 KPANIC("Tried to resume process but the event does not match filter");
             }
             if (args->event_out) {
-                // TODO log
-                kmemcpy(&next->next_event, args->event_out, sizeof(ebus_event_t));
+                kmemcpy(args->event_out, &proc->next_event, sizeof(ebus_event_t));
             }
 
-            next->filter_event.event_id = 0;
-            next->next_event.event_id   = 0;
+            proc->filter_event.event_id = 0;
+            proc->next_event.event_id   = 0;
         } break;
     }
 

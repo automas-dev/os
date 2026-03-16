@@ -46,8 +46,6 @@ void tmp_register_signals_cb(signals_master_cb_t cb);
 
 void kernel_queue_event(ebus_event_t * event);
 
-// ebus_event_t * pull_event(int event_id);
-
 typedef int (*_proc_call_t)(void * data);
 
 int kernel_call_as_proc(int pid, _proc_call_t fn, void * data);

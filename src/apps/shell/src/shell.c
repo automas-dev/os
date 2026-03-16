@@ -198,7 +198,7 @@ void term_run() {
 
     for (;;) {
         ebus_event_t event;
-        if (pull_event(EBUS_EVENT_KEY, &event)) {
+        if (!pull_event(EBUS_EVENT_KEY, &event)) {
             // printf("Got event type 0x%04x located at %p\n", event.event_id, &event);
             key_cb(event.key.keycode, event.key.c, event.key.event, event.key.mods);
             // printf("Got key %c keycode 0x%x scancode 0x%x location %p\n", event.key.c, event.key.keycode, event.key.scancode, &event);
