@@ -19,6 +19,7 @@ void time_init(uint32_t freq);
  */
 int time_start_timer(uint32_t ticks);
 int time_start_timer_ns(uint32_t ns);
+int time_start_timer_us(uint32_t us);
 int time_start_timer_ms(uint32_t ms);
 
 void time_stop_timer(int id);

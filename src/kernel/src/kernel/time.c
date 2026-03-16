@@ -72,12 +72,16 @@ void time_init(uint32_t freq) {
 }
 
 int time_start_timer(uint32_t ticks) {
+    if (!ticks) {
+        KLOG_TRACE("Tried to start a timer of 0 ticks");
+        return 0;
+    }
     timer_t t;
     t.id    = __next_id++;
     t.count = ticks;
     if (arr_insert(&__timers, arr_size(&__timers), &t)) {
         KLOG_ERROR("Failed to insert into timers array");
-        return -1;
+        return 0;
     }
     KLOG_DEBUG("Starting timer %d of %u ticks", t.id, t.count);
     return t.id;
@@ -85,6 +89,10 @@ int time_start_timer(uint32_t ticks) {
 
 int time_start_timer_ns(uint32_t ns) {
     return time_start_timer(ns * __freq / 1000000000);
+}
+
+int time_start_timer_us(uint32_t us) {
+    return time_start_timer(us * __freq / 1000000);
 }
 
 int time_start_timer_ms(uint32_t ms) {
