@@ -11,6 +11,7 @@
 #include "exec.h"
 #include "kernel.h"
 #include "kernel/logs.h"
+#include "kernel/time.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
 #include "libc/string.h"
@@ -50,8 +51,6 @@ int sys_call_event_cb(uint32_t call_id, void * args_data, registers_t * regs) {
                 KPANIC("Failed to resume process");
             }
 
-            proc = get_current_process();
-
             // args->filter doesn't appear to be valid here, why not?
             if (!(proc->next_event.event_id == proc->filter_event.event_id)) {
                 KPANIC("Tried to resume process but the event does not match filter");
@@ -62,6 +61,54 @@ int sys_call_event_cb(uint32_t call_id, void * args_data, registers_t * regs) {
 
             proc->filter_event.event_id = 0;
             proc->next_event.event_id   = 0;
+        } break;
+
+        case SYS_CALL_EVENT_TIME: {
+            enable_interrupts();
+            process_t * next = pm_get_next(kernel_get_proc_man());
+            if (pm_resume_process(kernel_get_proc_man(), next->pid)) {
+                KPANIC("Failed to resume process");
+            }
+
+            return time_s();
+        } break;
+
+        case SYS_CALL_EVENT_SLEEP: {
+            struct _args {
+                size_t ms;
+                size_t us;
+            } * args = (struct _args *)args_data;
+
+            int timer_id = 0;
+            if (args->ms) {
+                KLOG_TRACE("Using millisecond sleep %u", args->ms);
+                timer_id = time_start_timer_ms(args->ms);
+            }
+            else {
+                KLOG_TRACE("Using microsecond sleep %u", args->us);
+                timer_id = time_start_timer_us(args->us);
+            }
+
+            if (timer_id < 1) {
+                KLOG_WARNING("Failed to start timer of %u ms\n", args->ms);
+                return 1;
+            }
+
+            proc->next_event.event_id   = 0;
+            proc->next_event.timer.id   = 0;
+            proc->next_event.timer.time = 0;
+            proc->filter_event.event_id = EBUS_EVENT_TIMER;
+            proc->filter_event.timer.id = timer_id;
+            proc->state                 = PROCESS_STATE_WAITING;
+
+            do {
+                enable_interrupts();
+                process_t * next = pm_get_next(kernel_get_proc_man());
+                if (pm_resume_process(kernel_get_proc_man(), next->pid)) {
+                    KPANIC("Failed to resume process");
+                }
+                KLOG_TRACE("Back from timer %u", timer_id);
+            } while (proc->next_event.timer.id != timer_id);
         } break;
     }
 

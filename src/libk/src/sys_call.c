@@ -85,3 +85,11 @@ int _sys_proc_set_foreground(int pid) {
 int _sys_event_pull(int filter, ebus_event_t * event_out) {
     return send_call(SYS_CALL_EVENT_PULL, filter, event_out);
 }
+
+size_t _sys_event_time() {
+    return send_call(SYS_CALL_EVENT_TIME);
+}
+
+void _sys_event_sleep(size_t ms, size_t us) {
+    send_call(SYS_CALL_EVENT_SLEEP, ms, us);
+}

@@ -38,4 +38,7 @@ int  _sys_proc_set_foreground(int pid);
 
 int _sys_event_pull(int filter, ebus_event_t * event_out);
 
+size_t _sys_event_time(void);
+void   _sys_event_sleep(size_t ms, size_t us);
+
 #endif // LIBK_SYS_CALL_H
