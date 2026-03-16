@@ -14,7 +14,7 @@ DECLARE_FAKE_VOID_FUNC(_sys_proc_panic, const char *, const char *, unsigned int
 DECLARE_FAKE_VALUE_FUNC(int, _sys_proc_getpid);
 DECLARE_FAKE_VOID_FUNC(_sys_register_signals, void *);
 DECLARE_FAKE_VOID_FUNC(_sys_queue_event, ebus_event_t *);
-DECLARE_FAKE_VALUE_FUNC(int, _sys_yield, int, ebus_event_t *);
+DECLARE_FAKE_VOID_FUNC(_sys_yield);
 DECLARE_FAKE_VALUE_FUNC(size_t, _sys_putc, char);
 DECLARE_FAKE_VALUE_FUNC(size_t, _sys_puts, const char *);
 

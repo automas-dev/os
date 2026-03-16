@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "DRIVER/VGA"
+
 #include "drivers/vga.h"
 
 #include "cpu/ports.h"
@@ -6,9 +8,6 @@
 
 // WARNING vga driver was previously used in logging, so be careful using it for
 // log outputs.
-
-#undef SERVICE
-#define SERVICE "DRIVER/VGA"
 
 #define REG_SCREEN_CTRL 0x3d4
 #define REG_SCREEN_DATA 0x3d5
@@ -50,8 +49,8 @@ void vga_clear() {
 }
 
 void vga_put(int index, char c, unsigned char attr) {
-    // idk if this is too much
-    KLOG_TRACE("Put character 0x%X (%c) to index %d with attr 0x%X", c, c, index, attr);
+    // This is way to much
+    // KLOG_TRACE("Put character 0x%X (%c) to index %d with attr 0x%X", c, c, index, attr);
     index *= 2;
     __screen[index]     = c;
     __screen[index + 1] = attr;

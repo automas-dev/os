@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "SYSCALL/PROCESS"
+
 #include "kernel/system_call_proc.h"
 
 #include <stddef.h>
@@ -14,24 +16,20 @@
 #include "libk/defs.h"
 #include "process.h"
 
-#undef SERVICE
-#define SERVICE "SYSCALL/PROCESS"
-
-int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
+int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
     process_t * proc = get_current_process();
-    int         res  = 0;
 
-    KLOG_TRACE("Call from pid %u interrupt number 0x%X", proc->pid, int_no);
+    KLOG_TRACE("Call id 0x%X from pid %u", call_id, proc->pid);
 
-    switch (int_no) {
+    switch (call_id) {
         default: {
-            KLOG_WARNING("Invalid interrupt number 0x%X", int_no);
+            KLOG_WARNING("Invalid call id 0x%X", call_id);
             break;
         }
 
             // TODO this isn't fully updated with task switching
 
-        case SYS_INT_PROC_EXIT: {
+        case SYS_CALL_PROC_EXIT: {
             KLOG_DEBUG("System call proc exit");
             struct _args {
                 uint8_t code;
@@ -51,7 +49,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
 
             // TODO this isn't fully updated with task switching
 
-        case SYS_INT_PROC_ABORT: {
+        case SYS_CALL_PROC_ABORT: {
             KLOG_DEBUG("System call proc abort");
             struct _args {
                 uint8_t      code;
@@ -72,7 +70,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             KPANIC("Unexpected return from kernel_switch_task");
         } break;
 
-        case SYS_INT_PROC_PANIC: {
+        case SYS_CALL_PROC_PANIC: {
             KLOG_DEBUG("System call proc panic");
             struct _args {
                 const char * msg;
@@ -98,7 +96,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             }
         } break;
 
-        case SYS_INT_PROC_REG_SIG: {
+        case SYS_CALL_PROC_REG_SIG: {
             KLOG_DEBUG("System call proc sig");
             struct _args {
                 signals_master_cb_t cb;
@@ -106,7 +104,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             tmp_register_signals_cb(args->cb);
         } break;
 
-        case SYS_INT_PROC_GETPID: {
+        case SYS_CALL_PROC_GETPID: {
             // KLOG_DEBUG("System call proc getpid");
             process_t * p = get_current_process();
             if (!p) {
@@ -115,7 +113,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             return p->pid;
         } break;
 
-        case SYS_INT_PROC_QUEUE_EVENT: {
+        case SYS_CALL_PROC_QUEUE_EVENT: {
             // KLOG_DEBUG("System call proc queue event");
             struct _args {
                 ebus_event_t * event;
@@ -131,46 +129,19 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             kernel_queue_event(args->event);
         } break;
 
-        case SYS_INT_PROC_YIELD: {
-            // KLOG_DEBUG("System call proc yield");
-            struct _args {
-                int            filter;
-                ebus_event_t * event_out;
-            } * args = (struct _args *)args_data;
+        case SYS_CALL_PROC_YIELD: {
+            proc->filter_event.event_id = 0;
+            proc->next_event.event_id   = 0;
+            proc->state                 = PROCESS_STATE_SUSPENDED;
 
-            // TODO clear iret from stack?
-            proc->filter_event = args->filter;
-            proc->state        = (args->filter ? PROCESS_STATE_WAITING : PROCESS_STATE_SUSPENDED);
-            // process_yield(proc, regs->esp, regs->eip, args->filter);
             enable_interrupts();
-            process_t * next      = pm_get_next(kernel_get_proc_man());
-            int         has_event = 0;
-            if (ebus_queue_size(&next->event_queue) > 0) {
-                // KLOGS_DEBUG("SC_PROC", "Got %u events", ebus_queue_size(&next->event_queue));
-                if (ebus_pop(&next->event_queue, args->event_out)) {
-                    KPANIC("Yea, that didn't work");
-                }
-                has_event = 1;
-            }
-            // KLOGS_DEBUG("SC_PROC", "Switching from process %u to %u", proc->pid, next->pid);
-            if (pm_resume_process(kernel_get_proc_man(), next->pid, 0)) {
+            process_t * next = pm_get_next(kernel_get_proc_man());
+            if (pm_resume_process(kernel_get_proc_man(), next->pid)) {
                 KPANIC("Failed to resume process");
             }
-
-            // TODO return 1 for event out
-            // proc = get_current_process();
-            // if (ebus_queue_size(&proc->event_queue) > 0) {
-            //     if (ebus_pop(&proc->event_queue, args->event_out)) {
-            //         return -1;
-            //     }
-            //     if (args->event_out) {
-            //         return args->event_out->event_id;
-            //     }
-            // }
-            return has_event;
         } break;
 
-        case SYS_INT_PROC_EXEC: {
+        case SYS_CALL_PROC_EXEC: {
             struct _args {
                 const char * filename;
                 size_t       argc;
@@ -181,7 +152,7 @@ int sys_call_proc_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             return kernel_exec(args->filename, args->argc, args->argv);
         } break;
 
-        case SYS_INT_PROC_SET_FOREGROUND: {
+        case SYS_CALL_PROC_SET_FOREGROUND: {
             struct _args {
                 int pid;
             } * args = (struct _args *)args_data;

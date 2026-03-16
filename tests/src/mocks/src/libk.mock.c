@@ -13,7 +13,7 @@ DEFINE_FAKE_VOID_FUNC(_sys_proc_panic, const char *, const char *, unsigned int)
 DEFINE_FAKE_VALUE_FUNC(int, _sys_proc_getpid);
 DEFINE_FAKE_VOID_FUNC(_sys_register_signals, void *);
 DEFINE_FAKE_VOID_FUNC(_sys_queue_event, ebus_event_t *);
-DEFINE_FAKE_VALUE_FUNC(int, _sys_yield, int, ebus_event_t *);
+DEFINE_FAKE_VOID_FUNC(_sys_yield);
 DEFINE_FAKE_VALUE_FUNC(size_t, _sys_putc, char);
 DEFINE_FAKE_VALUE_FUNC(size_t, _sys_puts, const char *);
 

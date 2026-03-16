@@ -1,12 +1,11 @@
+#define KLOG_SERVICE "KERNEL/MEMORY"
+
 #include "kernel/memory.h"
 
 #include "kernel.h"
 #include "kernel/logs.h"
 #include "libc/memory.h"
 #include "paging.h"
-
-#undef SERVICE
-#define SERVICE "KERNEL/MEMORY"
 
 static memory_t __memory;
 static size_t   __next_heap_page;

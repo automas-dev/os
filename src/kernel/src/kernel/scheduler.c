@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "SCHEDULER"
+
 #include "kernel/scheduler.h"
 
 #include "ebus.h"
@@ -26,7 +28,7 @@ int scheduler_run(scheduler_t * scheduler) {
     }
 
     if (cb_len(&get_kernel()->event_queue.queue) > 0) {
-        KLOGS_DEBUG("Scheduler", "There are %u events ready", cb_len(&get_kernel()->event_queue.queue));
+        KLOG_DEBUG("There are %u events ready", cb_len(&get_kernel()->event_queue.queue));
         ebus_event_t event;
 
         if (cb_pop(&get_kernel()->event_queue.queue, &event) < 0) {

@@ -49,21 +49,41 @@ The TSS entry will need to be updated with the new process' esp0.
 TODO : the ESP0 might be better stored in the kernel instead of the process if
 the process page dir does not include a stack for the kernel (eg. isr stack).
 
-## Process Struct
+TODO : parent pid
 
-| Start | Size | Description              |
-| ----- | ---- | ------------------------ |
-| 0     | 4    | Process Id (PID)         |
-| 4     | 4    | Next Heap Page           |
-| 8     | 4    | Stack Page Count         |
-| 16    | 4    | Page Directory (CR3)     |
-| 12    | 4    | Stack Pointer (ESP)      |
-| 20    | 4    | ISR Stack Pointer (ESP0) |
-| 24    | 4    | Signal Callback Function |
-| 28    | 4    | Pointer to next Process  |
+## Ring Scheduler
 
-- `Size` is in bytes.
-- PID 0 is reserved for the kernel, the first proc will be pid 1
+There needs to be some intermediate task scheduler until a more complete one is
+implemented (similar to how malloc needed an intermediate). This intermediate
+scheduler will be a ring scheduler.
+
+Each process is in a linked list with a pointer to the next process (and
+previous for list removal). When a task switch is performed, the next process
+in checked for fulfillment of the event filter. This is repeated until a ready
+to run task is found.
+
+> [!WARNING] There must be at least one process ready to run
+>
+> There must always be a "next" task ready to run. In the case where the current
+> process is yielding with an event filter, another process must be ready to
+> launch. This will most likely be init, so there needs to be some documentation
+> for init behavior written which includes that it must never yield with an
+> event filter.
+
+### Process Manager
+
+has pointer to first and foreground processes
+
+### Searching for PID
+
+starts at foreground task
+
+### Event Filter Fulfillment
+
+When the task filter is 0 or there is an event with matching id to filter type.
+
+
+# Old
 
 ## Memory
 

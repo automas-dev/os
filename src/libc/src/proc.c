@@ -21,11 +21,11 @@ void queue_event(ebus_event_t * event) {
 }
 
 int pull_event(int filter, ebus_event_t * event_out) {
-    return _sys_yield(filter, event_out);
+    return _sys_event_pull(filter, event_out);
 }
 
 void yield() {
-    _sys_yield(0, 0);
+    _sys_yield();
 }
 
 int proc_open(const char * filename, size_t argc, char ** argv) {

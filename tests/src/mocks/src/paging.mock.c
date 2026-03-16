@@ -1,9 +1,9 @@
 
 #include "paging.mock.h"
 
-DEFINE_FAKE_VOID_FUNC(paging_init);
+DEFINE_FAKE_VALUE_FUNC(int, paging_init);
 DEFINE_FAKE_VALUE_FUNC(void *, paging_temp_map, uint32_t);
-DEFINE_FAKE_VOID_FUNC(paging_temp_free, uint32_t);
+DEFINE_FAKE_VALUE_FUNC(int, paging_temp_free, uint32_t);
 DEFINE_FAKE_VALUE_FUNC(size_t, paging_temp_available);
 DEFINE_FAKE_VALUE_FUNC(int, paging_id_map_range, size_t, size_t);
 DEFINE_FAKE_VALUE_FUNC(int, paging_id_map_page, size_t);

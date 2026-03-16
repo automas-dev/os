@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "SYSCALL"
+
 #include "system_call.h"
 
 #include "cpu/isr.h"
@@ -10,9 +12,6 @@
 #include "libc/string.h"
 #include "libk/defs.h"
 #include "process.h"
-
-#undef SERVICE
-#define SERVICE "SYSCALL"
 
 #define MAX_CALLBACKS 0x100
 static sys_call_handler_t __callbacks[MAX_CALLBACKS];
@@ -30,7 +29,7 @@ void system_call_init(uint8_t isr_interrupt_no) {
     KLOG_DEBUG("Initialized system calls");
 }
 
-void system_call_register(uint8_t family, sys_call_handler_t handler) {
+void system_call_register(uint16_t family, sys_call_handler_t handler) {
     KLOG_DEBUG("Registering handler for family 0x%02X", family);
     if (family >= MAX_CALLBACKS) {
         KLOG_ERROR("Cannot register handler for family 0x%02X, must be < 0x%X", family, MAX_CALLBACKS);
@@ -42,12 +41,14 @@ void system_call_register(uint8_t family, sys_call_handler_t handler) {
 static void callback(registers_t * regs) {
     uint32_t res = 0;
 
-    uint16_t int_no = regs->eax & 0xffff;
-    uint8_t  family = (regs->eax >> 8) & 0xff;
+    uint32_t call_id = regs->eax;
+    uint16_t family  = (regs->eax >> 16);
+
+    KLOG_TRACE("Received system call 0x%X", call_id);
 
     // if (family != 0x01 && family != 0x10) {
     //     process_t * proc = get_current_process();
-    //     KLOG_DEBUG("Got system call 0x%04x from PID %u", (int)int_no, proc->pid);
+    //     KLOG_DEBUG("Got system call 0x%04x from PID %u", (int)call_id, proc->pid);
     // }
 
     void * args_data = UINT2PTR(regs->ebx);
@@ -55,10 +56,10 @@ static void callback(registers_t * regs) {
     sys_call_handler_t handler = __callbacks[family];
 
     if (handler) {
-        res = handler(int_no, args_data, regs);
+        res = handler(call_id, args_data, regs);
     }
     else {
-        KLOG_ERROR("Failed to find handler for interrupt 0x%04X", int_no);
+        KLOG_ERROR("Failed to find handler for system call 0x%04X", call_id);
         PANIC("UNKNOWN INTERRUPT");
     }
 

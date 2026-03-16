@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "DRIVER/ATA"
+
 #include "drivers/ata.h"
 
 #include "cpu/isr.h"
@@ -11,9 +13,6 @@
 #include "libc/proc.h"
 #include "libc/stdio.h"
 #include "libc/string.h"
-
-#undef SERVICE
-#define SERVICE "DRIVER/ATA"
 
 // https://wiki.osdev.org/ATA_PIO_Mode
 

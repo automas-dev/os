@@ -4,37 +4,56 @@
 #include <stdarg.h>
 #include <stddef.h>
 
-enum KERNEL_LOG_LEVEL {
-    KERNEL_LOG_LEVEL_TRACE = 0,
-    KERNEL_LOG_LEVEL_DEBUG,
-    KERNEL_LOG_LEVEL_INFO,
-    KERNEL_LOG_LEVEL_WARNING,
-    KERNEL_LOG_LEVEL_ERROR,
-
-    KERNEL_LOG_LEVEL__LENGTH, // Number of log levels, used to bounds check name lookup
-};
+#define KERNEL_LOG_LEVEL_TRACE   0
+#define KERNEL_LOG_LEVEL_DEBUG   1
+#define KERNEL_LOG_LEVEL_INFO    2
+#define KERNEL_LOG_LEVEL_WARNING 3
+#define KERNEL_LOG_LEVEL_ERROR   4
+#define KERNEL_LOG_LEVEL__LENGTH 5 // Number of log levels, used to bounds check name lookup
 
 #define STRINGIZE(x)  STRINGIZE2(x)
 #define STRINGIZE2(x) #x
 #define LINE_STRING   STRINGIZE(__LINE__)
 #define PREFIX        __BASE_FILE__ ":" LINE_STRING
 
-#ifndef SERVICE
-#define SERVICE 0
+#ifndef KLOG_SERVICE
+#define KLOG_SERVICE 0
 #endif
 
-#define VA_ARGS(...)           , ##__VA_ARGS__
-#define KLOG_TRACE(FMT, ...)   kernel_log(KERNEL_LOG_LEVEL_TRACE, (__FILE__), (__LINE__), (SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
-#define KLOG_DEBUG(FMT, ...)   kernel_log(KERNEL_LOG_LEVEL_DEBUG, (__FILE__), (__LINE__), (SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
-#define KLOG_INFO(FMT, ...)    kernel_log(KERNEL_LOG_LEVEL_INFO, (__FILE__), (__LINE__), (SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
-#define KLOG_WARNING(FMT, ...) kernel_log(KERNEL_LOG_LEVEL_WARNING, (__FILE__), (__LINE__), (SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
-#define KLOG_ERROR(FMT, ...)   kernel_log(KERNEL_LOG_LEVEL_ERROR, (__FILE__), (__LINE__), (SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
+#ifndef KLOG_LEVEL
+#define KLOG_LEVEL KERNEL_LOG_LEVEL_DEBUG
+#endif
 
-#define KLOGS_TRACE(SERVICE, FMT, ...)   kernel_log(KERNEL_LOG_LEVEL_TRACE, (__FILE__), (__LINE__), (SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
-#define KLOGS_DEBUG(SERVICE, FMT, ...)   kernel_log(KERNEL_LOG_LEVEL_DEBUG, (__FILE__), (__LINE__), (SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
-#define KLOGS_INFO(SERVICE, FMT, ...)    kernel_log(KERNEL_LOG_LEVEL_INFO, (__FILE__), (__LINE__), (SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
-#define KLOGS_WARNING(SERVICE, FMT, ...) kernel_log(KERNEL_LOG_LEVEL_WARNING, (__FILE__), (__LINE__), (SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
-#define KLOGS_ERROR(SERVICE, FMT, ...)   kernel_log(KERNEL_LOG_LEVEL_ERROR, (__FILE__), (__LINE__), (SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
+#define VA_ARGS(...) , ##__VA_ARGS__
+#if KLOG_LEVEL <= KERNEL_LOG_LEVEL_TRACE
+#define KLOG_TRACE(FMT, ...) kernel_log(KERNEL_LOG_LEVEL_TRACE, (__FILE__), (__LINE__), (KLOG_SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
+#else
+#define KLOG_TRACE(FMT, ...)
+#endif
+
+#if KLOG_LEVEL <= KERNEL_LOG_LEVEL_DEBUG
+#define KLOG_DEBUG(FMT, ...) kernel_log(KERNEL_LOG_LEVEL_DEBUG, (__FILE__), (__LINE__), (KLOG_SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
+#else
+#define KLOG_DEBUG(FMT, ...)
+#endif
+
+#if KLOG_LEVEL <= KERNEL_LOG_LEVEL_INFO
+#define KLOG_INFO(FMT, ...) kernel_log(KERNEL_LOG_LEVEL_INFO, (__FILE__), (__LINE__), (KLOG_SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
+#else
+#define KLOG_INFO(FMT, ...)
+#endif
+
+#if KLOG_LEVEL <= KERNEL_LOG_LEVEL_WARNING
+#define KLOG_WARNING(FMT, ...) kernel_log(KERNEL_LOG_LEVEL_WARNING, (__FILE__), (__LINE__), (KLOG_SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
+#else
+#define KLOG_WARNING(FMT, ...)
+#endif
+
+#if KLOG_LEVEL <= KERNEL_LOG_LEVEL_ERROR
+#define KLOG_ERROR(FMT, ...) kernel_log(KERNEL_LOG_LEVEL_ERROR, (__FILE__), (__LINE__), (KLOG_SERVICE), (FMT)VA_ARGS(__VA_ARGS__))
+#else
+#define KLOG_ERROR(FMT, ...)
+#endif
 
 void kernel_log_init();
 

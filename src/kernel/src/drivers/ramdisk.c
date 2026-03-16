@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "DRIVER/RAMDISK"
+
 #include "drivers/ramdisk.h"
 
 #include "kernel.h"
@@ -5,9 +7,6 @@
 #include "libc/memory.h"
 #include "libc/proc.h"
 #include "libc/string.h"
-
-#undef SERVICE
-#define SERVICE "DRIVER/RAMDISK"
 
 struct _ramdisk {
     int    id;

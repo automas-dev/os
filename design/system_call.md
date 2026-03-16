@@ -1,70 +1,118 @@
-# WIP - System Calls
+# System Calls
 
-System calls are performed through interrupt 48 (`int 0x30`). The interrupt
-takes a `uint16_t` id and some number of arguments.
+System calls are the mechanism by which processes communicate with the kernel
+both for sending commands and retrieving data. Some examples include file io,
+memory management, process management, etc. System calls are initiated by the
+process. To handle communication form kernel to process, use
+[signals](signals.md).
 
-Each interrupt takes up to 3 arguments and returns a `uint32_t`.
+## Sending System Calls
 
-## System Calls
+System calls are sent to the kernel through interrupt 48 (`int 0x30`) which is
+sent to IRQ 16. Each system call has a wrapper function in libk which calls one
+of two functions, `send_call` or `send_call_noret`. These functions take a
+`uint32_t` call id followed by some number va args.
 
-These are calls from the process to the kernel
+```c
+extern int            send_call(uint32_t int_no, ...);
+extern NO_RETURN void send_call_noret(uint32_t int_no, ...);
+```
 
-| ID   | Family          |
-| ---- | --------------- |
-| 0x01 | I/O             |
-| 0x02 | Memory          |
-| 0x03 | Process Control |
-| 0x10 | Tmp Std I/O     |
+> [!TIP]
+> Wrapper functions are declared in
+> [src/libk/include/libk/sys_call.h](../src/libk/include/libk/sys_call.h) and
+> defined in [src/libk/src/sys_call.c](../src/libk/src/sys_call.c).
 
-An interrupt id is an 8 bit family + an 8 bit id.
+### Call Id
 
-| Family          | ID     | Name                                                                      |
-| --------------- | ------ | ------------------------------------------------------------------------- |
-| I/O             | 0x0100 | open                                                                      |
-|                 | 0x0101 | close                                                                     |
-|                 | 0x0102 | read                                                                      |
-|                 | 0x0103 | write                                                                     |
-|                 | 0x0104 | seek                                                                      |
-|                 | 0x0105 | tell                                                                      |
-| Memory          | 0x0200 | `void * malloc(size_t size)`                                              |
-|                 | 0x0201 | `void * realloc(void * ptr, size_t size)`                                 |
-|                 | 0x0202 | `void free(void * ptr)`                                                   |
-| Process Control | 0x0300 | `void exit(uint8_t code)`                                                 |
-|                 | 0x0301 | `void abort(uint8_t code, const char * msg)`                              |
-|                 | 0x0302 | `void panic(const char * msg, const char * file, unsigned int line)`      |
-|                 | 0x0303 | `int register_signals(void * callback)`                                   |
-|                 | 0x0304 | `int getpid()`                                                            |
-| Tmp Std I/O     | 0x1000 | `size_t putc(char c)`                                                     |
-|                 | 0x1001 | `size_t puts(const char * str)`                                           |
-|                 | 0x1002 | `size_t vprintf(const char * fmt, va_list params)`                        |
-| File I/O        | 0x1101 | `file_t file_open(const char * path, const char * mode)`                  |
-|                 | 0x1102 | `void file_close(file_t)`                                                 |
-|                 | 0x1103 | `size_t file_read(file_t, size_t size, size_t count, void * buff)`        |
-|                 | 0x1104 | `size_t file_write(file_t, size_t size, size_t count, const void * buff)` |
-|                 | 0x1105 | `int file_seek(file_t, int offset, int origin)`                           |
-|                 | 0x1105 | `int file_tell(file_t)`                                                   |
-| Dir I/O         | 0x1201 | `dir_t dir_open(const char * path)`                                       |
-|                 | 0x1202 | `void dir_close(dir_t)`                                                   |
-|                 | 0x1203 | `int dir_read(dir_t, void * dir_entry)`                                   |
-|                 | 0x1205 | `int dir_seek(dir_t, int offset, int origin)`                             |
-|                 | 0x1205 | `int dir_tell(dir_t)`                                                     |
+The system call id is a `uint32_t` where the first 16 bits are the family
+followed by 16 bits for the call number.
 
-## System Calls 2.0
+| Family  | Call    |
+| ------- | ------- |
+| 16 bits | 16 bits |
 
-io
-- open handle
-- close handle
-- read handle
-- write handle
-- handle size? (maybe part of open)
-- stat? size? (can't be seek or tell, those are in libc)
+> [!TIP]
+> System call ids are defined in
+> [src/libk/include/libk/defs.h](../src/libk/include/libk/defs.h).
 
+## Receiving System Calls
 
-# System Signals
+System calls are received by the kernel through callbacks registered with
+`system_call_register`. The callback function receives a `uint32_t` call id,
+`void *` pointer to the va_args pushed onto the stack by `send_call` and
+`send_call_noret`, and `registers_t *` object with values of all registers.
 
-These are callbacks from the kernel to the process.
+```c
+typedef int (*sys_call_handler_t)(uint32_t call_id, void * args_data, registers_t * regs);
+void system_call_register(uint16_t family, sys_call_handler_t handler);
+```
 
-The `register_signals` call will hook a function in libc to receive all signals.
-It will then store all registered callbacks of the process.
+### Call Arguments
 
-TODO - keyboard event
+Arguments are accessible from `args_data` which is a pointer to the va_args in
+the caller process stack. A struct can be used to decompose the argument values
+from this pointer.
+
+```c
+struct _args {
+    void * ptr;
+    size_t count;
+} * args = (struct _args *)args_data;
+// use args->ptr or args->count to read values
+```
+
+> [!WARNING]
+>
+> Argument data is stored in the process stack. After changing the page directory
+> the values in `arg_data` will be invalid. Copy values to the kernel stack or
+> heap before switching to retrain access.
+
+### Return Value
+
+Each call handler can optionally returns a single `int` value to the caller
+process by returning a value from the handler function. If no value is returned
+to the caller process, the call handler should return 0.
+
+### Example Handler
+
+A typical call handler uses a switch block to select the correct logic based
+on the `call_id`.
+
+```c
+// Define handler function
+int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
+    // Get the caller process
+    process_t * proc = get_current_process();
+
+    // Handle call id
+    switch (call_id) {
+        // Log warning if call id is unknown
+        default: {
+            KLOG_WARNING("Invalid call id 0x%X", call_id);
+            break;
+        }
+
+        // Logic for call id
+        case SYS_CALL_MEM_MALLOC: {
+            // va args from send_call or send_call_noret
+            struct _args {
+                size_t size;
+            } * args = (struct _args *)args_data;
+            // Return int to caller process
+            return PTR2UINT(memory_alloc(&proc->memory, args->size));
+        } break;
+
+        case SYS_CALL_MEM_FREE: {
+            struct _args {
+                void * ptr;
+            } * args = (struct _args *)args_data;
+            memory_free(&proc->memory, args->ptr);
+            // No value is returned so handler defaults to 0
+        } break;
+    }
+
+    // Default return value of 0
+    return 0;
+}
+```

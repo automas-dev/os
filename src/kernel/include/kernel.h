@@ -14,12 +14,18 @@
 #include "process_manager.h"
 
 typedef struct _kernel {
-    uint32_t    esp0;
-    proc_man_t  pm;
+    /// Kernel stack pointer
+    uint32_t esp0;
+    /// Process manager
+    proc_man_t pm;
+    /// Process scheduler
     scheduler_t scheduler;
-    ebus_t      event_queue;
-    disk_t *    disk;
-    tar_fs_t *  tar;
+    /// Kernel event bus (is this used?)
+    ebus_t event_queue;
+    /// Disk driver for boot drive (this is temporary and should be replaced with a proper driver / device manager)
+    disk_t * disk;
+    /// Filesystem driver for boot drive (this is temporary and should be replaced with a proper drier / filesystem manager)
+    tar_fs_t * tar;
 } kernel_t;
 
 disk_t *   kernel_get_disk();
@@ -39,8 +45,6 @@ int kernel_exec(const char * filename, size_t argc, char ** argv);
 void tmp_register_signals_cb(signals_master_cb_t cb);
 
 void kernel_queue_event(ebus_event_t * event);
-
-// ebus_event_t * pull_event(int event_id);
 
 typedef int (*_proc_call_t)(void * data);
 

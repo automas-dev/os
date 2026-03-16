@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "DRIVER/KEYBOARD"
+
 #include "drivers/keyboard.h"
 
 #include <stdbool.h>
@@ -9,9 +11,6 @@
 #include "libc/proc.h"
 #include "libc/stdio.h"
 #include "libc/string.h"
-
-#undef SERVICE
-#define SERVICE "DRIVER/KEYBOARD"
 
 static bool     __e0_mode;
 static uint32_t __keystate[8];

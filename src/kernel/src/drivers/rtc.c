@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "DRIVER/RTC"
+
 #include "drivers/rtc.h"
 
 #include <stdbool.h>
@@ -5,9 +7,6 @@
 #include "cpu/isr.h"
 #include "cpu/ports.h"
 #include "kernel/logs.h"
-
-#undef SERVICE
-#define SERVICE "DRIVER/RTC"
 
 #define RTC_REG_PORT  0x70
 #define RTC_DATA_PORT 0x71

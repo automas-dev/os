@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "SYSCALL/MEMORY"
+
 #include "kernel/system_call_mem.h"
 
 #include <stddef.h>
@@ -8,20 +10,17 @@
 #include "memory_alloc.h"
 #include "process.h"
 
-#undef SERVICE
-#define SERVICE "SYSCALL/MEMORY"
-
-int sys_call_mem_cb(uint16_t int_no, void * args_data, registers_t * regs) {
+int sys_call_mem_cb(uint32_t call_id, void * args_data, registers_t * regs) {
     process_t * proc = get_current_process();
 
-    KLOG_TRACE("Call from pid %u interrupt number 0x%X", proc->pid, int_no);
+    KLOG_TRACE("Call id 0x%X from pid %u", call_id, proc->pid);
 
-    switch (int_no) {
+    switch (call_id) {
         default: {
-            KLOG_WARNING("Invalid interrupt number 0x%X", int_no);
+            KLOG_WARNING("Invalid call id 0x%X", call_id);
             break;
         }
-        case SYS_INT_MEM_MALLOC: {
+        case SYS_CALL_MEM_MALLOC: {
             struct _args {
                 size_t size;
             } * args = (struct _args *)args_data;
@@ -29,7 +28,7 @@ int sys_call_mem_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             return PTR2UINT(memory_alloc(&proc->memory, args->size));
         } break;
 
-        case SYS_INT_MEM_REALLOC: {
+        case SYS_CALL_MEM_REALLOC: {
             struct _args {
                 void * ptr;
                 size_t size;
@@ -38,7 +37,7 @@ int sys_call_mem_cb(uint16_t int_no, void * args_data, registers_t * regs) {
             return PTR2UINT(memory_realloc(&proc->memory, args->ptr, args->size));
         } break;
 
-        case SYS_INT_MEM_FREE: {
+        case SYS_CALL_MEM_FREE: {
             struct _args {
                 void * ptr;
             } * args = (struct _args *)args_data;

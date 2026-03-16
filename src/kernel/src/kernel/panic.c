@@ -1,5 +1,7 @@
+#include "kernel/panic.h"
+
 #include "drivers/vga.h"
-#include "kernel.h"
+#include "kernel/logs.h"
 
 NO_RETURN void kernel_panic(const char * msg, const char * file, unsigned int line) {
     vga_color(VGA_FG_WHITE | VGA_BG_RED);
@@ -15,6 +17,7 @@ NO_RETURN void kernel_panic(const char * msg, const char * file, unsigned int li
         vga_puts(msg);
     }
     vga_cursor_hide();
+    KLOG_ERROR("[KERNEL PANIC][%s]:%u %s", file, line, msg);
     halt();
 }
 

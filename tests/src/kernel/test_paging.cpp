@@ -167,7 +167,7 @@ TEST_F(Paging, paging_add_pages_InvalidParameters) {
     EXPECT_NE(0, paging_add_pages(0, 1, 2));
 
     // Start is after end
-    EXPECT_EQ(0, paging_add_pages(&dir, 2, 1));
+    EXPECT_NE(0, paging_add_pages(&dir, 2, 1));
 
     // End past dir
     EXPECT_NE(0, paging_add_pages(&dir, 1, MMU_DIR_SIZE * MMU_TABLE_SIZE));
@@ -239,7 +239,7 @@ TEST_F(Paging, paging_remove_pages_InvalidParameters) {
     EXPECT_NE(0, paging_remove_pages(0, 1, 2));
 
     // Start past end
-    EXPECT_EQ(0, paging_remove_pages(&dir, 2, 1));
+    EXPECT_NE(0, paging_remove_pages(&dir, 2, 1));
 
     // End Past Dir
     EXPECT_NE(0, paging_remove_pages(&dir, 1, MMU_DIR_SIZE * MMU_TABLE_SIZE));

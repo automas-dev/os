@@ -4,6 +4,7 @@
  *
  * Documentation moved to design/boot_stages.md
  */
+#define KLOG_SERVICE "LOADER"
 
 #include <stdint.h>
 
@@ -26,9 +27,6 @@
 #include "process.h"
 #include "process_manager.h"
 
-#undef SERVICE
-#define SERVICE "LOADER"
-
 void kernel_init();
 
 static void map_kernel_table(mmu_table_t * table);
@@ -47,7 +45,8 @@ void __start() {
     serial_init(SERIAL_PORT_COM1);
     _libc_config_file_write_call(device_serial_write_raw);
 
-    kernel_log_set_level(KERNEL_LOG_LEVEL_DEBUG);
+    // THIS WAS REPLACED WITH KLOG_LEVEL MACRO
+    // kernel_log_set_level(KERNEL_LOG_LEVEL_DEBUG);
     // kernel_log_set_level(KERNEL_LOG_LEVEL_TRACE);
     KLOG_INFO("Loader Start");
 
@@ -187,22 +186,69 @@ static void id_map_page(mmu_table_t * table, size_t page) {
 }
 
 static char * copy_string(const char * str) {
+    if (!str) {
+        KLOG_ERROR("Tried to copy null string");
+        return 0;
+    }
     int    len     = kstrlen(str);
     char * new_str = kmalloc(len + 1);
-    kmemcpy(new_str, str, len + 1);
+    if (!new_str) {
+        KLOG_ERROR("Failed to malloc new string of length %d", len + 1);
+        return 0;
+    }
+    if (!kmemcpy(new_str, str, len + 1)) {
+        KLOG_ERROR("Failed to copy %u bytes in memory from %p to %p", len + 1, str, new_str);
+        return 0;
+    }
     return new_str;
 }
 
-static int copy_args(process_t * proc, const char * filepath, int argc, const char ** argv) {
-    if (!proc || !filepath || !argv) {
+static int copy_args(process_t * proc, const char * filepath, int argc, char ** argv) {
+    if (!proc) {
+        KLOG_ERROR("Tried to copy args for null process");
+        return -1;
+    }
+    if (!filepath) {
+        KLOG_ERROR("Missing filepath");
+        return -1;
+    }
+    if (argc && !argv) {
+        KLOG_ERROR("Missing argv");
         return -1;
     }
 
     proc->filepath = copy_string(filepath);
-    proc->argc     = argc;
-    proc->argv     = kmalloc(sizeof(char *) * argc);
+    if (!proc->filepath) {
+        KLOG_ERROR("Failed to copy filepath");
+        return -1;
+    }
+    proc->argc = argc + 1;
+    proc->argv = kmalloc(sizeof(char *) * (argc + 1));
+    if (!proc->argv) {
+        KLOG_ERROR("Failed to malloc process_t argv");
+        kfree(proc->filepath);
+        return -1;
+    }
+
+    proc->argv[0] = copy_string(filepath);
+    if (!proc->argv[0]) {
+        KLOG_ERROR("Failed to copy filepath to argv");
+        kfree(proc->argv);
+        kfree(proc->filepath);
+        return -1;
+    }
+
     for (int i = 0; i < argc; i++) {
-        proc->argv[i] = copy_string(argv[i]);
+        proc->argv[i + 1] = copy_string(argv[i]);
+        if (!proc->argv[i + 1]) {
+            KLOG_ERROR("Failed to copy arg %d", i);
+            for (int j = 0; j < i + 1; j++) {
+                kfree(proc->argv[i]);
+            }
+            kfree(proc->argv);
+            kfree(proc->filepath);
+            return -1;
+        }
     }
 
     return 0;
@@ -223,11 +269,12 @@ static void proc_entry() {
 }
 
 static process_t * load_init() {
+    // TODO use exec code or replace this with exec version of copy args
     const char * filename = "init";
 
     tar_stat_t stat;
     if (!tar_stat_file(kernel_get_tar(), filename, &stat)) {
-        KLOGS_ERROR("init", "Failed to find file\n");
+        KLOG_ERROR("Failed to find file\n");
         return 0;
     }
 
@@ -251,21 +298,24 @@ static process_t * load_init() {
     process_t * proc = kmalloc(sizeof(process_t));
 
     if (process_create(proc)) {
-        KLOGS_ERROR("init", "Failed to create process\n");
+        KLOG_ERROR("Failed to create process for %s", filename);
         return 0;
     }
 
     if (process_load_heap(proc, buff, stat.size)) {
-        KLOGS_ERROR("init", "Failed to load\n");
+        KLOG_ERROR("Failed to load %s", filename);
         process_free(proc);
         return 0;
     }
 
     for (size_t i = 0; i < 1022; i++) {
-        process_grow_stack(proc);
+        if (process_grow_stack(proc)) {
+            KLOG_ERROR("Failed to grow process stack");
+            return 0;
+        }
     }
 
-    copy_args(proc, filename, 1, &filename);
+    copy_args(proc, filename, 0, 0);
 
     process_set_entrypoint(proc, proc_entry);
     process_add_pages(proc, 32);

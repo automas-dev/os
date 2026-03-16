@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "DRIVER/ISR"
+
 #include "cpu/isr.h"
 
 #include "cpu/idt.h"
@@ -6,9 +8,6 @@
 #include "kernel/logs.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
-
-#undef SERVICE
-#define SERVICE "DRIVER/ISR"
 
 // static void print_trace(registers_t *);
 

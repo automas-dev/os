@@ -14,9 +14,17 @@ QEMUFLAGS = -m 1G \
 	-drive format=raw,file=build/os-image.bin,index=0,if=floppy \
 	-drive format=raw,file=build/apps.tar \
 	-d int,mmu \
+	-vga cirrus \
 	-D qemu_log.txt \
 	-no-reboot -no-shutdown \
-	-chardev stdio,id=char0,logfile=kernel.log,signal=off -serial chardev:char0
+	-chardev stdio,id=char0,logfile=kernel.log,signal=off \
+	-serial chardev:char0
+
+# To write to file without stdout use
+# 	-chardev  stdout,id=char0,path=kernel.log,signal=off \
+# 	-serial chardev:char0
+# or
+# 	-serial file:kernel.log
 
 # ===============
 #  LAUNCH & UTIL

@@ -8,8 +8,9 @@
 
 /**
  * @brief Setup paging called by kernel main.
+ * @return int 0 for success
  */
-void paging_init();
+int paging_init();
 
 /**
  * @brief Map `paddr` to a temporary page and return the virtual address.
@@ -30,8 +31,9 @@ void * paging_temp_map(uint32_t paddr);
  * until empty.
  *
  * @param paddr physical address to free
+ * @return int 0 for success
  */
-void paging_temp_free(uint32_t paddr);
+int paging_temp_free(uint32_t paddr);
 
 /**
  * @brief Get count of free pages for temporary mapping.

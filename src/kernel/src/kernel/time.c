@@ -1,3 +1,4 @@
+#define KLOG_SERVICE "KERNEL/TIME"
 #include "kernel/time.h"
 
 #include "cpu/isr.h"
@@ -8,9 +9,6 @@
 #include "libc/datastruct/array.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
-
-#undef SERVICE
-#define SERVICE "KERNEL/TIME"
 
 // https://wiki.osdev.org/PIT
 
@@ -29,6 +27,7 @@ static arr_t __timers; // timer_t
 
 static void timer_callback(registers_t * regs) {
     __tick++;
+    // TODO  is this is way too much
     KLOG_TRACE("Timer callback, next tick is %u", __tick);
 
     for (int i = 0; i < arr_size(&__timers); i++) {
@@ -73,12 +72,16 @@ void time_init(uint32_t freq) {
 }
 
 int time_start_timer(uint32_t ticks) {
+    if (!ticks) {
+        KLOG_TRACE("Tried to start a timer of 0 ticks");
+        return 0;
+    }
     timer_t t;
     t.id    = __next_id++;
     t.count = ticks;
     if (arr_insert(&__timers, arr_size(&__timers), &t)) {
         KLOG_ERROR("Failed to insert into timers array");
-        return -1;
+        return 0;
     }
     KLOG_DEBUG("Starting timer %d of %u ticks", t.id, t.count);
     return t.id;
@@ -86,6 +89,10 @@ int time_start_timer(uint32_t ticks) {
 
 int time_start_timer_ns(uint32_t ns) {
     return time_start_timer(ns * __freq / 1000000000);
+}
+
+int time_start_timer_us(uint32_t us) {
+    return time_start_timer(us * __freq / 1000000);
 }
 
 int time_start_timer_ms(uint32_t ms) {
