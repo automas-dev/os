@@ -33,12 +33,15 @@ add_subdirectory(cinit)
 # Programs loaded from disk
 add_subdirectory(foo)
 add_subdirectory(bar)
-add_subdirectory(init)
+add_subdirectory(cat)
 add_subdirectory(demo)
+add_subdirectory(echo)
+add_subdirectory(init)
 add_subdirectory(ping)
 add_subdirectory(pong)
 add_subdirectory(shell)
-add_subdirectory(getpid)
+add_subdirectory(sleep)
+add_subdirectory(time)
 
 message("App targets are ${APPS_TARGETS}")
 

@@ -1,3 +1,3 @@
-set(TARGET getpid)
+set(TARGET cat)
 
 add_app(${TARGET})

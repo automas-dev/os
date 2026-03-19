@@ -329,13 +329,11 @@ static void exec_buff() {
 
     // No match was found
     else {
-        int pid = proc_open(argv[0], argc, argv);
+        // kernel adds filename at argv[0], so here it's a duplicate
+        int pid = proc_open(argv[0], argc - 1, &argv[1]);
         if (pid < 0) {
             printf("Unknown command '%s'\n", argv[0]);
             term_last_ret = 1;
-        }
-        else {
-            printf("Running command %u\n", pid);
         }
     }
 
