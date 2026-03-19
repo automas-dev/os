@@ -1,5 +1,5 @@
-#include "libc/stdio.h"
 #include "libc/proc.h"
+#include "libc/stdio.h"
 
 extern int main(size_t argc, char ** argv);
 
