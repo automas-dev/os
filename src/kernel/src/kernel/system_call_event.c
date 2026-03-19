@@ -46,10 +46,7 @@ int sys_call_event_cb(uint32_t call_id, void * args_data, registers_t * regs) {
             proc->state                 = PROCESS_STATE_WAITING;
 
             enable_interrupts();
-            process_t * next = pm_get_next(kernel_get_proc_man());
-            if (pm_resume_process(kernel_get_proc_man(), next->pid)) {
-                KPANIC("Failed to resume process");
-            }
+            kernel_switch_task();
 
             // args->filter doesn't appear to be valid here, why not?
             if (!(proc->next_event.event_id == proc->filter_event.event_id)) {
@@ -65,10 +62,7 @@ int sys_call_event_cb(uint32_t call_id, void * args_data, registers_t * regs) {
 
         case SYS_CALL_EVENT_TIME: {
             enable_interrupts();
-            process_t * next = pm_get_next(kernel_get_proc_man());
-            if (pm_resume_process(kernel_get_proc_man(), next->pid)) {
-                KPANIC("Failed to resume process");
-            }
+            kernel_switch_task();
 
             return time_s();
         } break;
@@ -103,10 +97,7 @@ int sys_call_event_cb(uint32_t call_id, void * args_data, registers_t * regs) {
 
             do {
                 enable_interrupts();
-                process_t * next = pm_get_next(kernel_get_proc_man());
-                if (pm_resume_process(kernel_get_proc_man(), next->pid)) {
-                    KPANIC("Failed to resume process");
-                }
+                kernel_switch_task();
                 KLOG_TRACE("Back from timer %u", timer_id);
             } while (proc->next_event.timer.id != timer_id);
         } break;

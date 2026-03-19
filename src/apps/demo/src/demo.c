@@ -2,7 +2,7 @@
 #include "libc/proc.h"
 #include "libc/stdio.h"
 
-int __start(size_t argc, char ** argv) {
+int main(size_t argc, char ** argv) {
     printf("Lets demo some cool features of printf\n");
     int len = printf("Like the percent sign %%, \na signed int %d, a signed int with width formatting %4d, \nleading zeros %04d, left align %-4d\n", 10, 10, 10, 10);
     len += printf("How about negative numbers: signed %d and unsigned %u\n", -10, -10);

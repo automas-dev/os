@@ -13,6 +13,6 @@ void foo() {
     proc_exit(0);
 }
 
-void __start() {
+void main() {
     foo();
 }

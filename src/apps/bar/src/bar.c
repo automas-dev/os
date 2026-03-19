@@ -3,7 +3,7 @@
 
 #include "libc/stdio.h"
 
-int __start(size_t argc, char ** argv) {
+int main(size_t argc, char ** argv) {
     printf("Bar got %u arguments\n", argc);
 
     for (size_t i = 0; i < argc; i++) {
