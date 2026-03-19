@@ -7,8 +7,6 @@
 #include "kernel/logs.h"
 #include "libc/string.h"
 
-static void idle();
-
 int scheduler_init(scheduler_t * scheduler, proc_man_t * pm) {
     if (!scheduler) {
         KLOG_ERROR("scheduler_init received a null pointer for the scheduler struct");
@@ -30,7 +28,6 @@ int scheduler_init(scheduler_t * scheduler, proc_man_t * pm) {
     return 0;
 }
 
-// TODO this is just a copy of the kernel / process manager current behavior
 int scheduler_run(scheduler_t * scheduler) {
     if (!scheduler) {
         KLOG_ERROR("scheduler_run received a null pointer");

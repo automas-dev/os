@@ -10,6 +10,7 @@
 #include "exec.h"
 #include "kernel.h"
 #include "kernel/logs.h"
+#include "kernel/scheduler.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
 #include "libc/string.h"
@@ -32,13 +33,9 @@ int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
             proc->state = PROCESS_STATE_DEAD;
 
             enable_interrupts();
-            process_t * next = pm_get_next(kernel_get_proc_man());
-            KLOG_DEBUG("Next after %u is %u in state %u", proc->pid, next->pid, next->state);
-            if (pm_resume_process(kernel_get_proc_man(), next->pid)) {
-                KPANIC("Failed to resume process");
-            }
+            kernel_switch_task();
 
-            KPANIC("Unexpected return from pm_resume_process in SYS_CALL_PROC_EXIT");
+            KPANIC("Unexpected return from task switch in SYS_CALL_PROC_EXIT");
         } break;
 
         case SYS_CALL_PROC_ABORT: {
@@ -52,13 +49,9 @@ int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
             proc->state = PROCESS_STATE_DEAD;
 
             enable_interrupts();
-            process_t * next = pm_get_next(kernel_get_proc_man());
-            KLOG_DEBUG("Next after %u is %u in state %u", proc->pid, next->pid, next->state);
-            if (pm_resume_process(kernel_get_proc_man(), next->pid)) {
-                KPANIC("Failed to resume process");
-            }
+            kernel_switch_task();
 
-            KPANIC("Unexpected return from pm_resume_process in SYS_CALL_PROC_ABORT");
+            KPANIC("Unexpected return from task switch in SYS_CALL_PROC_ABORT");
         } break;
 
         case SYS_CALL_PROC_PANIC: {
@@ -85,13 +78,9 @@ int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
             proc->state = PROCESS_STATE_DEAD;
 
             enable_interrupts();
-            process_t * next = pm_get_next(kernel_get_proc_man());
-            KLOG_DEBUG("Next after %u is %u in state %u", proc->pid, next->pid, next->state);
-            if (pm_resume_process(kernel_get_proc_man(), next->pid)) {
-                KPANIC("Failed to resume process");
-            }
+            kernel_switch_task();
 
-            KPANIC("Unexpected return from pm_resume_process in SYS_CALL_PROC_PANIC");
+            KPANIC("Unexpected return from task switch in SYS_CALL_PROC_PANIC");
         } break;
 
         case SYS_CALL_PROC_REG_SIG: {
@@ -133,10 +122,7 @@ int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
             proc->state                 = PROCESS_STATE_SUSPENDED;
 
             enable_interrupts();
-            process_t * next = pm_get_next(kernel_get_proc_man());
-            if (pm_resume_process(kernel_get_proc_man(), next->pid)) {
-                KPANIC("Failed to resume process");
-            }
+            kernel_switch_task();
         } break;
 
         case SYS_CALL_PROC_EXEC: {
