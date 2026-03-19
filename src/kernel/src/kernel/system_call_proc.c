@@ -29,8 +29,19 @@ int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
         }
 
         case SYS_CALL_PROC_EXIT: {
-            KLOG_DEBUG("Setting process %u state from %u to %u", proc->pid, proc->state, PROCESS_STATE_DEAD);
-            proc->state = PROCESS_STATE_DEAD;
+            struct _args {
+                int code;
+            } * args = (struct _args *)args_data;
+            KLOG_DEBUG("Setting process %u state from %u to %u with status code %d", proc->pid, proc->state, PROCESS_STATE_DEAD, args->code);
+
+            proc->state       = PROCESS_STATE_DEAD;
+            proc->status_code = args->code;
+
+            ebus_event_t event;
+            event.event_id               = EBUS_EVENT_PROC_CLOSE;
+            event.proc_close.pid         = proc->pid;
+            event.proc_close.status_code = args->code;
+            kernel_queue_event(&event);
 
             enable_interrupts();
             kernel_switch_task();
@@ -41,12 +52,18 @@ int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
         case SYS_CALL_PROC_ABORT: {
             KLOG_DEBUG("System call proc abort");
             struct _args {
-                uint8_t      code;
+                int          code;
                 const char * msg;
             } * args = (struct _args *)args_data;
             printf("Proc abort with code %u\n", args->code);
             puts(args->msg);
             proc->state = PROCESS_STATE_DEAD;
+
+            ebus_event_t event;
+            event.event_id               = EBUS_EVENT_PROC_CLOSE;
+            event.proc_close.pid         = proc->pid;
+            event.proc_close.status_code = args->code;
+            kernel_queue_event(&event);
 
             enable_interrupts();
             kernel_switch_task();
@@ -76,6 +93,12 @@ int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
             KLOG_WARNING("Process %u panicked in %s at line %s: %s", proc->pid, file, args->line, msg);
 
             proc->state = PROCESS_STATE_DEAD;
+
+            ebus_event_t event;
+            event.event_id               = EBUS_EVENT_PROC_CLOSE;
+            event.proc_close.pid         = proc->pid;
+            event.proc_close.status_code = -1;
+            kernel_queue_event(&event);
 
             enable_interrupts();
             kernel_switch_task();
@@ -143,6 +166,46 @@ int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
             KLOG_DEBUG("System call set foreground pid %d", args->pid);
 
             return pm_set_foreground_proc(kernel_get_proc_man(), args->pid);
+        } break;
+
+        case SYS_CALL_PROC_WAIT_PID: {
+            struct _args {
+                int   pid;
+                int * exit_status;
+            } * args = (struct _args *)args_data;
+
+            process_t * child = pm_find_pid(kernel_get_proc_man(), args->pid);
+            if (!child) {
+                KLOG_WARNING("Tried to wait on pid %u which is not found", args->pid);
+                return -1;
+            }
+
+            if (child->state >= PROCESS_STATE_DEAD) {
+                KLOG_WARNING("Tried to wait on pid %u which is dead in state %u", args->pid, child->state);
+                return -1;
+            }
+
+            proc->next_event.event_id         = 0;
+            proc->filter_event.event_id       = EBUS_EVENT_PROC_CLOSE;
+            proc->filter_event.proc_close.pid = args->pid;
+            proc->state                       = PROCESS_STATE_WAITING;
+
+            do {
+                enable_interrupts();
+                kernel_switch_task();
+                KLOG_TRACE("Back from timer %u", timer_id);
+            } while (proc->next_event.proc_close.pid != args->pid);
+
+            if (!(proc->next_event.event_id == proc->filter_event.event_id)) {
+                KPANIC("Tried to resume process but the event does not match filter");
+            }
+            if (args->exit_status) {
+                KLOG_TRACE("Sending exist status %d of pid %u back to caller", proc->next_event.proc_close.pid, proc->next_event.proc_close.status_code);
+                *args->exit_status = proc->next_event.proc_close.status_code;
+            }
+
+            proc->filter_event.event_id = 0;
+            proc->next_event.event_id   = 0;
         } break;
     }
 

@@ -335,6 +335,11 @@ static void exec_buff() {
             printf("Unknown command '%s'\n", argv[0]);
             term_last_ret = 1;
         }
+
+        int exit_status = 0;
+        if (!proc_wait_pid(pid, &exit_status) && exit_status) {
+            printf("Process exited with status %d\n", exit_status);
+        }
     }
 
     // Free parsed args

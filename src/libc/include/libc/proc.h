@@ -25,8 +25,8 @@
 
 typedef void (*_libc_config_queue_event_fn)(ebus_event_t *);
 
-void           proc_exit(uint8_t code);
-void           proc_abort(uint8_t code, const char * msg);
+void           proc_exit(int code);
+void           proc_abort(int code, const char * msg);
 NO_RETURN void proc_panic(const char * msg, const char * file, unsigned int line);
 
 void queue_event(ebus_event_t * event);
@@ -36,6 +36,7 @@ void yield(void);
 // return pid
 int proc_open(const char * filename, size_t argc, char ** argv);
 int proc_set_foreground(int pid);
+int proc_wait_pid(int pid, int * exit_status);
 
 int getpid(void);
 
