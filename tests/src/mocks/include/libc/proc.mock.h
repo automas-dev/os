@@ -7,8 +7,8 @@ extern "C" {
 #include "fff.h"
 #include "libc/proc.h"
 
-DECLARE_FAKE_VOID_FUNC(proc_exit, uint8_t);
-DECLARE_FAKE_VOID_FUNC(proc_abort, uint8_t, const char *);
+DECLARE_FAKE_VOID_FUNC(proc_exit, int);
+DECLARE_FAKE_VOID_FUNC(proc_abort, int, const char *);
 DECLARE_FAKE_VOID_FUNC(proc_panic, const char *, const char *, unsigned int);
 DECLARE_FAKE_VOID_FUNC(set_next_pid, uint32_t);
 DECLARE_FAKE_VOID_FUNC(queue_event, ebus_event_t *);

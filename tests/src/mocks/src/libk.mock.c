@@ -7,8 +7,8 @@
 // libk/sys_call.h
 
 DEFINE_FAKE_VALUE_FUNC(void *, _sys_page_alloc, size_t);
-DEFINE_FAKE_VOID_FUNC(_sys_proc_exit, uint8_t);
-DEFINE_FAKE_VOID_FUNC(_sys_proc_abort, uint8_t, const char *);
+DEFINE_FAKE_VOID_FUNC(_sys_proc_exit, int);
+DEFINE_FAKE_VOID_FUNC(_sys_proc_abort, int, const char *);
 DEFINE_FAKE_VOID_FUNC(_sys_proc_panic, const char *, const char *, unsigned int);
 DEFINE_FAKE_VALUE_FUNC(int, _sys_proc_getpid);
 DEFINE_FAKE_VOID_FUNC(_sys_register_signals, void *);

@@ -24,8 +24,8 @@ void reset_libc_memory_mock(void) {
 
 // libc/proc.h
 
-DEFINE_FAKE_VOID_FUNC(proc_exit, uint8_t);
-DEFINE_FAKE_VOID_FUNC(proc_abort, uint8_t, const char *);
+DEFINE_FAKE_VOID_FUNC(proc_exit, int);
+DEFINE_FAKE_VOID_FUNC(proc_abort, int, const char *);
 DEFINE_FAKE_VOID_FUNC(proc_panic, const char *, const char *, unsigned int);
 DEFINE_FAKE_VOID_FUNC(set_next_pid, uint32_t);
 DEFINE_FAKE_VOID_FUNC(queue_event, ebus_event_t *);
