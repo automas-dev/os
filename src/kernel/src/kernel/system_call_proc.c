@@ -62,29 +62,36 @@ int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
         } break;
 
         case SYS_CALL_PROC_PANIC: {
-            KLOG_DEBUG("System call proc panic");
             struct _args {
                 const char * msg;
                 const char * file;
                 unsigned int line;
             } * args = (struct _args *)args_data;
-            vga_color(VGA_FG_WHITE | VGA_BG_RED);
-            vga_puts("[PANIC]");
-            if (args->file) {
-                vga_putc('[');
-                vga_puts(args->file);
-                vga_puts("]:");
-                vga_putu(args->line);
+
+            // Default empty string if not provided by process
+            const char * file = "";
+            if (!file) {
+                file = args->file;
             }
-            if (args->msg) {
-                vga_putc(' ');
-                vga_puts(args->msg);
+
+            // Default empty string if not provided by process
+            const char * msg = "";
+            if (!msg) {
+                msg = args->msg;
             }
-            vga_cursor_hide();
-            asm("cli");
-            for (;;) {
-                asm("hlt");
+
+            KLOG_WARNING("Process %u panicked in %s at line %s: %s", proc->pid, file, args->line, msg);
+
+            proc->state = PROCESS_STATE_DEAD;
+
+            enable_interrupts();
+            process_t * next = pm_get_next(kernel_get_proc_man());
+            KLOG_DEBUG("Next after %u is %u in state %u", proc->pid, next->pid, next->state);
+            if (pm_resume_process(kernel_get_proc_man(), next->pid)) {
+                KPANIC("Failed to resume process");
             }
+
+            KPANIC("Unexpected return from pm_resume_process in SYS_CALL_PROC_PANIC");
         } break;
 
         case SYS_CALL_PROC_REG_SIG: {
