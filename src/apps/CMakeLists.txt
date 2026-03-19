@@ -38,7 +38,6 @@ add_subdirectory(demo)
 add_subdirectory(ping)
 add_subdirectory(pong)
 add_subdirectory(shell)
-add_subdirectory(getpid)
 
 message("App targets are ${APPS_TARGETS}")
 
