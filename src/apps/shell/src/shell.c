@@ -48,7 +48,7 @@ static size_t buff_read(const cb_t * cb, uint8_t * data, size_t count);
 static size_t buff_remove(cb_t * cb, size_t count);
 static void   exec_buff();
 
-int __start(size_t argc, char ** argv) {
+int main(size_t argc, char ** argv) {
     term_command_add("help", help_cmd);
     init_commands();
 

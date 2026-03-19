@@ -7,7 +7,3 @@ void main() {
         yield();
     }
 }
-
-void __start() {
-    main();
-}

@@ -1,7 +1,7 @@
 #include "libc/proc.h"
 #include "libc/stdio.h"
 
-void __start() {
+void main() {
     int pid = getpid();
     printf("PID is %u\n");
 }
