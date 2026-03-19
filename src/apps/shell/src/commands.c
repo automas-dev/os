@@ -45,14 +45,7 @@ static int pid_cmd(size_t argc, char ** argv) {
     return 0;
 }
 
-static int time_cmd(size_t argc, char ** argv) {
-    printf("The time is %u seconds\n", time());
-
-    return 0;
-}
-
 void init_commands() {
     term_command_add("ls", ls_cmd);
     term_command_add("pid", pid_cmd);
-    term_command_add("time", time_cmd);
 }

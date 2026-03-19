@@ -41,6 +41,7 @@ add_subdirectory(ping)
 add_subdirectory(pong)
 add_subdirectory(shell)
 add_subdirectory(sleep)
+add_subdirectory(time)
 
 message("App targets are ${APPS_TARGETS}")
 
