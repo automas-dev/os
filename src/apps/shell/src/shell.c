@@ -335,9 +335,6 @@ static void exec_buff() {
             printf("Unknown command '%s'\n", argv[0]);
             term_last_ret = 1;
         }
-        else {
-            printf("Running command %u\n", pid);
-        }
     }
 
     // Free parsed args
