@@ -4,11 +4,11 @@
 
 static _libc_config_queue_event_fn __queue_event = _sys_queue_event;
 
-void proc_exit(uint8_t code) {
+void proc_exit(int code) {
     _sys_proc_exit(code);
 }
 
-void proc_abort(uint8_t code, const char * msg) {
+void proc_abort(int code, const char * msg) {
     _sys_proc_abort(code, msg);
 }
 
@@ -41,6 +41,10 @@ int getpid(void) {
 
 int proc_set_foreground(int pid) {
     _sys_proc_set_foreground(pid);
+}
+
+int proc_wait_pid(int pid, int * exit_status) {
+    return _sys_proc_wait_pid(pid, exit_status);
 }
 
 void _libc_config_queue_event_call(_libc_config_queue_event_fn fn) {

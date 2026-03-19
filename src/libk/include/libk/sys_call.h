@@ -23,8 +23,8 @@ void * _sys_mem_malloc(size_t size);
 void * _sys_mem_realloc(void * ptr, size_t size);
 void   _sys_mem_free(void * ptr);
 
-NO_RETURN void _sys_proc_exit(uint8_t code);
-NO_RETURN void _sys_proc_abort(uint8_t code, const char * msg);
+NO_RETURN void _sys_proc_exit(int code);
+NO_RETURN void _sys_proc_abort(int code, const char * msg);
 NO_RETURN void _sys_proc_panic(const char * msg, const char * file, unsigned int line);
 
 int _sys_proc_exec(const char * filename, int argc, char ** argv);
@@ -35,6 +35,7 @@ void _sys_register_signals(void * callback);
 void _sys_queue_event(ebus_event_t * event);
 void _sys_yield(void);
 int  _sys_proc_set_foreground(int pid);
+int  _sys_proc_wait_pid(int pid, int * exit_status);
 
 int _sys_event_pull(int filter, ebus_event_t * event_out);
 

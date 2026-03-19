@@ -35,6 +35,9 @@ setup:
 build:
 	cmake --build build -j
 
+clean:
+	cmake --build build --target clean
+
 run:
 	$(QEMU) $(QEMUFLAGS)
 
@@ -77,7 +80,7 @@ format:
 
 checks: lint build test_cov
 
-clean:
-	rm -rf *.bin qemu_log.txt drive.img build/
+# clean:
+# 	rm -rf *.bin qemu_log.txt drive.img build/
 
-.PHONY: setup build run debug boot-debug dump dump-kernel test test_cov coverage lint format checks clean
+.PHONY: setup build clean run debug boot-debug dump dump-kernel test test_cov coverage lint format checks clean

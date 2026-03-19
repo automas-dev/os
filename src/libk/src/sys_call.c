@@ -43,12 +43,12 @@ void _sys_mem_free(void * ptr) {
     send_call(SYS_CALL_MEM_FREE, ptr);
 }
 
-void _sys_proc_exit(uint8_t code) {
+void _sys_proc_exit(int code) {
     // _sys_puts("libk: Proc exit\n");
     send_call_noret(SYS_CALL_PROC_EXIT, code);
 }
 
-void _sys_proc_abort(uint8_t code, const char * msg) {
+void _sys_proc_abort(int code, const char * msg) {
     // _sys_puts("libk: Proc abort\n");
     send_call_noret(SYS_CALL_PROC_ABORT, code, msg);
 }
@@ -80,6 +80,10 @@ int _sys_proc_exec(const char * filename, int argc, char ** argv) {
 
 int _sys_proc_set_foreground(int pid) {
     return send_call(SYS_CALL_PROC_SET_FOREGROUND, pid);
+}
+
+int _sys_proc_wait_pid(int pid, int * exit_status) {
+    return send_call(SYS_CALL_PROC_WAIT_PID, pid, exit_status);
 }
 
 int _sys_event_pull(int filter, ebus_event_t * event_out) {
