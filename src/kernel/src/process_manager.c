@@ -198,7 +198,7 @@ process_t * pm_get_next(proc_man_t * pm) {
     do {
         // KLOG_TRACE("Looking at pid %u in state %u to see if it's ready", proc->pid, proc->state);
 
-        if (PROCESS_STATE_LOADED <= proc->state <= PROCESS_STATE_DEAD) {
+        if (proc->state > PROCESS_STATE_LOADED && proc->state < PROCESS_STATE_DEAD) {
             if (!proc->filter_event.event_id) {
                 // KLOG_TRACE("Process %u has no filter event, so it's ready", proc->pid);
                 return proc;
