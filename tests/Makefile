@@ -31,4 +31,7 @@ setup:
 build: setup
 	cmake --build build -j
 
-.PHONY: setup build test test_cov coverage test-ci
+clean:
+	cmake --build build --target clean
+
+.PHONY: setup build clean test test_cov coverage test-ci
