@@ -173,6 +173,8 @@ int pm_resume_process(proc_man_t * pm, int pid) {
         return -1;
     }
 
+    pm->foreground_task = proc;
+
     if (proc->filter_event.event_id) {
         // TODO assert next_event has an event of the correct type
         // TODO push to process next_event instead of event_queue
