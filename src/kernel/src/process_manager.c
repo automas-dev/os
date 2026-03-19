@@ -38,6 +38,10 @@ process_t * pm_find_pid(proc_man_t * pm, int pid) {
         return 0;
     }
 
+    if (pm->current_task && pm->current_task->pid == pid) {
+        return pm->current_task;
+    }
+
     if (pm->foreground_task && pm->foreground_task->pid == pid) {
         return pm->foreground_task;
     }
@@ -71,6 +75,7 @@ int pm_add_proc(proc_man_t * pm, process_t * proc) {
     if (!pm->first_task) {
         KLOG_INFO("Assigning first process to be %u", proc->pid);
         pm->first_task      = proc;
+        pm->current_task    = proc;
         pm->foreground_task = proc;
 
         // Link to self
@@ -127,6 +132,11 @@ int pm_remove_proc(proc_man_t * pm, int pid) {
         return -1;
     }
 
+    if (proc == pm->current_task) {
+        KLOG_ERROR("Cannot remove current process");
+        return -1;
+    }
+
     if (proc == pm->foreground_task) {
         KLOG_ERROR("Cannot remove foreground process");
         return -1;
@@ -173,7 +183,7 @@ int pm_resume_process(proc_man_t * pm, int pid) {
         return -1;
     }
 
-    pm->foreground_task = proc;
+    pm->current_task = proc;
 
     if (proc->filter_event.event_id) {
         // TODO assert next_event has an event of the correct type
@@ -191,9 +201,9 @@ process_t * pm_get_next(proc_man_t * pm) {
         return 0;
     }
 
-    process_t * proc = pm->foreground_task->next;
+    process_t * proc = pm->current_task->next;
 
-    KLOG_TRACE("Start looking for next process after %u", pm->foreground_task->pid);
+    KLOG_TRACE("Start looking for next process after %u", pm->current_task->pid);
 
     do {
         KLOG_TRACE("Looking at pid %u in state %u to see if it's ready", proc->pid, proc->state);
@@ -214,9 +224,9 @@ process_t * pm_get_next(proc_man_t * pm) {
             KLOG_TRACE("Process with pid %u is not alive", proc->pid);
         }
 
-        KLOG_TRACE("Going to next process %u, fg is %u", proc->next->pid, pm->foreground_task->pid);
+        KLOG_TRACE("Going to next process %u, fg is %u", proc->next->pid, pm->current_task->pid);
         proc = proc->next;
-    } while (proc != pm->foreground_task->next);
+    } while (proc != pm->current_task->next);
 
     KLOG_TRACE("Finish looking for next process");
 

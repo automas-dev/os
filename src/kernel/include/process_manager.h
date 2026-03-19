@@ -9,6 +9,7 @@
 
 typedef struct _proc_man {
     process_t * first_task;
+    process_t * current_task;
     process_t * foreground_task;
 } proc_man_t;
 
@@ -25,7 +26,6 @@ int pm_set_foreground_proc(proc_man_t * pm, int pid);
 
 int pm_resume_process(proc_man_t * pm, int pid);
 
-// TODO move to scheduler
 process_t * pm_get_next(proc_man_t * pm);
 
 int pm_push_event(proc_man_t * pm, ebus_event_t * event);
