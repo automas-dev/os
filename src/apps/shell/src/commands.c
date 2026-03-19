@@ -8,30 +8,6 @@
 #include "libc/time.h"
 #include "shell.h"
 
-static int echo_cmd(size_t argc, char ** argv) {
-    bool next_line = true;
-    if (argc > 1 && kmemcmp(argv[1], "-n", 2) == 0) {
-        next_line = false;
-    }
-
-    size_t i = 1;
-    if (!next_line) {
-        i++;
-    }
-    for (; i < argc; i++) {
-        puts(argv[i]);
-        if (i < argc) {
-            putc(' ');
-        }
-    }
-
-    if (next_line) {
-        putc('\n');
-    }
-
-    return 0;
-}
-
 static int ls_cmd(size_t argc, char ** argv) {
     // dir_t dir = dir_open("/");
     // if (!dir) {
@@ -128,7 +104,6 @@ static int time_cmd(size_t argc, char ** argv) {
 }
 
 void init_commands() {
-    term_command_add("echo", echo_cmd);
     term_command_add("ls", ls_cmd);
     term_command_add("cat", cat_cmd);
     term_command_add("pid", pid_cmd);
