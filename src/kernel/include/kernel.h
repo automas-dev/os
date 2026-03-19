@@ -48,8 +48,6 @@ void kernel_queue_event(ebus_event_t * event);
 
 typedef int (*_proc_call_t)(void * data);
 
-int kernel_call_as_proc(int pid, _proc_call_t fn, void * data);
-
-int kernel_switch_task();
+void kernel_switch_task();
 
 #endif // KERNEL_H

@@ -154,8 +154,10 @@ int kernel_exec(const char * filename, size_t argc, char ** argv) {
     return pid;
 }
 
-int kernel_switch_task() {
-    return scheduler_run(&__kernel.scheduler);
+void kernel_switch_task() {
+    if (scheduler_run(&__kernel.scheduler)) {
+        KPANIC("Failed to switch tasks");
+    }
 }
 
 process_t * get_current_process() {
