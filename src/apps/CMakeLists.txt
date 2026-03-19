@@ -33,6 +33,7 @@ add_subdirectory(cinit)
 # Programs loaded from disk
 add_subdirectory(foo)
 add_subdirectory(bar)
+add_subdirectory(cat)
 add_subdirectory(demo)
 add_subdirectory(echo)
 add_subdirectory(init)
