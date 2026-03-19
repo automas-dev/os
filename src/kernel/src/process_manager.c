@@ -193,14 +193,14 @@ process_t * pm_get_next(proc_man_t * pm) {
 
     process_t * proc = pm->foreground_task->next;
 
-    // KLOG_TRACE("Start looking for next process");
+    KLOG_TRACE("Start looking for next process after %u", pm->foreground_task->pid);
 
     do {
-        // KLOG_TRACE("Looking at pid %u in state %u to see if it's ready", proc->pid, proc->state);
+        KLOG_TRACE("Looking at pid %u in state %u to see if it's ready", proc->pid, proc->state);
 
         if (proc->state > PROCESS_STATE_LOADED && proc->state < PROCESS_STATE_DEAD) {
             if (!proc->filter_event.event_id) {
-                // KLOG_TRACE("Process %u has no filter event, so it's ready", proc->pid);
+                KLOG_TRACE("Process %u has no filter event, so it's ready", proc->pid);
                 return proc;
             }
             // This handles the above case but is split for trace log
@@ -208,20 +208,20 @@ process_t * pm_get_next(proc_man_t * pm) {
                 KLOG_TRACE("Process %u has ready event %u", proc->pid, proc->next_event.event_id);
                 return proc;
             }
-            // KLOG_TRACE("Process %u is not ready, waiting for %u", proc->pid, proc->filter_event.event_id);
+            KLOG_TRACE("Process %u is not ready, waiting for %u", proc->pid, proc->filter_event.event_id);
         }
         else {
-            // KLOG_TRACE("Process with pid %u is not alive", proc->pid);
+            KLOG_TRACE("Process with pid %u is not alive", proc->pid);
         }
 
-        // KLOG_TRACE("Going to next process %u, fg is %u", proc->next->pid, pm->foreground_task->pid);
+        KLOG_TRACE("Going to next process %u, fg is %u", proc->next->pid, pm->foreground_task->pid);
         proc = proc->next;
     } while (proc != pm->foreground_task->next);
 
-    // KLOG_TRACE("Finish looking for next process");
+    KLOG_TRACE("Finish looking for next process");
 
     if (PROCESS_STATE_LOADED <= proc->state <= PROCESS_STATE_DEAD) {
-        // KLOG_TRACE("Next process is the foreground process with pid %u", proc->pid);
+        KLOG_TRACE("Next process is the foreground process with pid %u", proc->pid);
         return proc;
     }
 
