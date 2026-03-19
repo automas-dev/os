@@ -27,27 +27,19 @@ int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
             break;
         }
 
-            // TODO this isn't fully updated with task switching
-
         case SYS_CALL_PROC_EXIT: {
-            KLOG_DEBUG("System call proc exit");
-            struct _args {
-                uint8_t code;
-            } * args = (struct _args *)args_data;
-            printf("Proc exit with code %u\n", args->code);
+            KLOG_DEBUG("Setting process %u state from %u to %u", proc->pid, proc->state, PROCESS_STATE_DEAD);
+            proc->state = PROCESS_STATE_DEAD;
+
             enable_interrupts();
+            process_t * next = pm_get_next(kernel_get_proc_man());
+            KLOG_DEBUG("Next after %u is %u in state %u", proc->pid, next->pid, next->state);
+            if (pm_resume_process(kernel_get_proc_man(), next->pid)) {
+                KPANIC("Failed to resume process");
+            }
 
-            ebus_event_t event           = {0};
-            event.event_id               = EBUS_EVENT_PROC_CLOSE;
-            event.proc_close.pid         = get_active_task()->pid;
-            event.proc_close.status_code = args->code;
-
-            queue_event(&event);
-            kernel_switch_task();
-            KPANIC("Unexpected return from kernel_switch_task");
+            KPANIC("Unexpected return from pm_resume_process in SYS_CALL_PROC_EXIT");
         } break;
-
-            // TODO this isn't fully updated with task switching
 
         case SYS_CALL_PROC_ABORT: {
             KLOG_DEBUG("System call proc abort");
@@ -57,17 +49,16 @@ int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
             } * args = (struct _args *)args_data;
             printf("Proc abort with code %u\n", args->code);
             puts(args->msg);
-            process_t * proc = get_current_process();
+            proc->state = PROCESS_STATE_DEAD;
+
             enable_interrupts();
+            process_t * next = pm_get_next(kernel_get_proc_man());
+            KLOG_DEBUG("Next after %u is %u in state %u", proc->pid, next->pid, next->state);
+            if (pm_resume_process(kernel_get_proc_man(), next->pid)) {
+                KPANIC("Failed to resume process");
+            }
 
-            ebus_event_t event           = {0};
-            event.event_id               = EBUS_EVENT_PROC_CLOSE;
-            event.proc_close.pid         = get_active_task()->pid;
-            event.proc_close.status_code = args->code;
-
-            queue_event(&event);
-            kernel_switch_task();
-            KPANIC("Unexpected return from kernel_switch_task");
+            KPANIC("Unexpected return from pm_resume_process in SYS_CALL_PROC_ABORT");
         } break;
 
         case SYS_CALL_PROC_PANIC: {
