@@ -146,6 +146,9 @@ int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
 
             enable_interrupts();
             kernel_switch_task();
+
+            proc->filter_event.event_id = 0;
+            proc->next_event.event_id   = 0;
         } break;
 
         case SYS_CALL_PROC_EXEC: {
@@ -190,11 +193,15 @@ int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
             proc->filter_event.proc_close.pid = args->pid;
             proc->state                       = PROCESS_STATE_WAITING;
 
-            do {
+            for (;;) {
                 enable_interrupts();
                 kernel_switch_task();
-                KLOG_TRACE("Back from timer %u", timer_id);
-            } while (proc->next_event.proc_close.pid != args->pid);
+                if (proc->next_event.proc_close.pid == args->pid) {
+                    KLOG_DEBUG("Waited process %u has closed, waiting process is %u", args->pid, proc->pid);
+                    break;
+                }
+                proc->next_event.event_id = 0;
+            }
 
             if (!(proc->next_event.event_id == proc->filter_event.event_id)) {
                 KPANIC("Tried to resume process but the event does not match filter");

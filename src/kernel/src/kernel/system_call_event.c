@@ -100,6 +100,9 @@ int sys_call_event_cb(uint32_t call_id, void * args_data, registers_t * regs) {
                 kernel_switch_task();
                 KLOG_TRACE("Back from timer %u", timer_id);
             } while (proc->next_event.timer.id != timer_id);
+
+            proc->filter_event.event_id = 0;
+            proc->next_event.event_id   = 0;
         } break;
     }
 

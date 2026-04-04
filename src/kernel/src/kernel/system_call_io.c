@@ -116,7 +116,6 @@ int sys_call_io_cb(uint32_t call_id, void * args_data, registers_t * regs) {
                     }
                 }
 
-                // TODO is this needed?
                 proc->filter_event.event_id = 0;
                 proc->next_event.event_id   = 0;
 
