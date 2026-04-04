@@ -44,12 +44,14 @@ int term_last_ret = 0;
 
 void          term_run();
 static int    help_cmd(size_t argc, char ** argv);
+static int    exit_cmd(size_t argc, char ** argv);
 static size_t buff_read(const cb_t * cb, uint8_t * data, size_t count);
 static size_t buff_remove(cb_t * cb, size_t count);
 static void   exec_buff();
 
 int main(size_t argc, char ** argv) {
     term_command_add("help", help_cmd);
+    term_command_add("exit", exit_cmd);
     init_commands();
 
     if (cb_create(&keybuff, MAX_CHARS, 1)) {
@@ -102,6 +104,14 @@ static int help_cmd(size_t argc, char ** argv) {
         putc('\n');
     }
     return 0;
+}
+
+static int exit_cmd(size_t argc, char ** argv) {
+    if (argc > 1) {
+        int status = katoi(argv[1]);
+        proc_exit(status);
+    }
+    proc_exit(0);
 }
 
 void term_update() {
@@ -288,11 +298,13 @@ static void exec_buff() {
             printf("Unknown command '%s'\n", argv[0]);
             term_last_ret = 1;
         }
+        proc_set_foreground(pid);
 
         int exit_status = 0;
         if (!proc_wait_pid(pid, &exit_status) && exit_status) {
             printf("Process exited with status %d\n", exit_status);
         }
+        proc_set_foreground(getpid());
     }
 
     // Free parsed args
