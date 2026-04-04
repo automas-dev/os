@@ -203,36 +203,34 @@ process_t * pm_get_next(proc_man_t * pm) {
 
     process_t * proc = pm->current_task->next;
 
-    KLOG_TRACE("Start looking for next process after %u", pm->current_task->pid);
+    for (;;) {
+        KLOG_TRACE("Start looking for next process after %u", pm->current_task->pid);
 
-    do {
-        KLOG_TRACE("Looking at pid %u in state %u to see if it's ready", proc->pid, proc->state);
+        do {
+            KLOG_TRACE("Looking at pid %u in state %u to see if it's ready", proc->pid, proc->state);
 
-        if (proc->state > PROCESS_STATE_LOADED && proc->state < PROCESS_STATE_DEAD) {
-            if (!proc->filter_event.event_id) {
-                KLOG_TRACE("Process %u has no filter event, so it's ready", proc->pid);
-                return proc;
+            if (proc->state > PROCESS_STATE_LOADED && proc->state < PROCESS_STATE_DEAD) {
+                if (!proc->filter_event.event_id) {
+                    KLOG_TRACE("Process %u has no filter event, so it's ready", proc->pid);
+                    return proc;
+                }
+                // This handles the above case but is split for trace log
+                if (proc->filter_event.event_id == proc->next_event.event_id) {
+                    KLOG_DEBUG("Process %u has ready event %u", proc->pid, proc->next_event.event_id);
+                    return proc;
+                }
+                KLOG_TRACE("Process %u is not ready, waiting for %u", proc->pid, proc->filter_event.event_id);
             }
-            // This handles the above case but is split for trace log
-            if (proc->filter_event.event_id == proc->next_event.event_id) {
-                KLOG_TRACE("Process %u has ready event %u", proc->pid, proc->next_event.event_id);
-                return proc;
+            else {
+                KLOG_TRACE("Process with pid %u is not alive", proc->pid);
             }
-            KLOG_TRACE("Process %u is not ready, waiting for %u", proc->pid, proc->filter_event.event_id);
-        }
-        else {
-            KLOG_TRACE("Process with pid %u is not alive", proc->pid);
-        }
 
-        KLOG_TRACE("Going to next process %u, fg is %u", proc->next->pid, pm->current_task->pid);
-        proc = proc->next;
-    } while (proc != pm->current_task->next);
+            KLOG_TRACE("Going to next process %u, fg is %u", proc->next->pid, pm->current_task->pid);
+            proc = proc->next;
+        } while (proc != pm->current_task->next);
 
-    KLOG_TRACE("Finish looking for next process");
-
-    if (PROCESS_STATE_LOADED <= proc->state <= PROCESS_STATE_DEAD) {
-        KLOG_TRACE("Next process is the foreground process with pid %u", proc->pid);
-        return proc;
+        KLOG_TRACE("No process ready to resume. Halting until next event");
+        asm("hlt");
     }
 
     KPANIC("Could not find process to resume");
@@ -281,6 +279,24 @@ int pm_push_event(proc_man_t * pm, ebus_event_t * event) {
     } while (proc != pm->first_task);
 
     KLOG_TRACE("Finish push event %u", event->event_id);
+
+    // TODO this is a temp hack to get keyboard to process until better stdin is created
+    if (event->event_id == EBUS_EVENT_KEY && (event->key.event == KEY_EVENT_PRESS || event->key.event == KEY_EVENT_REPEAT) && event->key.c) {
+        process_t * fg = pm->foreground_task;
+        if (io_buffer_push(fg->io_buffer, event->key.c)) {
+            KLOG_WARNING("Failed to push keyboard char %c to process %u io buffer", event->key.c, fg->pid);
+        }
+        else {
+            KLOG_TRACE("Process %u currently waiting on %u", fg->pid, fg->filter_event.event_id);
+            if (fg->filter_event.event_id == EBUS_EVENT_STDIN_READY) {
+                KLOG_TRACE("Process %u was waiting for stdin, setting next_event to stdin ready", fg->pid);
+                fg->next_event.event_id = EBUS_EVENT_STDIN_READY;
+            }
+            KLOG_TRACE("Pushed char '%c' (0x%02X) to process %u io buffer resulting in length %u", event->key.c, event->key.c, fg->pid, io_buffer_length(fg->io_buffer));
+        }
+    }
+
+    KLOG_TRACE("Finish stdio %u", event->event_id);
 
     return 0;
 }
