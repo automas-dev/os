@@ -282,5 +282,23 @@ int pm_push_event(proc_man_t * pm, ebus_event_t * event) {
 
     KLOG_TRACE("Finish push event %u", event->event_id);
 
+    // TODO this is a temp hack to get keyboard to process until better stdin is created
+    if (event->event_id == EBUS_EVENT_KEY && (event->key.event == KEY_EVENT_PRESS || event->key.event == KEY_EVENT_REPEAT) && event->key.c) {
+        process_t * fg = pm->foreground_task;
+        if (io_buffer_push(fg->io_buffer, event->key.c)) {
+            KLOG_WARNING("Failed to push keyboard char %c to process %u io buffer", event->key.c, fg->pid);
+        }
+        else {
+            KLOG_TRACE("Process %u currently waiting on %u", fg->pid, fg->filter_event.event_id);
+            if (fg->filter_event.event_id == EBUS_EVENT_STDIN_READY) {
+                KLOG_TRACE("Process %u was waiting for stdin, setting next_event to stdin ready", fg->pid);
+                fg->next_event.event_id = EBUS_EVENT_STDIN_READY;
+            }
+            KLOG_TRACE("Pushed char '%c' (0x%02X) to process %u io buffer resulting in length %u", event->key.c, event->key.c, fg->pid, io_buffer_length(fg->io_buffer));
+        }
+    }
+
+    KLOG_TRACE("Finish stdio %u", event->event_id);
+
     return 0;
 }

@@ -68,40 +68,7 @@ static void dump_buff() {
     }
 }
 
-static void key_cb(uint8_t code, char c, keyboard_event_t event, keyboard_mod_t mod) {
-    if ((event == KEY_EVENT_PRESS || event == KEY_EVENT_REPEAT) && c) {
-        if (cb_len(&keybuff) >= MAX_CHARS) {
-            ERROR("key buffer overflow");
-            printf("(%u out of %u)", cb_len(&keybuff), MAX_CHARS);
-            PANIC("key buffer overflow");
-            return;
-        }
-
-        if (code == KEY_BACKSPACE) {
-            if (cb_len(&keybuff) > 0) {
-                putc(c);
-                cb_rpop(&keybuff, 0);
-            }
-            return;
-        }
-
-        if (cb_push(&keybuff, &c)) {
-            ERROR("key buffer write error");
-            return;
-        }
-
-        // kprintf("Circbuff char %x at len %d / %d\n", c, circbuff_len(&keybuff), circbuff_buff_size(&keybuff));
-        // dump_buff();
-
-        if (code == KEY_ENTER) {
-            command_ready++;
-        }
-
-        putc(c);
-    }
-}
-
-static void key_char_cb(char c) {
+static void char_cb(char c) {
     if (cb_len(&keybuff) >= MAX_CHARS) {
         ERROR("key buffer overflow");
         printf("(%u out of %u)", cb_len(&keybuff), MAX_CHARS);
@@ -109,7 +76,7 @@ static void key_char_cb(char c) {
         return;
     }
 
-    if (c == KEY_BACKSPACE) {
+    if (c == '\b') {
         if (cb_len(&keybuff) > 0) {
             putc(c);
             cb_rpop(&keybuff, 0);
@@ -122,15 +89,11 @@ static void key_char_cb(char c) {
         return;
     }
 
-    if (c == KEY_ENTER) {
+    if (c == '\n') {
         command_ready++;
     }
 
     putc(c);
-}
-
-static void key_event_handler(const ebus_event_t * event) {
-    key_cb(event->key.keycode, event->key.c, event->key.event, event->key.mods);
 }
 
 static int help_cmd(size_t argc, char ** argv) {
@@ -197,19 +160,9 @@ void term_run() {
     puts("$ ");
 
     for (;;) {
-        ebus_event_t event;
-        if (!pull_event(EBUS_EVENT_KEY, &event)) {
-            // printf("Got event type 0x%04x located at %p\n", event.event_id, &event);
-            key_cb(event.key.keycode, event.key.c, event.key.event, event.key.mods);
-            // printf("Got key %c keycode 0x%x scancode 0x%x location %p\n", event.key.c, event.key.keycode, event.key.scancode, &event);
-            // if (event.key.event == 0) {
-            //     putc(event.key.c);
-            // }
-
-            // char c = getc();
-            // if (c) {
-            //     key_char_cb(c);
-            // }
+        char c;
+        if (file_read(stdin, 1, 1, &c) == 1) {
+            char_cb(c);
         }
         term_update();
     }

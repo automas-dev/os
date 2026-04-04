@@ -45,7 +45,7 @@ void init() {
 
     int shell_pid = proc_open("shell", 0, 0);
     // printf("Shell got pid %d\n", shell_pid);
-    // proc_set_foreground(shell_pid);
+    proc_set_foreground(shell_pid);
 
     for (;;) {
         yield();

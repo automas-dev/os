@@ -67,7 +67,16 @@ int sys_call_io_cb(uint32_t call_id, void * args_data, registers_t * regs) {
                 size_t pos;
             } * args = (struct _args *)args_data;
 
-            if (args->handle < 0 || !args->buff || !args->count) {
+            if (args->handle < 0) {
+                KLOG_WARNING("Process %u tried to read from invalid handle", proc->pid);
+                return 0;
+            }
+            if (!args->buff) {
+                KLOG_WARNING("Process %u tried to read into null buffer", proc->pid);
+                return 0;
+            }
+            if (!args->count) {
+                KLOG_WARNING("Process %u read with 0 count", proc->pid);
                 return 0;
             }
 
@@ -75,32 +84,48 @@ int sys_call_io_cb(uint32_t call_id, void * args_data, registers_t * regs) {
             // TODO add buffer to handle_t
 
             if (args->handle == 0) {
-                size_t available = io_buffer_length(proc->io_buffer);
-                size_t count     = args->count; // idk if this needs to be copied or can be edited in place
-                if (count > available) {
-                    count = available;
-                }
+                KLOG_TRACE("Process %u reading %u characters from stdin", proc->pid, args->count);
 
-                if (count > 0) {
-                    for (size_t i = 0; i < count; i++) {
-                        if (io_buffer_pop(proc->io_buffer, &args->buff[i])) {
-                            break;
+                size_t written = 0;
+                size_t count   = args->count; // idk if this needs to be copied or can be edited in place
+
+                while (count) {
+                    size_t available = io_buffer_length(proc->io_buffer);
+                    // Use available as the number to read, limit to count if greater than
+                    if (available > count) {
+                        available = count;
+                    }
+
+                    for (size_t i = 0; i < available; i++) {
+                        if (io_buffer_pop(proc->io_buffer, &args->buff[written++])) {
+                            KLOG_WARNING("Failed to pop from io buffer for process %u", proc->pid);
+                            // TODO should this be -1?
+                            return written;
                         }
+                    }
+                    count -= available;
+
+                    if (count) {
+                        // yield
+                        proc->next_event.event_id   = 0;
+                        proc->filter_event.event_id = EBUS_EVENT_STDIN_READY;
+                        proc->state                 = PROCESS_STATE_WAITING;
+
+                        enable_interrupts();
+                        kernel_switch_task();
                     }
                 }
 
-                return count;
-            }
+                // TODO is this needed?
+                proc->filter_event.event_id = 0;
+                proc->next_event.event_id   = 0;
 
-            handle_t * h = process_get_handle(proc, args->handle);
-            if (!h) {
-                KPANIC("Failed to find handle");
+                return written;
+            }
+            else {
+                KLOG_WARNING("Process %u trying to read from unsupported handle %d", proc->pid, args->handle);
                 return 0;
             }
-
-            // io_device_t * d = h->device;
-
-            // return d->read_fn(d->data, args->buff, args->count, args->pos);
         } break;
 
         case SYS_CALL_IO_WRITE: {
