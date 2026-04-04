@@ -57,7 +57,7 @@ int io_buffer_pop(io_buffer_t * buff, char * c_out) {
         return -1;
     }
 
-    return 0;
+    return cb_pop(cb, c_out);
 }
 
 size_t io_buffer_size(const io_buffer_t * buff) {
