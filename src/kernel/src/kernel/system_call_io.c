@@ -27,14 +27,30 @@ int sys_call_io_cb(uint32_t call_id, void * args_data, registers_t * regs) {
                 const char * mode;
             } * args = (struct _args *)args_data;
 
-            if (!args->path || !args->mode || !*args->path || !*args->mode) {
+            if (!args->path) {
+                KLOG_WARNING("Open called with null path");
+                return 0;
+            }
+            if (!args->mode) {
+                KLOG_WARNING("Open called with null mode");
+                return 0;
+            }
+            if (!*args->path) {
+                KLOG_WARNING("Open called with empty path");
+                return 0;
+            }
+            if (!*args->mode) {
+                KLOG_WARNING("Open called with empty mode");
                 return 0;
             }
 
             io_device_t * d = device_fs_file_open(args->path, args->mode);
             if (!d) {
+                KLOG_WARNING("Failed to open fs file for %s in mode %s", args->path, args->mode);
                 return 0;
             }
+
+            KLOG_DEBUG("Process %u opens file %s in mode %s", proc->pid, args->path, args->mode);
 
             return process_add_handle(proc, -1, 0, d);
         } break;
