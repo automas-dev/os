@@ -10,6 +10,11 @@ int main(size_t argc, char ** argv) {
 
     file_t * file = file_open(argv[1], "r");
 
+    if (!file) {
+        printf("File not found %s\n", argv[1]);
+        return 1;
+    }
+
     char c;
     while (file_read(file, 1, 1, &c)) {
         putc(c);
