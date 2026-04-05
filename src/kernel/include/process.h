@@ -93,8 +93,7 @@ typedef struct _process {
     /// Current state of process (eg. loading, running, waiting, dead, etc.)
     enum PROCESS_STATE state;
 
-    /// Array of circular buffers used to store data being sent to each handle.
-    /// If a buffee is filled it ... (tbd, drops input or pops oldest?)
+    /// Character buffer for stdin
     io_buffer_t * io_buffer;
 
     struct _process * next;
