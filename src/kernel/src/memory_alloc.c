@@ -49,7 +49,7 @@ static void catch_invalid_entry(const memory_entry_t * entry) {
 
 int memory_init(memory_t * mem, memory_alloc_pages_t alloc_pages_fn) {
     if (!mem) {
-        KLOG_ERROR("Called memory_init with null pointer");
+        KLOG_ERROR("Called memory_realloc with null memory struct");
         return -1;
     }
     if (!alloc_pages_fn) {
@@ -80,7 +80,7 @@ int memory_init(memory_t * mem, memory_alloc_pages_t alloc_pages_fn) {
 
 void * memory_alloc(memory_t * mem, size_t size) {
     if (!mem) {
-        KLOG_ERROR("Called memory_alloc with null pointer");
+        KLOG_ERROR("Called memory_realloc with null memory struct");
         return 0;
     }
     if (!size) {
@@ -90,25 +90,31 @@ void * memory_alloc(memory_t * mem, size_t size) {
 
     ALIGN_SIZE(size);
 
+    KLOG_TRACE("Alloc aligned size is %u", size);
+
     memory_entry_t * entry = memory_find_entry_size(mem, size);
 
     if (!entry) {
+        KLOG_TRACE("No entry found");
         size_t request_size = size;
 
         // Last entry will be merged with new entry
         if (mem->last->magic == MAGIC_FREE) {
             request_size -= mem->last->size - sizeof(memory_entry_t);
+            KLOG_TRACE("Reduced request size to %u", request_size);
         }
 
         entry = memory_add_entry(mem, request_size);
         catch_invalid_entry(entry);
 
         if (!entry) {
+            KLOG_WARNING("Could not add memory entry of size %u", request_size);
             return 0;
         }
 
         // Last entry is being included, so merge it
         if (request_size != size) {
+            KLOG_TRACE("Will merge with last entry because %u != %u", request_size, size);
             entry = entry->prev;
             catch_invalid_entry(entry);
             memory_merge_with_next(mem, entry);
@@ -118,6 +124,7 @@ void * memory_alloc(memory_t * mem, size_t size) {
     catch_invalid_entry(entry);
 
     if (SHOULD_SPLIT(entry, size)) {
+        KLOG_TRACE("Entry should split from %u, for aligned requested size %u", entry->size, size);
         memory_split_entry(mem, entry, size);
         catch_invalid_entry(entry);
     }
@@ -129,12 +136,22 @@ void * memory_alloc(memory_t * mem, size_t size) {
 }
 
 void * memory_realloc(memory_t * mem, void * ptr, size_t size) {
-    if (!mem || !ptr || !size) {
+    if (!mem) {
+        KLOG_ERROR("Called memory_realloc with null memory struct");
+        return 0;
+    }
+    if (!ptr) {
+        KLOG_ERROR("Called memory_realloc with null pointer");
+        return 0;
+    }
+    if (!size) {
+        KLOG_ERROR("Called memory_realloc with 0 size");
         return 0;
     }
 
     // Will never be found
     if (NOT_ALIGNED(ptr)) {
+        KLOG_ERROR("Realloc was called with a misaligned pointer %p", ptr);
         return 0;
     }
 
@@ -144,12 +161,19 @@ void * memory_realloc(memory_t * mem, void * ptr, size_t size) {
     catch_invalid_entry(entry);
 
     // Does not exist
-    if (!entry || entry->magic != MAGIC_USED) {
+    if (!entry) {
+        KLOG_WARNING("Memory entry does not exist for pointer %p", ptr);
+        return 0;
+    }
+    if (entry->magic != MAGIC_USED) {
+        KLOG_WARNING("Memory entry for pointer %p is not allocated", ptr);
         return 0;
     }
 
     // Same size or smaller
     if (entry->size <= size) {
+        // TODO split / shrink entry
+        KLOG_TRACE("Realloc size of pointer %p is smaller than the current allocation, no changes will be made", ptr);
         return ENTRY_PTR(entry);
     }
 
@@ -165,6 +189,7 @@ void * memory_realloc(memory_t * mem, void * ptr, size_t size) {
 
     void * new_ptr = memory_alloc(mem, size);
     if (!new_ptr) {
+        KLOG_WARNING("Failed to allocate new memory to copy data into from pointer %p", ptr);
         return 0;
     }
 
@@ -177,28 +202,44 @@ void * memory_realloc(memory_t * mem, void * ptr, size_t size) {
 
     memory_free(mem, ptr);
 
+    KLOG_TRACE("Finished realloc of pointer %p to new pointer %p", ptr, new_ptr);
+
     return new_ptr;
 }
 
 int memory_free(memory_t * mem, void * ptr) {
-    if (!mem || !ptr) {
+    if (!mem) {
+        KLOG_ERROR("Called memory_realloc with null memory struct");
+        return -1;
+    }
+    if (!ptr) {
+        KLOG_ERROR("Called memory_realloc with null pointer");
         return -1;
     }
 
     // Will never be found
     if (NOT_ALIGNED(ptr)) {
+        KLOG_ERROR("Realloc was called with a misaligned pointer %p", ptr);
         return -1;
     }
 
     memory_entry_t * entry = memory_find_entry_ptr(mem, ptr);
     catch_invalid_entry(entry);
 
+    // Does not exist
     if (!entry) {
+        KLOG_WARNING("Memory entry does not exist for pointer %p", ptr);
+        return -1;
+    }
+    if (entry->magic != MAGIC_USED) {
+        KLOG_WARNING("Memory entry for pointer %p is already free", ptr);
         return -1;
     }
 
     entry->magic = MAGIC_FREE;
     catch_invalid_entry(entry);
+
+    KLOG_TRACE("Finished free of pointer %p", ptr);
 
     return 0;
 }
