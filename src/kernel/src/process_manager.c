@@ -216,7 +216,7 @@ process_t * pm_get_next(proc_man_t * pm) {
                 }
                 // This handles the above case but is split for trace log
                 if (proc->filter_event.event_id == proc->next_event.event_id) {
-                    KLOG_DEBUG("Process %u has ready event %u", proc->pid, proc->next_event.event_id);
+                    KLOG_TRACE("Process %u has ready event %u", proc->pid, proc->next_event.event_id);
                     return proc;
                 }
                 KLOG_TRACE("Process %u is not ready, waiting for %u", proc->pid, proc->filter_event.event_id);
