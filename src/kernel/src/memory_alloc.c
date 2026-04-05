@@ -1,5 +1,11 @@
+#define KLOG_SERVICE "MEMORY_ALLOC"
+#define KLOG_LEVEL   KLOG_LEVEL_TRACE
+
 #include "memory_alloc.h"
 
+#include "kernel.h"
+#include "kernel/logs.h"
+#include "libc/proc.h"
 #include "libc/string.h"
 
 #define PAGE_SIZE 4096
@@ -22,8 +28,32 @@ static memory_entry_t * memory_find_entry_size(memory_t * mem, size_t size);
 static memory_entry_t * memory_find_entry_ptr(memory_t * mem, void * ptr);
 static memory_entry_t * memory_add_entry(memory_t * mem, size_t size);
 
+static void catch_invalid_entry(const memory_entry_t * entry) {
+    if (!entry) {
+        KPANIC("INVALID MEMORY ENTRY");
+    }
+    if (entry->magic != MAGIC_FREE && entry->magic != MAGIC_USED) {
+        KPANIC("INVALID MEMORY ENTRY");
+    }
+    if (entry->next) {
+        if (entry->next->magic != MAGIC_FREE && entry->next->magic != MAGIC_USED) {
+            KPANIC("INVALID MEMORY ENTRY");
+        }
+    }
+    if (entry->prev) {
+        if (entry->prev->magic != MAGIC_FREE && entry->prev->magic != MAGIC_USED) {
+            KPANIC("INVALID MEMORY ENTRY");
+        }
+    }
+}
+
 int memory_init(memory_t * mem, memory_alloc_pages_t alloc_pages_fn) {
-    if (!mem || !alloc_pages_fn) {
+    if (!mem) {
+        KLOG_ERROR("Called memory_init with null pointer");
+        return -1;
+    }
+    if (!alloc_pages_fn) {
+        KLOG_ERROR("Called memory_init with no page allocation function");
         return -1;
     }
 
@@ -32,6 +62,7 @@ int memory_init(memory_t * mem, memory_alloc_pages_t alloc_pages_fn) {
     mem->alloc_pages_fn = alloc_pages_fn;
 
     if (!mem->first) {
+        KLOG_ERROR("Failed to allocate first page");
         return -1;
     }
 
@@ -42,11 +73,18 @@ int memory_init(memory_t * mem, memory_alloc_pages_t alloc_pages_fn) {
     entry->next  = 0;
     entry->prev  = 0;
 
+    catch_invalid_entry(entry);
+
     return 0;
 }
 
 void * memory_alloc(memory_t * mem, size_t size) {
-    if (!mem || !size) {
+    if (!mem) {
+        KLOG_ERROR("Called memory_alloc with null pointer");
+        return 0;
+    }
+    if (!size) {
+        KLOG_ERROR("Called memory_alloc with 0 size");
         return 0;
     }
 
@@ -63,6 +101,7 @@ void * memory_alloc(memory_t * mem, size_t size) {
         }
 
         entry = memory_add_entry(mem, request_size);
+        catch_invalid_entry(entry);
 
         if (!entry) {
             return 0;
@@ -71,15 +110,20 @@ void * memory_alloc(memory_t * mem, size_t size) {
         // Last entry is being included, so merge it
         if (request_size != size) {
             entry = entry->prev;
+            catch_invalid_entry(entry);
             memory_merge_with_next(mem, entry);
         }
     }
 
+    catch_invalid_entry(entry);
+
     if (SHOULD_SPLIT(entry, size)) {
         memory_split_entry(mem, entry, size);
+        catch_invalid_entry(entry);
     }
 
     entry->magic = MAGIC_USED;
+    catch_invalid_entry(entry);
 
     return ENTRY_PTR(entry);
 }
@@ -97,6 +141,7 @@ void * memory_realloc(memory_t * mem, void * ptr, size_t size) {
     ALIGN_SIZE(size);
 
     memory_entry_t * entry = memory_find_entry_ptr(mem, ptr);
+    catch_invalid_entry(entry);
 
     // Does not exist
     if (!entry || entry->magic != MAGIC_USED) {
@@ -146,12 +191,14 @@ int memory_free(memory_t * mem, void * ptr) {
     }
 
     memory_entry_t * entry = memory_find_entry_ptr(mem, ptr);
+    catch_invalid_entry(entry);
 
     if (!entry) {
         return -1;
     }
 
     entry->magic = MAGIC_FREE;
+    catch_invalid_entry(entry);
 
     return 0;
 }
@@ -166,23 +213,35 @@ int memory_free(memory_t * mem, void * ptr) {
  * @param size minimum number of bytes
  */
 static void memory_split_entry(memory_t * mem, memory_entry_t * entry, size_t size) {
+    catch_invalid_entry(entry);
     memory_entry_t * new_entry = ENTRY_PTR(entry) + size;
 
     new_entry->magic = MAGIC_FREE;
     new_entry->size  = entry->size - size - sizeof(memory_entry_t);
     new_entry->prev  = entry;
     new_entry->next  = entry->next;
+    catch_invalid_entry(new_entry);
 
     if (entry == mem->last) {
         mem->last = new_entry;
+        catch_invalid_entry(entry);
+        catch_invalid_entry(new_entry);
+        catch_invalid_entry(mem->last);
     }
 
     if (entry->next) {
+        catch_invalid_entry(entry->next);
         entry->next->prev = new_entry;
+        catch_invalid_entry(entry);
+        catch_invalid_entry(new_entry);
+        catch_invalid_entry(entry->next);
+        catch_invalid_entry(entry->next->prev);
     }
 
     entry->next = new_entry;
     entry->size = size;
+    catch_invalid_entry(entry);
+    catch_invalid_entry(entry->next);
 }
 
 /**
@@ -195,17 +254,24 @@ static void memory_split_entry(memory_t * mem, memory_entry_t * entry, size_t si
  * @param entry pointer to the memory entry
  */
 static void memory_merge_with_next(memory_t * mem, memory_entry_t * entry) {
+    catch_invalid_entry(entry);
     memory_entry_t * next_entry = entry->next;
+    catch_invalid_entry(next_entry);
 
     if (next_entry == mem->last) {
         mem->last = entry;
+        catch_invalid_entry(mem->last);
     }
 
     entry->size += next_entry->size + sizeof(memory_entry_t);
     entry->next = next_entry->next;
+    catch_invalid_entry(entry);
+    catch_invalid_entry(next_entry);
 
     if (next_entry->next) {
         next_entry->next->prev = entry;
+        catch_invalid_entry(entry);
+        catch_invalid_entry(next_entry);
     }
 }
 
@@ -221,17 +287,22 @@ static void memory_merge_with_next(memory_t * mem, memory_entry_t * entry) {
  */
 static memory_entry_t * memory_find_entry_size(memory_t * mem, size_t size) {
     memory_entry_t * entry = mem->first;
+    catch_invalid_entry(entry);
 
     while (entry) {
+        catch_invalid_entry(entry);
+
         if (entry->magic == MAGIC_FREE) {
             memory_entry_t * next_entry = entry->next;
 
             while (entry->size < size && next_entry) {
+                catch_invalid_entry(next_entry);
                 if (next_entry->magic != MAGIC_FREE) {
                     break;
                 }
 
                 memory_merge_with_next(mem, entry);
+                catch_invalid_entry(entry);
 
                 if (entry->size >= size) {
                     break;
@@ -264,6 +335,8 @@ static memory_entry_t * memory_find_entry_ptr(memory_t * mem, void * ptr) {
     memory_entry_t * entry = mem->first;
 
     while (entry) {
+        catch_invalid_entry(entry);
+
         if (ENTRY_PTR(entry) == ptr) {
             return entry;
         }
@@ -301,6 +374,7 @@ static memory_entry_t * memory_add_entry(memory_t * mem, size_t size) {
     entry->prev     = mem->last;
     mem->last->next = entry;
     mem->last       = entry;
+    catch_invalid_entry(entry);
 
     return entry;
 }
