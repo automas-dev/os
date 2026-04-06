@@ -9,6 +9,7 @@
 #include <stdint.h>
 
 #include "boot_params.h"
+#include "config.h"
 #include "cpu/gdt.h"
 #include "cpu/mmu.h"
 #include "defs.h"
@@ -49,6 +50,8 @@ void __start() {
     // kernel_log_set_level(KERNEL_LOG_LEVEL_DEBUG);
     // kernel_log_set_level(KERNEL_LOG_LEVEL_TRACE);
     KLOG_INFO("Loader Start");
+
+    KLOG_INFO(PROJECT_NAME " " PROJECT_VERSION " " CPU_ARCH);
 
     // 2. Load VGA driver and clear screen
     vga_init(UINT2PTR(PADDR_VGA));
