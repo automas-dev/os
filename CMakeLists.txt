@@ -1,11 +1,23 @@
 cmake_minimum_required(VERSION 3.15..3.20)
 
 set(CPU_ARCH i386)
+set(KERNEL_DEBUG_CHECKS_ENABLED 1)
 
 set(CROSS_PREFIX "$ENV{HOME}/.local/opt/cross")
 set(CMAKE_TOOLCHAIN_FILE cmake/toolchain.cmake)
 
-project(os VERSION 0.1.0 LANGUAGES C)
+execute_process(
+    COMMAND git describe --tags --abbrev=0
+    OUTPUT_VARIABLE OS_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+if(OS_VERSION STREQUAL "")
+    set(OS_VERSION 0.0.0)
+    message(WARNING "Could not find git tag for version, defaulting to 0.0.0")
+endif()
+
+project(os VERSION ${OS_VERSION} LANGUAGES C)
 
 # set(CMAKE_VERBOSE_MAKEFILE on)
 
@@ -13,8 +25,8 @@ project(os VERSION 0.1.0 LANGUAGES C)
 # NASM SETUP
 
 # https://stackoverflow.com/a/56434253
-
 enable_language(ASM_NASM)
+
 if(CMAKE_ASM_NASM_COMPILER_LOADED)
     set(CMAKE_ASM_NASM_COMPILE_OBJECT "<CMAKE_ASM_NASM_COMPILER> <INCLUDES> <FLAGS> -o <OBJECT> <SOURCE>")
 
@@ -41,7 +53,6 @@ add_subdirectory(src)
 
 # ------------------------------------------------------------------------------
 # OS IMAGE
-
 add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/os-image.bin
     COMMAND cat $<TARGET_OBJECTS:boot> ${CMAKE_BINARY_DIR}/src/kernel/kernel.bin > ${CMAKE_BINARY_DIR}/os-image.bin
     COMMAND echo Size of os image is
