@@ -138,8 +138,15 @@ int sys_call_io_cb(uint32_t call_id, void * args_data, registers_t * regs) {
                 return written;
             }
             else {
-                KLOG_WARNING("Process %u trying to read from unsupported handle %d", proc->pid, args->handle);
-                return 0;
+                handle_t * h = process_get_handle(proc, args->handle);
+                if (!h) {
+                    KLOG_WARNING("Process %u trying to read from unsupported handle %d", proc->pid, args->handle);
+                    return 0;
+                }
+
+                io_device_t * d = h->device;
+
+                return d->read_fn(d->device_data, args->buff, args->count, args->pos);
             }
         } break;
 
