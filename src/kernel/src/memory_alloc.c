@@ -29,7 +29,7 @@ static memory_entry_t * memory_find_entry_size(memory_t * mem, size_t size);
 static memory_entry_t * memory_find_entry_ptr(memory_t * mem, void * ptr);
 static memory_entry_t * memory_add_entry(memory_t * mem, size_t size);
 
-#if KERNEL_DEBUG_CHECKS_ENABLED
+#if KERNEL_MEMORY_INTEGRITY_CHECKS_ENABLED
 #define CHECK_ENTRY(ENTRY) catch_invalid_entry(ENTRY)
 static void catch_invalid_entry(const memory_entry_t * entry) {
     if (!entry) {

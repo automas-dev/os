@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15..3.20)
 
 set(CPU_ARCH i386)
-set(KERNEL_DEBUG_CHECKS_ENABLED 1)
+set(KERNEL_MEMORY_INTEGRITY_CHECKS_ENABLED 1)
 
 set(CROSS_PREFIX "$ENV{HOME}/.local/opt/cross")
 set(CMAKE_TOOLCHAIN_FILE cmake/toolchain.cmake)

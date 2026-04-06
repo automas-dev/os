@@ -51,7 +51,7 @@ void __start() {
     // kernel_log_set_level(KERNEL_LOG_LEVEL_TRACE);
     KLOG_INFO("Loader Start");
 
-    KLOG_INFO(PROJECT_NAME " version=" PROJECT_VERSION " arch=" CPU_ARCH " debug_checks=%u", KERNEL_DEBUG_CHECKS_ENABLED);
+    KLOG_INFO(PROJECT_DESCRIPTION);
 
     // 2. Load VGA driver and clear screen
     vga_init(UINT2PTR(PADDR_VGA));

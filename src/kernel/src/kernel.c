@@ -18,6 +18,7 @@
 #include "kernel/panic.h"
 #include "kernel/system_call_event.h"
 #include "kernel/system_call_io.h"
+#include "kernel/system_call_kernel.h"
 #include "kernel/system_call_mem.h"
 #include "kernel/system_call_proc.h"
 #include "kernel/time.h"
@@ -106,6 +107,7 @@ static void setup_system_calls() {
     system_call_register(SYS_CALL_FAMILY_MEM, sys_call_mem_cb);
     system_call_register(SYS_CALL_FAMILY_PROC, sys_call_proc_cb);
     system_call_register(SYS_CALL_FAMILY_EVENT, sys_call_event_cb);
+    system_call_register(SYS_CALL_FAMILY_KERNEL, sys_call_kernel_cb);
 }
 
 int kernel_exec(const char * filename, size_t argc, char ** argv) {

@@ -2,8 +2,12 @@
 #include "libc/memory.h"
 #include "libc/proc.h"
 #include "libc/stdio.h"
+#include "libk/sys_call.h"
 
 void init() {
+    const char * description = _sys_kernel_describe();
+    printf("%s\n", description);
+
     // TODO why doesn't keyboard work without this?
     yield();
 
