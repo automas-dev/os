@@ -14,6 +14,7 @@
 #include "drivers/ramdisk.h"
 #include "drivers/rtc.h"
 #include "exec.h"
+#include "kernel/device/ata.h"
 #include "kernel/logs.h"
 #include "kernel/panic.h"
 #include "kernel/system_call_event.h"
@@ -87,9 +88,9 @@ void kernel_init() {
     KLOG_DEBUG("enabled kernel log time");
 
     // 8.10 Mount disk
-    __kernel.disk = disk_open(0, DISK_DRIVER_ATA);
+    __kernel.disk = device_ata_open(0);
     if (!__kernel.disk) {
-        KPANIC("Failed to open ATA disk");
+        KPANIC("Failed to open ATA device");
     }
     KLOG_DEBUG("open ata disk finished");
 
@@ -180,7 +181,7 @@ void kernel_queue_event(ebus_event_t * event) {
     }
 }
 
-disk_t * kernel_get_disk() {
+io_device_t * kernel_get_disk() {
     return __kernel.disk;
 }
 

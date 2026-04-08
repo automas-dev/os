@@ -35,9 +35,9 @@ typedef struct {
 } tar_file_t;
 
 struct tar_fs {
-    disk_t *     disk;
-    size_t       file_count;
-    tar_file_t * files;
+    io_device_t * disk_device;
+    size_t        file_count;
+    tar_file_t *  files;
 } __attribute__((packed));
 
 struct tar_fs_file {
@@ -52,8 +52,8 @@ static size_t       count_files(tar_fs_t * tar);
 static bool         load_headers(tar_fs_t * tar);
 static tar_file_t * find_filename(tar_fs_t * tar, const char * filename);
 
-tar_fs_t * tar_open(disk_t * disk) {
-    if (!disk) {
+tar_fs_t * tar_open(io_device_t * disk_device) {
+    if (!disk_device) {
         KLOG_ERROR("Tried to open a null ptr");
         return 0;
     }
@@ -64,9 +64,9 @@ tar_fs_t * tar_open(disk_t * disk) {
         return 0;
     }
 
-    tar->disk       = disk;
-    tar->file_count = count_files(tar);
-    tar->files      = 0;
+    tar->disk_device = disk_device;
+    tar->file_count  = count_files(tar);
+    tar->files       = 0;
 
     if (tar->file_count) {
         tar->files = kmalloc(sizeof(tar_file_t) * tar->file_count);
@@ -321,7 +321,10 @@ size_t tar_file_read(tar_fs_file_t * file, char * buff, size_t count) {
         count = file->size - file->pos;
     }
 
-    return disk_read(file->tar->disk, buff, count, file->file->disk_pos + file->pos);
+    io_device_t * disk = file->tar->disk_device;
+
+    return disk->read_fn(disk->device_data, buff, count, file->file->disk_pos + file->pos);
+    // return disk_read(file->tar->disk, buff, count, file->file->disk_pos + file->pos);
 }
 
 static size_t parse_octal(const char * str) {
@@ -346,12 +349,15 @@ static size_t count_files(tar_fs_t * tar) {
         return 0;
     }
 
+    io_device_t * disk = tar->disk_device;
+
     raw_header_t header;
 
     size_t disk_pos = 0;
     size_t count    = 0;
     for (;;) {
-        size_t n_read = disk_read(tar->disk, (uint8_t *)&header, sizeof(raw_header_t), disk_pos);
+        // size_t n_read = disk_read(tar->disk, (uint8_t *)&header, sizeof(raw_header_t), disk_pos);
+        size_t n_read = disk->read_fn(disk->device_data, (char *)&header, sizeof(raw_header_t), disk_pos);
 
         if (!n_read) {
             break;
@@ -385,12 +391,15 @@ static bool load_headers(tar_fs_t * tar) {
         return false;
     }
 
+    io_device_t * disk = tar->disk_device;
+
     size_t disk_pos = 0;
 
     for (size_t i = 0; i < tar->file_count; i++) {
         tar_file_t * file = &tar->files[i];
 
-        size_t n_read = disk_read(tar->disk, (uint8_t *)&file->header, sizeof(raw_header_t), disk_pos);
+        // size_t n_read = disk_read(tar->disk, (uint8_t *)&file->header, sizeof(raw_header_t), disk_pos);
+        size_t n_read = disk->read_fn(disk->device_data, (char *)&file->header, sizeof(raw_header_t), disk_pos);
 
         if (!n_read) {
             break;
