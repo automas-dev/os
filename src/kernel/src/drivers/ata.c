@@ -19,21 +19,15 @@
 #define MAX_RETRY     5000
 #define TIMEOUT_MS    1000
 #define START_TIMEOUT uint32_t __timeout = time_ms() + TIMEOUT_MS;
-#define TEST_TIMEOUT                                          \
-    if (time_ms() > __timeout) {                              \
-        puts("TIMEOUT\n");                                    \
-        return 0;                                             \
-    }                                                         \
-    else if (debug) {                                         \
-        printf("no timeout %u < %u\n", time_ms(), __timeout); \
+#define TEST_TIMEOUT                                                                     \
+    if (time_ms() > __timeout) {                                                         \
+        KLOG_WARNING("Timeout occurred after %u (timeout is %u)", time_ms(), __timeout); \
+        return 0;                                                                        \
     }
-#define TEST_TIMEOUT_VOID                                     \
-    if (time_ms() > __timeout) {                              \
-        puts("TIMEOUT\n");                                    \
-        return;                                               \
-    }                                                         \
-    else if (debug) {                                         \
-        printf("no timeout %u < %u\n", time_ms(), __timeout); \
+#define TEST_TIMEOUT_VOID                                                                \
+    if (time_ms() > __timeout) {                                                         \
+        KLOG_WARNING("Timeout occurred after %u (timeout is %u)", time_ms(), __timeout); \
+        return;                                                                          \
     }
 
 #define ATA_BUS_0_IO_BASE  0x1F0
