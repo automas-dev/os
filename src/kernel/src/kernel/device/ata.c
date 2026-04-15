@@ -32,7 +32,7 @@ io_device_t * device_ata_open(uint8_t id) {
 
     kmemset(dev, 0, sizeof(io_device_t));
 
-    dev->flags = DEVICE_IO_FLAG_READ | DEVICE_IO_FLAG_WRITE | DEVICE_IO_FLAG_SIZED;
+    dev->flags = IO_DEVICE_FLAG_READ | IO_DEVICE_FLAG_WRITE | IO_DEVICE_FLAG_SIZED;
 
     dev->read_fn  = _ata_read;
     dev->write_fn = _ata_write;

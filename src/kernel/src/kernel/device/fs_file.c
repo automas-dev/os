@@ -12,10 +12,10 @@ io_device_t * device_fs_file_open(const char * path, const char * mode) {
     if (dev) {
         kmemset(dev, 0, sizeof(io_device_t));
 
-        dev->flags = DEVICE_IO_FLAG_WRITE | DEVICE_IO_FLAG_READ | DEVICE_IO_FLAG_SIZED;
+        dev->flags = IO_DEVICE_FLAG_WRITE | IO_DEVICE_FLAG_READ | IO_DEVICE_FLAG_SIZED;
 
-        dev->read_fn  = (device_io_read_t)tar_file_read;
-        dev->write_fn = (device_io_write_t)tar_file_read;
+        dev->read_fn  = (io_device_read_t)tar_file_read;
+        dev->write_fn = (io_device_write_t)tar_file_read;
         dev->size_fn  = __size;
 
         tar_fs_file_t * file = tar_file_open(kernel_get_tar(), path);
