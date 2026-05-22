@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install dependencies
         run: sudo apt-get install -y build-essential gcc-multilib g++-multilib
@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Lint src
         uses: jidicula/clang-format-action@v4.14.0
@@ -64,7 +64,7 @@ jobs:
 
   increment_version:
     name: Increment Version
-    uses: automas-dev/reusable-workflows/.github/workflows/increment_version.yml@main
+    uses: automas-dev/reusable-workflows/.github/workflows/increment_version.yml@v1.1
     if: github.ref == 'refs/heads/main'
     secrets: inherit
 
