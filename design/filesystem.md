@@ -26,7 +26,7 @@ The type show what the block type is.
 
 Example to get decode an address
 
-```text
+```c
 block = loc & 0xff
 group = (loc >> 8) & 0x3fff
 type = loc >> 30

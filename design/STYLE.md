@@ -29,7 +29,8 @@ frequently updated for well established documents.
 <!-- Why it's good -->
 Inline code can be used to display potentially ambiguous characters (eg. lower
 and upper case L, letter O and number 0) and to distinguish text from it's
-surroundings like hexadecimal numbers (eg. `0x123`).
+surroundings like hexadecimal numbers (eg. `0x123`). It's use is not mandatory
+and typically used as needed rather than by default.
 
 <!-- Why it's bad -->
 Inline code, however, reduce the contrast between text and background
