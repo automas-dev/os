@@ -106,6 +106,10 @@ unintuitive or not obvious, but are not important enough to ues an alert.
 content and communicates to the reader that a section may be incomplete or
 inaccurate.
 
+When used with all caps, **TODO** can also be highlighted by vscode using the
+[TODO Highlights](https://marketplace.visualstudio.com/items?itemName=wayou.vscode-todo-highlight)
+extension.
+
 ## Alerts / Callouts / Admonitions
 
 Alerts can be useful to call attention to some information or visually break up

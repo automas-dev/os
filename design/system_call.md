@@ -3,6 +3,7 @@
 <!-- Table of Contents only links to level 2 headers -->
 \[ [Sending System Calls](#sending-system-calls) \]
 \[ [Receiving System Calls](#receiving-system-calls) \]
+\[ [Example Handler](#example-handler) \]
 
 System calls are the mechanism by which processes communicate with the kernel
 both for sending commands and retrieving data. Some examples include file io,
@@ -77,7 +78,7 @@ Each call handler can optionally returns a single `int` value to the caller
 process by returning a value from the handler function. If no value is returned
 to the caller process, the call handler should return 0.
 
-### Example Handler
+## Example Handler
 
 A typical call handler uses a switch block to select the correct logic based
 on the `call_id`.
