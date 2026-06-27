@@ -25,9 +25,9 @@ at address `0x500`.
 
 | start | size | description        |
 | ----- | ---- | ------------------ |
-| `0`   | 2    | Low Memory Size    |
-| `2`   | 2    | Memory Entry Count |
-| `4`   | x    | Memory Map Entries |
+| 0     | 2    | Low Memory Size    |
+| 2     | 2    | Memory Entry Count |
+| 4     | x    | Memory Map Entries |
 
 x is the value of Memory Entry Count * 24
 
@@ -65,10 +65,10 @@ ACPI 3.0 Extended Attributes
 
 | start   | end     | size      | description           |
 | ------- | ------- | --------- | --------------------- |
-| 0x00000 | 0x004ff | 1.25 KiB  | Unused                |
-| 0x00500 | 0x00fff | 2.75 KiB  | Boot Parameters       |
-| 0x01000 | 0x01fff | 4 KiB     | Page Directory        |
-| 0x02000 | 0x02fff | 4 KiB     | ram region table      |
+| `0x00000` | 0x004ff | 1.25 KiB  | Unused                |
+| `0x00500` | 0x00fff | 2.75 KiB  | Boot Parameters       |
+| `0x01000` | 0x01fff | 4 KiB     | Page Directory        |
+| `0x02000` | 0x02fff | 4 KiB     | ram region table      |
 | 0x03000 | 0x06fff | 16 KiB    | Stack                 |
 | 0x07000 | 0x07bff | 3 KiB     | Unused                |
 | 0x07c00 | 0x07dff | 512 bytes | GDT                   |
