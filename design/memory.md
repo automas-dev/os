@@ -16,13 +16,14 @@ for reserved BIOS memory.
 
 > [!IMPORTANT]
 > Kernel Size in Protected Mode
+>
 > Reserved memory in protected mode starts at 0x9fc00 while real mode starts at
 > 0xa0000
 
 ### Boot Parameters
 
 Boot parameters are set by the bootloader and passed to the second stage kernel
-at address 0x500.
+at address 0x500[^1].
 
 | start | size | description        |
 | ----- | ---- | ------------------ |
@@ -236,3 +237,5 @@ the present flag set will be treated as the end of all entries.
   should be stored. All other tables are reachable via the linked list.
 
 TODO - everything else here
+
+[^1]: My footnote
