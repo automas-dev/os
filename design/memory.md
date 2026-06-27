@@ -15,15 +15,13 @@ for reserved BIOS memory.
 | 0x7e00 | 0x9fbff | 607.5 KiB | Kernel (second stage)       |
 
 > [!IMPORTANT]
-> Kernel Size in Protected Mode
->
-> Reserved memory in protected mode starts at 0x9fc00 while real mode starts at
-> 0xa0000
+> Kernel Size in Protected Mode is smaller than in real mode. Reserved memory in
+> protected mode starts at 0x9fc00 while real mode starts at 0xa0000
 
 ### Boot Parameters
 
 Boot parameters are set by the bootloader and passed to the second stage kernel
-at address 0x500[^1].
+at address 0x500.
 
 | start | size | description        |
 | ----- | ---- | ------------------ |
@@ -36,8 +34,7 @@ x is the value of Memory Entry Count * 24
 #### Memory Entry
 
 There is a single memory entry for each region of memory. It is possible to have
-out of order and overlapping regions. See [BIOS Function: INT 0x15, EAX =
-0xE820](https://wiki.osdev.org/Detecting_Memory_(x86)#BIOS_Function:_INT_0x15.2C_EAX_.3D_0xE820)
+out of order and overlapping regions. See [BIOS Function: INT 0x15, EAX = 0xE820](https://wiki.osdev.org/Detecting_Memory_(x86)#BIOS_Function:_INT_0x15.2C_EAX_.3D_0xE820)
 
 | start | size | description  |
 | ----- | ---- | ------------ |
@@ -79,14 +76,14 @@ ACPI 3.0 Extended Attributes
 | ...     | ...     | ...       | ...                   |
 | 0xb8000 | 0xb8fff | 0x01000   | VGA Memory            |
 
-> [!IMPORTANT] Kernel Size in Protected Mode
-> Reserved memory in protected mode starts at 0x9fc00 while real mode starts at
-> 0xa0000
+> [!IMPORTANT]
+> Kernel Size in Protected Mode is smaller than in real mode. Reserved memory in
+> protected mode starts at 0x9fc00 while real mode starts at 0xa0000
 
 ### Virtual Address Space (stage 2)
 
-See https://wiki.osdev.org/Paging for information about page tables and
-directory.
+See [https://wiki.osdev.org/Paging](https://wiki.osdev.org/Paging) for
+information about page tables and directory.
 
 - The first page (0) is always null, accessing any address here will result in a
   (page fault?)
@@ -151,11 +148,12 @@ pages in the region.
 | 4     | 2    | page count      |
 | 8     | 2    | free count      |
 
->[!IMPORTANT] Remember to mask the address
-> The low 12 bits of each address are flags because the address is always page
-> aligned. Remember to mask these bits when using the address.
+> [!IMPORTANT]
+> Remember to mask the address. The low 12 bits of each address are flags
+> because the address is always page aligned. Remember to mask these bits when
+> using the address.
 
-> [!NOTE] Region size
+> [!NOTE]
 > Each region can be up to 128 MiB (32768 pages)
 >- Page size = 4096 (0x1000)
 >- Bits per page = Page Size * 8 = 4096 * 8 = 32768 (0x8000)
@@ -176,8 +174,8 @@ bitmask for the region showing which pages are free. Any bits outside of the
 region should be set to 0 (ie. if the region is smaller than 128 MiB, bits for
 any pages after the region end should be 0).
 
-> [!IMPORTANT] Bitmask bit 1
-> The first bit of the bitmask will always be 0 for the bitmask page itself.
+> [!IMPORTANT]
+> The first bit (bit 1) of the bitmask will always be 0 for the bitmask page itself.
 
 ## Paging Allocator (`memory.h`)
 
@@ -211,11 +209,11 @@ for getting the page number or memory address.
 | 12    | 20   | page no (address if flags masked away) |
 | 32    | 32   | size in bytes (page aligned)           |
 
-> [!IMPORTANT] Size is page aligned
+> [!IMPORTANT]
 > The size is page aligned such that a page no / address + size points to the
 > next valid, page aligned, address.
 
-> [!NOTE] Size has unused bits
+> [!NOTE]
 > Because the size is page aligned, the first 12 bits should always be 0
 
 #### Flags
@@ -237,5 +235,3 @@ the present flag set will be treated as the end of all entries.
   should be stored. All other tables are reachable via the linked list.
 
 TODO - everything else here
-
-[^1]: My footnote
