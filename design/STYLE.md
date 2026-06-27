@@ -69,9 +69,17 @@ Compared to
 >- Max region size = Max pages per region * Page size = 32768 * 4096 = 134217728
 >  (`0x8000000`) = 128 MiB
 
+- Page size = 4096 (`0x1000`)
+- Bits per page = Page Size * 8 = 4096 * 8 = 32768 (`0x8000`)
+- Max pages per region = Bits per page = 32768 (`0x8000`) (includes bitmask page)
+- Max region size = Max pages per region * Page size = 32768 * 4096 = 134217728
+  (`0x8000000`) = 128 MiB
+
 **Bad Usage** - Numbers in formula without the operators
 
 > Bits per page = Page Size * `8` = `4096` * `8` = `32768` (`0x8000`)
+
+Bits per page = Page Size * `8` = `4096` * `8` = `32768` (`0x8000`)
 
 If you're going to quote a formula, include all operators and numbers in a
 single quote. Exceptions can be made where impractical.
@@ -80,9 +88,13 @@ single quote. Exceptions can be made where impractical.
 
 > Bits per page = `Page Size * 8` = `4096 * 8` = `32768 (0x8000)`
 
+Bits per page = `Page Size * 8` = `4096 * 8` = `32768 (0x8000)`
+
 **Bad Usage** - Quote entire line
 
 > `Bits per page = Page Size * 8 = 4096 * 8 = 32768 (0x8000)`
+
+`Bits per page = Page Size * 8 = 4096 * 8 = 32768 (0x8000)`
 
 If a quote spans the entire line, try to use a code block instead. Code blocks
 use a larger font with higher contrast between letters and background.
