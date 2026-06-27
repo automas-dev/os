@@ -30,6 +30,12 @@ frequently updated for well established documents.
 
 ## Inline Code
 
+> [!NOTE]
+> I'm feeling conflicted after writing this section. A the time of writing I was
+> using dark mode. Light mode has better contrast, reducing the issue to a level
+> where inline code is acceptable. I will have to put more thought int it's use
+> before concluding this section.
+
 <!-- Why it's good -->
 Inline code can be used to display potentially ambiguous characters (eg. lower
 and upper case L, letter O and number 0) and to distinguish text from it's
