@@ -65,8 +65,9 @@ jobs:
   increment_version:
     name: Increment Version
     uses: automas-dev/reusable-workflows/.github/workflows/increment_version.yml@v1.1
-    if: github.ref == 'refs/heads/main'
     secrets: inherit
+    with:
+      dry-run: ${{ github.ref != 'refs/heads/main' }}
 
     needs: [test, lint]
 
