@@ -59,7 +59,7 @@ section once they are finished.
 
 # Active
 
-## 1, Task Scheduler
+## 1. Task Scheduler
 
 Create a task scheduler and add a yield to most / all system calls. This
 scheduler should also handle the idle state when all processes are waiting. The
