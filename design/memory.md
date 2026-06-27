@@ -1,5 +1,6 @@
 # Memory Map
 
+<!-- Table of Contents only links to level 2 headers -->
 \[ [Real Mode](#real-mode) \]
 \[ [Protected Mode](#protected-mode) \]
 \[ [Physical Allocator](#physical-allocator-ramh) \]
