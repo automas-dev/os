@@ -5,29 +5,29 @@
 See [https://wiki.osdev.org/Memory_Map_(x86)](https://wiki.osdev.org/Memory_Map_(x86))
 for reserved BIOS memory.
 
-| start  | end     | size      | description                 |
-| ------ | ------- | --------- | --------------------------- |
-| 0x0000 | 0x4ff   | 1.25 KiB  | Unusable                    |
-| 0x0500 | 0x00fff | 1.25 KiB  | Boot Parameters             |
-| 0x1000 | 0x06fff | 24 KiB    | Stack (real mode), top down |
-| 0x7000 | 0x07bff | 3 KiB     | Unused                      |
-| 0x7c00 | 0x07dff | 512 bytes | Boot Sector                 |
-| 0x7e00 | 0x9fbff | 607.5 KiB | Kernel (second stage)       |
+| start    | end       | size      | description                 |
+| -------- | --------- | --------- | --------------------------- |
+| `0x0000` | `0x4ff`   | 1.25 KiB  | Unusable                    |
+| `0x0500` | `0x00fff` | 1.25 KiB  | Boot Parameters             |
+| `0x1000` | `0x06fff` | 24 KiB    | Stack (real mode), top down |
+| `0x7000` | `0x07bff` | 3 KiB     | Unused                      |
+| `0x7c00` | `0x07dff` | 512 bytes | Boot Sector                 |
+| `0x7e00` | `0x9fbff` | 607.5 KiB | Kernel (second stage)       |
 
 > [!IMPORTANT]
 > Kernel Size in Protected Mode is smaller than in real mode. Reserved memory in
-> protected mode starts at 0x9fc00 while real mode starts at 0xa0000
+> protected mode starts at `0x9fc00` while real mode starts at `0xa0000`
 
 ### Boot Parameters
 
 Boot parameters are set by the bootloader and passed to the second stage kernel
-at address 0x500.
+at address `0x500`.
 
 | start | size | description        |
 | ----- | ---- | ------------------ |
-| 0     | 2    | Low Memory Size    |
-| 2     | 2    | Memory Entry Count |
-| 4     | x    | Memory Map Entries |
+| `0`   | 2    | Low Memory Size    |
+| `2`   | 2    | Memory Entry Count |
+| `4`   | x    | Memory Map Entries |
 
 x is the value of Memory Entry Count * 24
 
