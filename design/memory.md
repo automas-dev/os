@@ -1,5 +1,10 @@
 # Memory Map
 
+\[ [Real Mode](#real-mode) \]
+\[ [Protected Mode](#protected-mode) \]
+\[ [Physical Allocator](#physical-allocator-ramh) \]
+\[ [Paging Allocator](#paging-allocator-memoryh) \]
+
 ## Real Mode
 
 See [https://wiki.osdev.org/Memory_Map_(x86)](https://wiki.osdev.org/Memory_Map_(x86))
