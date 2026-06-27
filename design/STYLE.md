@@ -1,4 +1,4 @@
-# Style Guide for Design
+# Style Guide for Design Files
 
 <!-- Remember to update code example in ## Table of Contents -->
 <!-- Table of Contents only links to level 2 headers -->
