@@ -5,6 +5,7 @@
 See [https://wiki.osdev.org/Memory_Map_(x86)](https://wiki.osdev.org/Memory_Map_(x86))
 for reserved BIOS memory.
 
+<!-- I'm not using inline code `0x...` for hex values because it makes them harder to read. -->
 | start  | end     | size      | description                 |
 | ------ | ------- | --------- | --------------------------- |
 | 0x0000 | 0x4ff   | 1.25 KiB  | Unusable                    |
