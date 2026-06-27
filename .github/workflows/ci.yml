@@ -72,3 +72,16 @@ jobs:
 
     permissions:
       contents: write
+
+  check:
+    runs-on: ubuntu-latest
+    if: always()
+
+    needs: [test, lint, increment_version]
+
+    timeout-minutes: 1
+
+    steps:
+      - uses: re-actors/alls-green@release/v1
+        with:
+          jobs: ${{ toJSON(needs) }}
