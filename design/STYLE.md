@@ -4,6 +4,8 @@
 <!-- Table of Contents only links to level 2 headers -->
 \[ [Table of Contents](#table-of-contents) \]
 \[ [Inline Code](#inline-code) \]
+\[ [Note and ToDO](#note-and-todo) \]
+\[ [Alerts / Callouts / Admonitions](#alerts--callouts--admonitions) \]
 
 ## Table of Contents
 
@@ -19,6 +21,8 @@ what headers are included for future additions or changes.
 <!-- Table of Contents only links to level 2 headers -->
 \[ [Table of Contents](#table-of-contents) \]
 \[ [Inline Code](#inline-code) \]
+\[ [Note and ToDO](#note-and-todo) \]
+\[ [Alerts / Callouts / Admonitions](#alerts--callouts--admonitions) \]
 ```
 
 One drawback is the need for manual updates, however these headers are not
@@ -92,7 +96,7 @@ use a larger font with higher contrast between letters and background.
 > Bits per page = Page Size * 8 = 4096 * 8 = 32768 (0x8000)
 > ```
 
-## NOTE and TODO
+## Note and ToDo
 
 An alternative to alerts ia **Note** and **ToDo** (can also be upper case
 **NOTE** and **TODO**). These are bold at the start of a paragraph followed by
