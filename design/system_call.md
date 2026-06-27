@@ -54,9 +54,9 @@ void system_call_register(uint16_t family, sys_call_handler_t handler);
 
 ### Call Arguments
 
-Arguments are accessible from `args_data` which is a pointer to the va_args in
-the caller process stack. A struct can be used to decompose the argument values
-from this pointer.
+Arguments are accessible from **args_data** which is a pointer to the `va_args`
+in the caller process stack. A struct can be used to decompose the argument
+values from this pointer.
 
 ```c
 struct _args {
@@ -67,10 +67,9 @@ struct _args {
 ```
 
 > [!WARNING]
->
-> Argument data is stored in the process stack. After changing the page directory
-> the values in `arg_data` will be invalid. Copy values to the kernel stack or
-> heap before switching to retrain access.
+> Argument data is stored in the process stack. After changing the page
+> directory the values in `arg_data` will be invalid. Copy values to the kernel
+> stack or heap before switching to retrain access.
 
 ### Return Value
 

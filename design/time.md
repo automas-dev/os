@@ -17,9 +17,9 @@ Each channel counts down, starting at the reload value, and when they reach 0
 the output is switched (low -> high or high -> low). In most cases the channel
 is then set to the reload value.
 
-TODO in what cases is the reload value not used when a channel reaches 0?
+**TODO** in what cases is the reload value not used when a channel reaches 0?
 
-> [!NOTE] Reload Value
+> [!NOTE]
 > The reload value of a channel is the value it will set it's count to after
 > reaching zero. Depending on the mode, that reset can be triggered by various
 > conditions.
@@ -57,7 +57,7 @@ _only channel 0_
 
 This mode will wait until a software trigger to begin the countdown.
 
-TODO does the countdown happen with the clock or on each sw trigger?
+**TODO** does the countdown happen with the clock or on each sw trigger?
 
 ### Mode 1 - Hardware Re-triggerable One-Shot
 
@@ -120,6 +120,7 @@ selected in the command.
 |         | 111 = Mode 3 (square wave generator, same as 011)         |
 | 0       | BCD / Binary Mode (0 = 16-bit binary, 1 = four digit BCD) |
 
-> [!TIP] Bits 0 - 5 are the same as the mode / command
+> [!TIP]
+> Bits 0 - 5 are the same as the mode / command
 
 # Real Time Clock (RTC)

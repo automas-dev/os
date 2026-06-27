@@ -16,7 +16,7 @@ The process tracks and manages the following information.
 - Registers
 - Signal callbacks
 - Link to next process
-- *TBD Stats about process
+- (TBD) Stats about process
 
 ## Creating a Process
 
@@ -67,13 +67,13 @@ previous for list removal). When a task switch is performed, the next process
 in checked for fulfillment of the event filter. This is repeated until a ready
 to run task is found.
 
-> [!WARNING] There must be at least one process ready to run
->
-> There must always be a "next" task ready to run. In the case where the current
-> process is yielding with an event filter, another process must be ready to
-> launch. This will most likely be init, so there needs to be some documentation
-> for init behavior written which includes that it must never yield with an
-> event filter.
+> [!WARNING]
+> There must always be at least one process (a "next" task) ready to run. In the
+> case where the current process is yielding with an event filter, another
+> process must be ready to launch or resume.
+> 
+> This will most likely be init, so documentation is needed for init behavior
+> written which includes that it must never yield with an event filter.
 
 ### Process Manager
 

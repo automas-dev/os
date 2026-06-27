@@ -10,7 +10,7 @@
 The auto-generated bullet point list has very limited control over content and
 styling with editors like vscode where the list is automatically updated. A
 cleaner solution is a single line linking to the primary sections of the
-document, showing only a single level (eg. all level 2 headers). 
+document, showing only a single level (eg. all level 2 headers).
 
 **Example** this is the ToC for this document. A comment is included to explain
 what headers are included for future additions or changes.
@@ -91,3 +91,37 @@ use a larger font with higher contrast between letters and background.
 > ```
 > Bits per page = Page Size * 8 = 4096 * 8 = 32768 (0x8000)
 > ```
+
+## NOTE and TODO
+
+An alternative to alerts ia **Note** and **ToDo** (can also be upper case
+**NOTE** and **TODO**). These are bold at the start of a paragraph followed by
+non-bold text. **Note** is typically used to communicate details that may be
+unintuitive or not obvious, but are not important enough to ues an alert.
+**ToDo** is typically used as a note or reminder to the writer for future
+content and communicates to the reader that a section may be incomplete or
+inaccurate.
+
+## Alerts / Callouts / Admonitions
+
+Alerts can be useful to call attention to some information or visually break up
+sections of text. To retain meaning and effectiveness at capturing the readers
+attention, alerts should be uses sparingly and with short content.
+
+**Note** In vscode, alerts can have an altered title by following the type `[!...]` with
+some text. This fails to render in GitHub so should be avoided.
+
+> [!NOTE]
+> Note block
+
+> [!TIP]
+> Tip block
+
+> [!IMPORTANT]
+> Important block
+
+> [!WARNING]
+> Warning block
+
+> [!CAUTION]
+> Caution block
