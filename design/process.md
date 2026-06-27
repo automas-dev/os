@@ -1,5 +1,10 @@
 # Process
 
+<!-- Table of Contents only links to level 2 headers -->
+\[ [Creating a Process](#creating-a-process) \]
+\[ [Switch Task](#switch-task) \]
+\[ [Ring Scheduler](#ring-scheduler) \]
+
 The process tracks and manages the following information.
 
 - Process Id

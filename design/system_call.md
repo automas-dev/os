@@ -1,5 +1,9 @@
 # System Calls
 
+<!-- Table of Contents only links to level 2 headers -->
+\[ [Sending System Calls](#sending-system-calls) \]
+\[ [Receiving System Calls](#receiving-system-calls) \]
+
 System calls are the mechanism by which processes communicate with the kernel
 both for sending commands and retrieving data. Some examples include file io,
 memory management, process management, etc. System calls are initiated by the

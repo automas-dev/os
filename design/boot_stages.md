@@ -1,5 +1,11 @@
 # Boot Stages
 
+<!-- Table of Contents only links to level 2 headers -->
+\[ [Stage 0 - BIOS](#stage-0---bios) \]
+\[ [Stage 1 - Boot](#stage-1---boot) \]
+\[ [Stage 2 - Loader](#stage-2---loader) \]
+\[ [Stage 3 - OS](#stage-3---os) \]
+
 This describes the planned stages and steps, it does not represent the current
 implementation or progress.
 
@@ -9,8 +15,8 @@ The BIOS firmware does a lot more than this, only the steps to launch the kernel
 are included.
 
 1. Power On Self Test (POST)
-2. Load boot sector (512 Bytes) into memory at `0x7c00`
-3. Jump to `0x7c00`
+2. Load boot sector (512 Bytes) into memory at 0x7c00
+3. Jump to 0x7c00
 
 ## Stage 1 - Boot
 

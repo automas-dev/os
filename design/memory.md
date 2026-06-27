@@ -23,12 +23,12 @@ for reserved BIOS memory.
 
 > [!IMPORTANT]
 > Kernel Size in Protected Mode is smaller than in real mode. Reserved memory in
-> protected mode starts at 0x9fc00 while real mode starts at 0xa0000
+> protected mode starts at `0x9fc00` while real mode starts at `0xa0000`
 
 ### Boot Parameters
 
 Boot parameters are set by the bootloader and passed to the second stage kernel
-at address 0x500.
+at address `0x500`.
 
 | start | size | description        |
 | ----- | ---- | ------------------ |
@@ -85,7 +85,7 @@ ACPI 3.0 Extended Attributes
 
 > [!IMPORTANT]
 > Kernel Size in Protected Mode is smaller than in real mode. Reserved memory in
-> protected mode starts at 0x9fc00 while real mode starts at 0xa0000
+> protected mode starts at `0x9fc00` while real mode starts at `0xa0000`
 
 ### Virtual Address Space (stage 2)
 
@@ -95,17 +95,17 @@ information about page tables and directory.
 - The first page (0) is always null, accessing any address here will result in a
   (page fault?)
 - Each page directory and table contain 1024 entries
-- 0x1000 will always point to the active page directory
-- 0x2000 will always point to the ram region table
-- 0xb9000 will always point to the first ram region bitmasks
-  - There are 512 sequential pages of ram bitmasks ending at 0x2b9fff
+- `0x1000` will always point to the active page directory
+- `0x2000` will always point to the ram region table
+- `0xb9000` will always point to the first ram region bitmasks
+  - There are 512 sequential pages of ram bitmasks ending at `0x2b9fff`
 - _0x400000 is the first virtual address of the second page table_
   - It is suggested to keep kernel level memory bellow this address to allow
     user space application switching out the second+ page table
   - This can be used as the entry point address for all user space applications
   - This region is ~3.99 GB
-- 0xffc00000 will always point to the first page table (kernel table)
-  - This goes up to 0xffffffff as the last address in all of virtual space
+- `0xffc00000` will always point to the first page table (kernel table)
+  - This goes up to `0xffffffff` as the last address in all of virtual space
   - Each of the 1024 tables from the page directory are stored here sequentially
   - The first table includes the null page and kernel memory mapping (see bellow)
 
@@ -185,6 +185,8 @@ any pages after the region end should be 0).
 > The first bit (bit 1) of the bitmask will always be 0 for the bitmask page itself.
 
 ## Paging Allocator (`memory.h`)
+
+Paging allocator (aka **pmalloc** and **pfree**) is responsible for connecting the
 
 Paging allocator (aka `pmalloc` and `pfree`) is responsible for connecting the
 physical memory allocator (ram) and page tables (mmu). This allocator keeps a
