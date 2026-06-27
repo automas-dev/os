@@ -2,7 +2,8 @@
 
 ## Real Mode
 
-See https://wiki.osdev.org/Memory_Map_(x86) for reserved BIOS memory.
+See [https://wiki.osdev.org/Memory_Map_(x86)](https://wiki.osdev.org/Memory_Map_(x86))
+for reserved BIOS memory.
 
 | start  | end     | size      | description                 |
 | ------ | ------- | --------- | --------------------------- |
@@ -13,7 +14,8 @@ See https://wiki.osdev.org/Memory_Map_(x86) for reserved BIOS memory.
 | 0x7c00 | 0x07dff | 512 bytes | Boot Sector                 |
 | 0x7e00 | 0x9fbff | 607.5 KiB | Kernel (second stage)       |
 
-> [!IMPORTANT] Kernel Size in Protected Mode
+> [!IMPORTANT]
+> Kernel Size in Protected Mode
 > Reserved memory in protected mode starts at 0x9fc00 while real mode starts at
 > 0xa0000
 
