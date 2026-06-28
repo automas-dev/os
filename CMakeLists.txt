@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.15..3.20)
 
-set(CPU_ARCH i386)
-set(CROSS_ARCH ${CPU_ARCH}-elf)
+set(CROSS_ARCH i386-elf)
 set(CROSS_GCC_VERSION 16.1.0)
 set(CROSS_PREFIX "$ENV{HOME}/.local/opt/cross")
 set(CMAKE_TOOLCHAIN_FILE cmake/toolchain.cmake)
