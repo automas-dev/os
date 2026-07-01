@@ -29,7 +29,7 @@ function(cross_target_binary target)
         ${TARGET_LINK_FILES}
         --end-group
         -nostdlib
-        "-L${CROSS_PREFIX}/lib/gcc/i386-elf/12.2.0"
+	"-L${CROSS_PREFIX}/lib/gcc/${CROSS_ARCH}/${CROSS_GCC_VERSION}"
         -lgcc
         DEPENDS ${target} ${TARGET_LINK_FILES} ${CMAKE_CURRENT_SOURCE_DIR}/link.ld)
 
@@ -44,7 +44,7 @@ function(cross_target_binary target)
         ${TARGET_LINK_FILES}
         --end-group
         -nostdlib
-        "-L${CROSS_PREFIX}/lib/gcc/i386-elf/12.2.0"
+	"-L${CROSS_PREFIX}/lib/gcc/${CROSS_ARCH}/${CROSS_GCC_VERSION}"
         -lgcc
         DEPENDS ${target} ${TARGET_LINK_FILES})
 
