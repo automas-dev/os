@@ -11,7 +11,7 @@ TODO
 
 # Old
 
-The `register_signals` call will hook a function in libc to receive all signals.
-It will then store all registered callbacks of the process.
+The **register_signals** call will hook a function in libc to receive all
+signals. It will then store all registered callbacks of the process.
 
 TODO - keyboard event

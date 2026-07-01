@@ -26,6 +26,7 @@ The type show what the block type is.
 
 Example to get decode an address
 
+<!-- Using text instead of c because not much gets highlighted -->
 ```text
 block = loc & 0xff
 group = (loc >> 8) & 0x3fff
@@ -34,6 +35,7 @@ type = loc >> 30
 
 Example to encode an address
 
+<!-- Using text instead of c because not much gets highlighted -->
 ```text
 address = block
 address |= (group << 8)

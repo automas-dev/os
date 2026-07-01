@@ -1,9 +1,17 @@
 # Memory Map
 
+<!-- Table of Contents only links to level 2 headers -->
+\[ [Real Mode](#real-mode) \]
+\[ [Protected Mode](#protected-mode) \]
+\[ [Physical Allocator](#physical-allocator-ramh) \]
+\[ [Paging Allocator](#paging-allocator-memoryh) \]
+
 ## Real Mode
 
-See https://wiki.osdev.org/Memory_Map_(x86) for reserved BIOS memory.
+See [https://wiki.osdev.org/Memory_Map_(x86)](https://wiki.osdev.org/Memory_Map_(x86))
+for reserved BIOS memory.
 
+<!-- I'm not using inline code `0x...` for hex values because it makes them harder to read. -->
 | start  | end     | size      | description                 |
 | ------ | ------- | --------- | --------------------------- |
 | 0x0000 | 0x4ff   | 1.25 KiB  | Unusable                    |
@@ -13,9 +21,9 @@ See https://wiki.osdev.org/Memory_Map_(x86) for reserved BIOS memory.
 | 0x7c00 | 0x07dff | 512 bytes | Boot Sector                 |
 | 0x7e00 | 0x9fbff | 607.5 KiB | Kernel (second stage)       |
 
-> [!IMPORTANT] Kernel Size in Protected Mode
-> Reserved memory in protected mode starts at 0x9fc00 while real mode starts at
-> 0xa0000
+> [!IMPORTANT]
+> Kernel Size in Protected Mode is smaller than in real mode. Reserved memory in
+> protected mode starts at 0x9fc00 while real mode starts at 0xa0000
 
 ### Boot Parameters
 
@@ -33,8 +41,7 @@ x is the value of Memory Entry Count * 24
 #### Memory Entry
 
 There is a single memory entry for each region of memory. It is possible to have
-out of order and overlapping regions. See [BIOS Function: INT 0x15, EAX =
-0xE820](https://wiki.osdev.org/Detecting_Memory_(x86)#BIOS_Function:_INT_0x15.2C_EAX_.3D_0xE820)
+out of order and overlapping regions. See [BIOS Function: INT 0x15, EAX = 0xE820](https://wiki.osdev.org/Detecting_Memory_(x86)#BIOS_Function:_INT_0x15.2C_EAX_.3D_0xE820)
 
 | start | size | description  |
 | ----- | ---- | ------------ |
@@ -76,28 +83,28 @@ ACPI 3.0 Extended Attributes
 | ...     | ...     | ...       | ...                   |
 | 0xb8000 | 0xb8fff | 0x01000   | VGA Memory            |
 
-> [!IMPORTANT] Kernel Size in Protected Mode
-> Reserved memory in protected mode starts at 0x9fc00 while real mode starts at
-> 0xa0000
+> [!IMPORTANT]
+> Kernel Size in Protected Mode is smaller than in real mode. Reserved memory in
+> protected mode starts at 0x9fc00 while real mode starts at 0xa0000
 
 ### Virtual Address Space (stage 2)
 
-See https://wiki.osdev.org/Paging for information about page tables and
-directory.
+See [https://wiki.osdev.org/Paging](https://wiki.osdev.org/Paging) for
+information about page tables and directory.
 
 - The first page (0) is always null, accessing any address here will result in a
   (page fault?)
 - Each page directory and table contain 1024 entries
-- 0x1000 will always point to the active page directory
-- 0x2000 will always point to the ram region table
-- 0xb9000 will always point to the first ram region bitmasks
+- **0x1000** will always point to the active page directory
+- **0x2000** will always point to the ram region table
+- **0xb9000** will always point to the first ram region bitmasks
   - There are 512 sequential pages of ram bitmasks ending at 0x2b9fff
-- _0x400000 is the first virtual address of the second page table_
+- _**0x400000** is the first virtual address of the second page table_
   - It is suggested to keep kernel level memory bellow this address to allow
     user space application switching out the second+ page table
   - This can be used as the entry point address for all user space applications
   - This region is ~3.99 GB
-- 0xffc00000 will always point to the first page table (kernel table)
+- **0xffc00000** will always point to the first page table (kernel table)
   - This goes up to 0xffffffff as the last address in all of virtual space
   - Each of the 1024 tables from the page directory are stored here sequentially
   - The first table includes the null page and kernel memory mapping (see bellow)
@@ -148,11 +155,12 @@ pages in the region.
 | 4     | 2    | page count      |
 | 8     | 2    | free count      |
 
->[!IMPORTANT] Remember to mask the address
-> The low 12 bits of each address are flags because the address is always page
-> aligned. Remember to mask these bits when using the address.
+> [!IMPORTANT]
+> Remember to mask the address. The low 12 bits of each address are flags
+> because the address is always page aligned. Remember to mask these bits when
+> using the address.
 
-> [!NOTE] Region size
+> [!NOTE]
 > Each region can be up to 128 MiB (32768 pages)
 >- Page size = 4096 (0x1000)
 >- Bits per page = Page Size * 8 = 4096 * 8 = 32768 (0x8000)
@@ -173,14 +181,14 @@ bitmask for the region showing which pages are free. Any bits outside of the
 region should be set to 0 (ie. if the region is smaller than 128 MiB, bits for
 any pages after the region end should be 0).
 
-> [!IMPORTANT] Bitmask bit 1
-> The first bit of the bitmask will always be 0 for the bitmask page itself.
+> [!IMPORTANT]
+> The first bit (bit 1) of the bitmask will always be 0 for the bitmask page itself.
 
 ## Paging Allocator (`memory.h`)
 
-Paging allocator (aka `pmalloc` and `pfree`) is responsible for connecting the
-physical memory allocator (ram) and page tables (mmu). This allocator keeps a
-linked list of tables, 1022 entries each.
+Paging allocator (aka **pmalloc** and **pfree**) is responsible for connecting
+the physical memory allocator (ram) and page tables (mmu). This allocator keeps
+a linked list of tables, 1022 entries each.
 
 Each entry of the table describes a region of memory with address, flags and
 size in bytes (page aligned).
@@ -198,9 +206,9 @@ There are a total of 511 entries per table.
 ### Memory Table Entries
 
 The first 12 bits of a table entry are flags. The page number can be converted
-to a memory address by shifting it left by 12 bits, or by using the max
-(0xfffff000). Because the size is page aligned, the same strategy can be used
-for getting the page number or memory address.
+to a memory address by shifting it left by 12 bits, or by using the max of
+0xfffff000. Because the size is page aligned, the same strategy can be used for
+getting the page number or memory address.
 
 | start | size | description                            |
 | ----- | ---- | -------------------------------------- |
@@ -208,11 +216,11 @@ for getting the page number or memory address.
 | 12    | 20   | page no (address if flags masked away) |
 | 32    | 32   | size in bytes (page aligned)           |
 
-> [!IMPORTANT] Size is page aligned
+> [!IMPORTANT]
 > The size is page aligned such that a page no / address + size points to the
 > next valid, page aligned, address.
 
-> [!NOTE] Size has unused bits
+> [!NOTE]
 > Because the size is page aligned, the first 12 bits should always be 0
 
 #### Flags
@@ -233,4 +241,4 @@ the present flag set will be treated as the end of all entries.
 - Memory tables can be moved and removed. Only a pointer to the first table
   should be stored. All other tables are reachable via the linked list.
 
-TODO - everything else here
+**TODO** - everything else here
