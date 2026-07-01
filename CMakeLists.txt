@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.15..3.20)
 
+# CPU_ARCH used in config.h.in and cpu module
+set(CPU_ARCH i386)
 set(CROSS_ARCH i386-elf)
 set(CROSS_GCC_VERSION 12.2.0)
 set(CROSS_PREFIX "$ENV{HOME}/.local/opt/cross")
 set(CMAKE_TOOLCHAIN_FILE cmake/toolchain.cmake)
+
 set(KERNEL_MEMORY_INTEGRITY_CHECKS_ENABLED 1)
 
 execute_process(
