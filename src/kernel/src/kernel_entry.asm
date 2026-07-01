@@ -104,3 +104,30 @@ start_first_task:
     mov esi, [ebp]
 
     jmp switch_task.resume
+
+; ; void * function
+; tmp_jump_target: dd  0
+
+; ; jump_usermode(proc_t * next)
+; global jump_usermode
+; extern test_user_function
+; jump_usermode:
+;     ; ebp = args
+;     push ebp
+;     mov  ebp, esp
+;     add  ebp, 8
+
+; 	mov ax, (4 * 8) | 3 ; ring 3 data with bottom 2 bits set for ring 3
+; 	mov ds, ax
+; 	mov es, ax 
+; 	mov fs, ax 
+; 	mov gs, ax ; SS is handled by iret
+
+; 	; set up the stack frame iret expects
+; 	mov eax, esp
+; 	push (4 * 8) | 3 ; data selector
+; 	push eax ; current esp
+; 	pushf ; eflags
+; 	push (3 * 8) | 3 ; code selector (ring 3 code with bottom 2 bits set for ring 3)
+; 	push [ebp] ; instruction address to return to
+; 	iret
