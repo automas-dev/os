@@ -1,8 +1,11 @@
 [bits 32]
 
+; If this file moves, update the comment in include/process.h
+
 [extern tss_set_esp0]
 [extern tss_get_esp0]
 
+; These must match struct _process in src/kernel/include/process.h
 TCB_CR3      equ 0
 TCB_ESP      equ 4
 TCB_ESP0     equ 8

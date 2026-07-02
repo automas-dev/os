@@ -1,6 +1,8 @@
 #ifndef KERNEL_PROCESS_H
 #define KERNEL_PROCESS_H
 
+// If this file moves, update the comment in src/kernel_entry.asm
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -49,12 +51,17 @@ enum PROCESS_STATE {
 };
 
 typedef struct _process {
+    // IMPORTANT These needs to be kept in the same order for assembly code
+    // see switch_task and set_active_task
+
     /// Page directory physical address
     uint32_t cr3;
     /// Process stack pointer
     uint32_t esp;
     /// Kernel stack pointer?
     uint32_t esp0;
+
+    // Everything after here can be in any order
 
     /// Process id
     uint32_t pid;
