@@ -7,6 +7,7 @@ set(CROSS_GCC_VERSION 12.2.0)
 set(CROSS_PREFIX "$ENV{HOME}/.local/opt/cross")
 set(CMAKE_TOOLCHAIN_FILE cmake/toolchain.cmake)
 
+# Extra checks in malloc
 set(KERNEL_MEMORY_INTEGRITY_CHECKS_ENABLED 1)
 
 execute_process(
