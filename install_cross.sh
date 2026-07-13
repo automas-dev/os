@@ -228,7 +228,7 @@ echo_section "Downloading Source"
 
 download_and_extract binutils-${BINUTILS_VERSION} "https://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VERSION}.tar.xz"
 download_and_extract gdb-${GDB_VERSION} "https://ftp.gnu.org/gnu/gdb/gdb-${GDB_VERSION}.tar.xz"
-download_and_extract gcc-${GCC_VERSION} "https://ftp.gnu.org/gnu/gcc/gcc-16.1.0/gcc-${GCC_VERSION}.tar.xz"
+download_and_extract gcc-${GCC_VERSION} "https://ftp.gnu.org/gnu/gcc/gcc-${GCC_VERSION}/gcc-${GCC_VERSION}.tar.xz"
 
 install_binutils
 install_gdb
