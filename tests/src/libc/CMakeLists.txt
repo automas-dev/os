@@ -1,13 +1,19 @@
 unit_test(
+    TARGET test_libc_array
+    TEST_FILES test_array.cpp
+    TARGET_FILES libc/src/array.c
+)
+
+unit_test(
     TARGET test_libc_circular_buffer
     TEST_FILES test_circular_buffer.cpp
     TARGET_FILES libc/src/circular_buffer.c
 )
 
 unit_test(
-    TARGET test_libc_array
-    TEST_FILES test_array.cpp
-    TARGET_FILES libc/src/array.c
+    TARGET test_libc_hash_table
+    TEST_FILES test_hash_table.cpp
+    TARGET_FILES libc/src/hash_table.c
 )
 
 # unit_test(
