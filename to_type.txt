@@ -1,0 +1,10 @@
+Writes a character to the screen
+
+b4 0e b0 41 cd 10 f4
+
+Writes a character to disk
+
+c6 06 00 7e 41 bb 00 7e
+b8 00 00 8e c0 b4 03 b0
+01 b1 01 b5 00 b6 00 b2
+80 cd 13 f4

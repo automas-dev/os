@@ -1,0 +1,12 @@
+    mov byte [0x7e00], 0x41
+    mov bx, 0x7e00
+    mov ax, 0x0000
+    mov es, ax
+    mov ah, 0x03
+    mov al, 0x01
+    mov cl, 0x01
+    mov bp, 0x0000
+    mov dh, 0x00
+    mov dl, 0x80
+    int 0x13
+    hlt
