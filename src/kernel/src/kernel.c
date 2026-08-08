@@ -88,7 +88,7 @@ void kernel_init() {
     KLOG_DEBUG("enabled kernel log time");
 
     // 8.10 Mount disk
-    __kernel.disk = device_ata_open(0);
+    __kernel.disk = io_device_ata_open(0);
     if (!__kernel.disk) {
         KPANIC("Failed to open ATA device");
     }

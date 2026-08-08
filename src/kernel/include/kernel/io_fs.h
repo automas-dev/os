@@ -1,7 +1,7 @@
-#ifndef KERNEL_DEVICE_IO_FS_H
-#define KERNEL_DEVICE_IO_FS_H
+#ifndef KERNEL_IO_FS_H
+#define KERNEL_IO_FS_H
 
-#include "kernel/device/io.h"
+#include "kernel/io.h"
 
 enum IO_FS_SEEK_ORIGIN {
     IO_FS_SEEK_ORIGIN_START,
@@ -47,4 +47,9 @@ typedef struct _io_fs {
     void * fs_data;
 } io_fs_t;
 
-#endif // KERNEL_DEVICE_IO_FS_H
+size_t io_fs_file_read(io_device_t * dev, char * buff, size_t count, size_t pos);
+size_t io_fs_file_write(io_device_t * dev, const char * buff, size_t count, size_t pos);
+size_t io_fs_file_size(io_device_t * dev);
+int    io_fs_file_close(io_device_t * dev);
+
+#endif // KERNEL_IO_FS_H

@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "kernel/device/io.h"
+#include "kernel/io.h"
 
 typedef struct tar_fs      tar_fs_t;
 typedef struct tar_fs_file tar_fs_file_t;

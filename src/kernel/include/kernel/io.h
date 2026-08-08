@@ -1,5 +1,5 @@
-#ifndef KERNEL_DEVICE_IO_H
-#define KERNEL_DEVICE_IO_H
+#ifndef KERNEL_IO_H
+#define KERNEL_IO_H
 
 #include <stddef.h>
 
@@ -12,6 +12,7 @@ enum IO_DEVICE_FLAG {
 typedef size_t (*io_device_read_t)(void * device_data, char * buff, size_t count, size_t pos);
 typedef size_t (*io_device_write_t)(void * device_data, const char * buff, size_t count, size_t pos);
 typedef size_t (*io_device_size_t)(void * device_data);
+typedef int (*io_device_close_t)(void * device_data);
 
 typedef struct _io_device {
     int flags;
@@ -19,8 +20,14 @@ typedef struct _io_device {
     io_device_read_t  read_fn;
     io_device_write_t write_fn;
     io_device_size_t  size_fn;
+    io_device_close_t close_fn;
 
     void * device_data;
 } io_device_t;
 
-#endif // KERNEL_DEVICE_IO_H
+size_t io_device_read(io_device_t * dev, char * buff, size_t count, size_t pos);
+size_t io_device_write(io_device_t * dev, const char * buff, size_t count, size_t pos);
+size_t io_device_size(io_device_t * dev);
+int    io_device_close(io_device_t * dev);
+
+#endif // KERNEL_IO_H

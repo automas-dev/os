@@ -16,7 +16,7 @@ static size_t _ata_read(void * device_data, char * buff, size_t size, size_t pos
 static size_t _ata_write(void * device_data, const char * buff, size_t size, size_t pos);
 static size_t _ata_size(void * device_data);
 
-io_device_t * device_ata_open(uint8_t id) {
+io_device_t * io_device_ata_open(uint8_t id) {
     ata_t * ata_dev = ata_open(id);
     if (!ata_dev) {
         KLOG_WARNING("Failed to open ata driver for device id %u", id);
@@ -43,7 +43,7 @@ io_device_t * device_ata_open(uint8_t id) {
     return dev;
 }
 
-void device_ata_close(io_device_t * device) {
+void io_device_ata_close(io_device_t * device) {
     if (!device) {
         KLOG_WARNING("Tried to free null ata device");
         return;
