@@ -15,7 +15,6 @@
 #include "defs.h"
 #include "drivers/ram.h"
 #include "drivers/serial.h"
-#include "drivers/tar.h"
 #include "drivers/vga.h"
 #include "kernel.h"
 #include "kernel/device/screen.h"
@@ -275,8 +274,8 @@ static process_t * load_init() {
     // TODO use exec code or replace this with exec version of copy args
     const char * filename = "init";
 
-    tar_stat_t stat;
-    if (!tar_stat_file(kernel_get_tar(), filename, &stat)) {
+    io_fs_stat_t stat;
+    if (io_fs_file_stat(kernel_get_fs(), filename, &stat)) {
         KLOG_ERROR("Failed to find file\n");
         return 0;
     }
@@ -286,14 +285,14 @@ static process_t * load_init() {
         return 0;
     }
 
-    tar_fs_file_t * file = tar_file_open(kernel_get_tar(), filename);
+    io_fs_file_t * file = io_fs_file_open(kernel_get_fs(), filename, "r");
     if (!file) {
         kfree(buff);
         return 0;
     }
 
-    if (!tar_file_read(file, buff, stat.size)) {
-        tar_file_close(file);
+    if (!io_fs_file_read(file, buff, stat.size)) {
+        io_fs_file_close(file);
         kfree(buff);
         return 0;
     }
@@ -325,7 +324,7 @@ static process_t * load_init() {
     pm_add_proc(&get_kernel()->pm, proc);
     pm_set_foreground_proc(&get_kernel()->pm, proc->pid);
 
-    tar_file_close(file);
+    io_fs_file_close(file);
     kfree(buff);
 
     return proc;
