@@ -106,14 +106,21 @@ static io_fs_file_t * _tar_file_open(void * fs_data, const char * path, const ch
             switch (*mode) {
                 case 'r':
                     file->flags |= IO_FS_FLAG_READ;
+                    KLOG_TRACE("File has read flag");
                     break;
                 case 'w':
                     file->flags |= IO_FS_FLAG_WRITE;
+                    KLOG_TRACE("File has write flag");
                     break;
                 // TODO handle append mode
                 case 'a':
                     file->flags |= IO_FS_FLAG_WRITE;
+                    KLOG_TRACE("File has append flag");
                     if (_tar_file_seek(fs_data, tar_file, 0, IO_FS_SEEK_ORIGIN_END)) {
+                        KLOG_ERROR("Failed to seek end of file for append mode");
+                        kfree(file);
+                        tar_file_close(tar_file);
+                        return 0;
                     }
                     break;
                 default:
