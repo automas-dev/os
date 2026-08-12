@@ -33,6 +33,8 @@ typedef size_t (*io_fs_file_tell_t)(void * fs_data, void * file_data);
 typedef struct _io_fs {
     io_device_t * dev;
 
+    // TODO fs close
+
     io_fs_file_open_t  file_open_fn;
     io_fs_file_close_t file_close_fn;
     io_fs_file_stat_t  file_stat_fn;
@@ -47,9 +49,28 @@ typedef struct _io_fs {
     void * fs_data;
 } io_fs_t;
 
-size_t io_fs_file_read(io_device_t * dev, char * buff, size_t count, size_t pos);
-size_t io_fs_file_write(io_device_t * dev, const char * buff, size_t count, size_t pos);
-size_t io_fs_file_size(io_device_t * dev);
-int    io_fs_file_close(io_device_t * dev);
+typedef struct _io_fs_file {
+    io_fs_t *    fs;
+    const char * path;
+    const char * mode;
+
+    io_fs_file_close_t file_close_fn;
+
+    io_fs_file_read_t  file_read_fn;
+    io_fs_file_write_t file_write_fn;
+    io_fs_file_seek_t  file_seek_fn;
+    io_fs_file_tell_t  file_tell_fn;
+
+    void * file_data;
+} io_fs_file_t;
+
+void * io_fs_file_open(io_fs_t * fs, const char * path, const char * mode);
+int    io_fs_file_close(io_fs_file_t * file);
+int    io_fs_file_stat(io_fs_t * fs, const char * path, io_fs_stat_t * stat_out);
+
+size_t io_fs_file_read(io_fs_file_t * file, char * buff, size_t count);
+size_t io_fs_file_write(io_fs_file_t * file, const char * buff, size_t count);
+size_t io_fs_file_seek(io_fs_file_t * file, int offset, int origin);
+size_t io_fs_file_tell(io_fs_file_t * file);
 
 #endif // KERNEL_IO_FS_H
