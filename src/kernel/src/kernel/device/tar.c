@@ -11,13 +11,13 @@ typedef struct _io_fs_tar {
     io_device_t * device;
 } io_fs_tar_t;
 
-static void * _tar_file_open(void * fs_data, const char * path, const char * mode);
-static int    _tar_file_close(void * fs_data, void * file_data);
-static int    _tar_file_stat(void * fs_data, const char * path, io_fs_stat_t * stat_out);
-static size_t _tar_file_read(void * fs_data, void * file_data, char * buff, size_t size);
-static size_t _tar_file_write(void * fs_data, void * file_data, const char * buff, size_t size);
-static int    _tar_file_seek(void * fs_data, void * file_data, int offset, int origin);
-static size_t _tar_file_tell(void * fs_data, void * file_data);
+static io_fs_file_t * _tar_file_open(void * fs_data, const char * path, const char * mode);
+static int            _tar_file_close(void * fs_data, void * file_data);
+static int            _tar_file_stat(void * fs_data, const char * path, io_fs_stat_t * stat_out);
+static size_t         _tar_file_read(void * fs_data, void * file_data, char * buff, size_t size);
+static size_t         _tar_file_write(void * fs_data, void * file_data, const char * buff, size_t size);
+static int            _tar_file_seek(void * fs_data, void * file_data, int offset, int origin);
+static int            _tar_file_tell(void * fs_data, void * file_data);
 
 io_fs_t * io_fs_tar_open(io_device_t * device) {
     tar_fs_t * tar = tar_open(device);
@@ -38,13 +38,8 @@ io_fs_t * io_fs_tar_open(io_device_t * device) {
 
     fs->dev = device;
 
-    fs->file_open_fn  = _tar_file_open;
-    fs->file_close_fn = _tar_file_close;
-    fs->file_stat_fn  = _tar_file_stat;
-    fs->file_read_fn  = _tar_file_read;
-    fs->file_write_fn = _tar_file_write;
-    fs->file_seek_fn  = _tar_file_seek;
-    fs->file_tell_fn  = _tar_file_tell;
+    fs->file_open_fn = _tar_file_open;
+    fs->file_stat_fn = _tar_file_stat;
 
     fs->fs_data = tar;
 
@@ -66,9 +61,9 @@ io_fs_t * io_fs_tar_open(io_device_t * device) {
 //     kfree(fs);
 // }
 
-static void * _tar_file_open(void * fs_data, const char * path, const char * mode) {
+static io_fs_file_t * _tar_file_open(void * fs_data, const char * path, const char * mode) {
     if (!fs_data) {
-        KLOG_WARNING("Tried to open tar file with null fs data");
+        KLOG_WARNING("Tried to open tar file with null fs_data");
         return 0;
     }
     if (!path) {
@@ -80,12 +75,53 @@ static void * _tar_file_open(void * fs_data, const char * path, const char * mod
         return 0;
     }
 
-    tar_fs_t * tar = fs_data;
-
-    tar_fs_file_t * file = tar_file_open(tar, path);
-    if (!file) {
+    tar_fs_file_t * tar_file = tar_file_open(fs_data, path);
+    if (!tar_file) {
         KLOG_WARNING("Failed to open file %s in mode %u", path, mode);
         return 0;
+    }
+
+    io_fs_file_t * file = kmalloc(sizeof(io_fs_file_t));
+    if (file) {
+        kmemset(file, 0, sizeof(io_fs_file_t));
+        // TODO file->flags
+        file->fs_data   = fs_data;
+        file->file_data = tar_file;
+        file->path      = str_copy(path);
+        if (!file->path) {
+            // TODO pointer
+            KLOG_ERROR("Failed to copy path");
+            kfree(file);
+            tar_file_close(tar_file);
+            return 0;
+        }
+
+        file->file_close_fn = _tar_file_close;
+        file->file_read_fn  = _tar_file_read;
+        file->file_write_fn = _tar_file_write;
+        file->file_seek_fn  = _tar_file_seek;
+        file->file_tell_fn  = _tar_file_tell;
+
+        while (*mode) {
+            switch (*mode) {
+                case 'r':
+                    file->flags |= IO_FS_FLAG_READ;
+                    break;
+                case 'w':
+                    file->flags |= IO_FS_FLAG_WRITE;
+                    break;
+                // TODO handle append mode
+                case 'a':
+                    file->flags |= IO_FS_FLAG_WRITE;
+                    if (_tar_file_seek(fs_data, tar_file, 0, IO_FS_SEEK_ORIGIN_END)) {
+                    }
+                    break;
+                default:
+                    KLOG_TRACE("Unknown flag %c", *mode);
+                    break;
+            }
+            mode++;
+        }
     }
 
     return file;
@@ -191,14 +227,14 @@ static int _tar_file_seek(void * fs_data, void * file_data, int offset, int orig
     return 0;
 }
 
-static size_t _tar_file_tell(void * fs_data, void * file_data) {
+static int _tar_file_tell(void * fs_data, void * file_data) {
     if (!fs_data) {
         KLOG_WARNING("Tried to tell tar file with null fs data");
-        return 0;
+        return -1;
     }
     if (!file_data) {
         KLOG_WARNING("Tried to tell tar file with null file data");
-        return 0;
+        return -1;
     }
 
     tar_fs_file_t * file = file_data;
