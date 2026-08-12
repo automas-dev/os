@@ -27,12 +27,10 @@ typedef struct _kernel {
     /// Disk driver for boot drive (this is temporary and should be replaced with a proper driver / device manager)
     io_device_t * disk;
     /// Filesystem driver for boot drive (this is temporary and should be replaced with a proper drier / filesystem manager)
-    tar_fs_t * tar;
-    io_fs_t *  fs;
+    io_fs_t * fs;
 } kernel_t;
 
 io_device_t * kernel_get_disk();
-tar_fs_t *    kernel_get_tar();
 io_fs_t *     kernel_get_fs();
 
 kernel_t * get_kernel();

@@ -96,12 +96,8 @@ void kernel_init() {
     KLOG_DEBUG("open ata disk finished");
 
     // 8.11 Mount filesystem
-    __kernel.tar = tar_open(__kernel.disk);
-    if (!__kernel.tar) {
-        KPANIC("Failed to open tar");
-    }
     __kernel.fs = io_fs_tar_open(__kernel.disk);
-    if (!__kernel.tar) {
+    if (!__kernel.fs) {
         KPANIC("Failed to open tar fs");
     }
     KLOG_DEBUG("open tar fs finished");
@@ -121,8 +117,8 @@ int kernel_exec(const char * filename, size_t argc, char ** argv) {
         KLOG_ERROR("Missing filename");
         return -1;
     }
-    tar_stat_t stat;
-    if (!tar_stat_file(kernel_get_tar(), filename, &stat)) {
+    io_fs_stat_t stat;
+    if (io_fs_file_stat(kernel_get_fs(), filename, &stat)) {
         KLOG_ERROR("Failed to find file %s to execute", filename);
         return -1;
     }
@@ -133,16 +129,16 @@ int kernel_exec(const char * filename, size_t argc, char ** argv) {
         return -1;
     }
 
-    tar_fs_file_t * file = tar_file_open(kernel_get_tar(), filename);
+    io_fs_file_t * file = io_fs_file_open(kernel_get_fs(), filename, "r");
     if (!file) {
         KLOG_ERROR("Failed to open file %s", filename);
         kfree(buff);
         return -1;
     }
 
-    if (!tar_file_read(file, buff, stat.size)) {
+    if (!io_fs_file_read(file, buff, stat.size)) {
         KLOG_ERROR("Failed to read from file %s", filename);
-        tar_file_close(file);
+        io_fs_file_close(file);
         kfree(buff);
         return -1;
     }
@@ -151,12 +147,12 @@ int kernel_exec(const char * filename, size_t argc, char ** argv) {
 
     if (pid < 0) {
         KLOG_ERROR("Failed to execute file %s", filename);
-        tar_file_close(file);
+        io_fs_file_close(file);
         kfree(buff);
         return -1;
     }
 
-    tar_file_close(file);
+    io_fs_file_close(file);
     kfree(buff);
 
     return pid;
@@ -188,10 +184,6 @@ void kernel_queue_event(ebus_event_t * event) {
 
 io_device_t * kernel_get_disk() {
     return __kernel.disk;
-}
-
-tar_fs_t * kernel_get_tar() {
-    return __kernel.tar;
 }
 
 io_fs_t * kernel_get_fs() {

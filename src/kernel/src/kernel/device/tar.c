@@ -77,7 +77,7 @@ static io_fs_file_t * _tar_file_open(void * fs_data, const char * path, const ch
 
     tar_fs_file_t * tar_file = tar_file_open(fs_data, path);
     if (!tar_file) {
-        KLOG_WARNING("Failed to open file %s in mode %u", path, mode);
+        KLOG_WARNING("Failed to open file %s in mode %s", path, mode);
         return 0;
     }
 
