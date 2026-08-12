@@ -15,6 +15,7 @@
 #include "drivers/rtc.h"
 #include "exec.h"
 #include "kernel/device/ata.h"
+#include "kernel/device/tar.h"
 #include "kernel/logs.h"
 #include "kernel/panic.h"
 #include "kernel/system_call_event.h"
@@ -98,6 +99,10 @@ void kernel_init() {
     __kernel.tar = tar_open(__kernel.disk);
     if (!__kernel.tar) {
         KPANIC("Failed to open tar");
+    }
+    __kernel.fs = io_fs_tar_open(__kernel.disk);
+    if (!__kernel.tar) {
+        KPANIC("Failed to open tar fs");
     }
     KLOG_DEBUG("open tar fs finished");
 }
@@ -187,6 +192,10 @@ io_device_t * kernel_get_disk() {
 
 tar_fs_t * kernel_get_tar() {
     return __kernel.tar;
+}
+
+io_fs_t * kernel_get_fs() {
+    return __kernel.fs;
 }
 
 void tmp_register_signals_cb(signals_master_cb_t cb) {
