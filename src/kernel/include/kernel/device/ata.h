@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "kernel/io.h"
+#include "kernel/io_device.h"
 
 io_device_t * io_device_ata_open(uint8_t id);
 

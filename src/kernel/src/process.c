@@ -537,14 +537,14 @@ static int open_stdio_handles(process_t * proc) {
     // TODO make stdin
 
     // process_add_handle returns handle id
-    if (process_add_handle(proc, 1, IO_DEVICE_FLAG_WRITE, device_screen_open()) < 0) {
+    if (process_add_handle(proc, 1, IO_DEVICE_FLAG_WRITE, io_device_screen_open()) < 0) {
         KLOG_ERROR("Failed to create stdout handle");
         return -1;
     }
 
     handle_t * h = arr_at(&proc->io_handles, 0);
 
-    if (process_add_handle(proc, 2, IO_DEVICE_FLAG_WRITE, device_screen_open()) < 0) {
+    if (process_add_handle(proc, 2, IO_DEVICE_FLAG_WRITE, io_device_screen_open()) < 0) {
         KLOG_ERROR("Failed to create stderr handle");
         return -1;
     }

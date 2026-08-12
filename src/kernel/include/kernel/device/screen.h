@@ -4,10 +4,10 @@
 #include <stddef.h>
 
 #include "drivers/vga.h"
-#include "kernel/io.h"
+#include "kernel/io_device.h"
 
-io_device_t * device_screen_open();
+io_device_t * io_device_screen_open();
 
-int device_screen_write_raw(int handle, const char * buff, size_t size, size_t pos);
+int io_device_screen_write_raw(int handle, const char * buff, size_t size, size_t pos);
 
 #endif // KERNEL_DEVICE_SCREEN_H

@@ -51,20 +51,20 @@ io_fs_t * io_fs_tar_open(io_device_t * device) {
     return fs;
 }
 
-void io_fs_tar_close(io_fs_t * fs) {
-    if (!fs) {
-        KLOG_WARNING("Tried to free null tar fs");
-        return;
-    }
-    if (!fs->fs_data) {
-        KLOG_WARNING("Tried to free tar fs with null fs data");
-        return;
-    }
+// void io_fs_tar_close(io_fs_t * fs) {
+//     if (!fs) {
+//         KLOG_WARNING("Tried to free null tar fs");
+//         return;
+//     }
+//     if (!fs->fs_data) {
+//         KLOG_WARNING("Tried to free tar fs with null fs data");
+//         return;
+//     }
 
-    tar_close(fs->fs_data);
+//     tar_close(fs->fs_data);
 
-    kfree(fs);
-}
+//     kfree(fs);
+// }
 
 static void * _tar_file_open(void * fs_data, const char * path, const char * mode) {
     if (!fs_data) {

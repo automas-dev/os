@@ -44,7 +44,7 @@ void __start() {
     // 1. Setup kernel logging (serial only)
     kernel_log_init();
     serial_init(SERIAL_PORT_COM1);
-    _libc_config_file_write_call(device_serial_write_raw);
+    _libc_config_file_write_call(io_device_serial_write_raw);
 
     // THIS WAS REPLACED WITH KLOG_LEVEL MACRO
     // kernel_log_set_level(KERNEL_LOG_LEVEL_DEBUG);
