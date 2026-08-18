@@ -212,3 +212,73 @@ TEST_F(String, katoi) {
     EXPECT_EQ(-123, katoi("-123"));
     EXPECT_EQ(123, katoi("+123"));
 }
+
+TEST_F(String, integer_conversions) {
+    char buffer[32];
+
+    EXPECT_EQ(0, itoa(12, 0));
+    EXPECT_EQ(2, itoa(12, buffer));
+    EXPECT_STREQ("12", buffer);
+    EXPECT_EQ(3, itoa(-12, buffer));
+    EXPECT_STREQ("-12", buffer);
+
+    EXPECT_EQ(0, itoa_base(8, 12, 0, 10, true));
+    EXPECT_EQ(3, itoa_base(sizeof(buffer), -12, buffer, 10, true));
+    EXPECT_STREQ("-12", buffer);
+
+    EXPECT_EQ(0, ltoa(12, 0));
+    EXPECT_EQ(2, ltoa(12, buffer));
+    EXPECT_STREQ("12", buffer);
+    EXPECT_EQ(3, ltoa(-12, buffer));
+    EXPECT_STREQ("-12", buffer);
+
+    EXPECT_EQ(0, ltoa_base(8, 12, 0, 10, true));
+    EXPECT_EQ(3, ltoa_base(sizeof(buffer), -12, buffer, 10, true));
+    EXPECT_STREQ("-12", buffer);
+}
+
+TEST_F(String, unsigned_conversions) {
+    char buffer[32];
+
+    EXPECT_EQ(0, utoa(12, 0));
+    EXPECT_EQ(2, utoa(12, buffer));
+    EXPECT_STREQ("12", buffer);
+
+    EXPECT_EQ(0, utoa_base(0, 12, buffer, 10, true));
+    EXPECT_EQ(0, utoa_base(sizeof(buffer), 12, buffer, 0, true));
+    EXPECT_EQ(1, utoa_base(sizeof(buffer), 0, buffer, 10, true));
+    EXPECT_STREQ("0", buffer);
+    EXPECT_EQ(2, utoa_base(sizeof(buffer), 0xab, buffer, 16, true));
+    EXPECT_STREQ("AB", buffer);
+    EXPECT_EQ(2, utoa_base(sizeof(buffer), 0xab, buffer, 16, false));
+    EXPECT_STREQ("ab", buffer);
+    EXPECT_EQ(2, utoa_base(2, 123, buffer, 10, true));
+
+    EXPECT_EQ(0, ultoa(12, 0));
+    EXPECT_EQ(2, ultoa(12, buffer));
+    EXPECT_STREQ("12", buffer);
+
+    EXPECT_EQ(0, ultoa_base(0, 12, buffer, 10, true));
+    EXPECT_EQ(0, ultoa_base(sizeof(buffer), 12, buffer, 0, true));
+    EXPECT_EQ(1, ultoa_base(sizeof(buffer), 0, buffer, 10, true));
+    EXPECT_STREQ("0", buffer);
+    EXPECT_EQ(2, ultoa_base(sizeof(buffer), 0xab, buffer, 16, true));
+    EXPECT_STREQ("AB", buffer);
+    EXPECT_EQ(2, ultoa_base(sizeof(buffer), 0xab, buffer, 16, false));
+    EXPECT_STREQ("ab", buffer);
+    EXPECT_EQ(2, ultoa_base(2, 123, buffer, 10, true));
+}
+
+TEST_F(String, str_copy) {
+    EXPECT_EQ(0, str_copy(0));
+
+    char * copy = str_copy("hello");
+    ASSERT_NE(nullptr, copy);
+    EXPECT_STREQ("hello", copy);
+    EXPECT_NE("hello", copy);
+    free(copy);
+
+    pmalloc_fake.custom_fake = 0;
+    pmalloc_fake.return_val  = 0;
+    EXPECT_EQ(0, str_copy("hello"));
+}

@@ -36,6 +36,14 @@ TEST(PagingStatic, paging_init) {
     EXPECT_EQ(25, paging_temp_available());
 }
 
+TEST(PagingStatic, paging_init_FailClear) {
+    init_mocks();
+    kmemset_fake.custom_fake = 0;
+    kmemset_fake.return_val = 0;
+
+    EXPECT_NE(0, paging_init());
+}
+
 class Paging : public ::testing::Test {
 protected:
     void SetUp() override {
@@ -65,6 +73,13 @@ TEST_F(Paging, paging_temp_map_calls_flush_tlb) {
     EXPECT_EQ(24, paging_temp_available());
     EXPECT_EQ(1, mmu_flush_tlb_fake.call_count);
     EXPECT_EQ((uint32_t)ptr, mmu_flush_tlb_fake.arg0_val);
+}
+
+TEST_F(Paging, paging_temp_map_FailSet) {
+    mmu_table_set_fake.return_val = -1;
+
+    EXPECT_EQ(nullptr, paging_temp_map(0x1000));
+    EXPECT_EQ(24, paging_temp_available());
 }
 
 TEST_F(Paging, paging_temp_map) {
@@ -338,4 +353,63 @@ TEST_F(Paging, paging_remove_table_HasTable) {
 TEST_F(Paging, paging_remove_table_NoTable) {
     EXPECT_EQ(0, paging_remove_table(&dir, 1));
     EXPECT_EQ(0, ram_page_free_fake.call_count);
+}
+
+TEST_F(Paging, paging_add_pages_FailSetPage) {
+    mmu_dir_get_flags_fake.return_val = MMU_DIR_FLAG_PRESENT;
+    mmu_dir_get_addr_fake.return_val  = 0x1000;
+    ram_page_alloc_fake.return_val    = 0x2000;
+    mmu_table_set_fake.return_val     = -1;
+
+    EXPECT_NE(0, paging_add_pages(&dir, 1, 1));
+}
+
+TEST_F(Paging, paging_remove_pages_FailSetPage) {
+    mmu_dir_get_flags_fake.return_val   = MMU_DIR_FLAG_PRESENT;
+    mmu_dir_get_addr_fake.return_val    = 0x1000;
+    mmu_table_get_flags_fake.return_val = MMU_TABLE_FLAG_PRESENT;
+    mmu_table_get_addr_fake.return_val  = 0x2000;
+    mmu_table_set_fake.return_val       = -1;
+
+    EXPECT_NE(0, paging_remove_pages(&dir, 1, 1));
+}
+
+TEST_F(Paging, paging_remove_pages_FailFreePage) {
+    mmu_dir_get_flags_fake.return_val   = MMU_DIR_FLAG_PRESENT;
+    mmu_dir_get_addr_fake.return_val    = 0x1000;
+    mmu_table_get_flags_fake.return_val = MMU_TABLE_FLAG_PRESENT;
+    mmu_table_get_addr_fake.return_val  = 0x2000;
+    ram_page_free_fake.return_val       = -1;
+
+    EXPECT_NE(0, paging_remove_pages(&dir, 1, 1));
+}
+
+TEST_F(Paging, paging_add_table_FailSet) {
+    ram_page_alloc_fake.return_val = 0x1000;
+    mmu_dir_set_fake.return_val    = -1;
+
+    EXPECT_NE(0, paging_add_table(&dir, 1));
+}
+
+TEST_F(Paging, paging_remove_table_FailGetAddress) {
+    mmu_dir_get_flags_fake.return_val = MMU_DIR_FLAG_PRESENT;
+    mmu_dir_get_addr_fake.return_val  = 0;
+
+    EXPECT_NE(0, paging_remove_table(&dir, 1));
+}
+
+TEST_F(Paging, paging_remove_table_FailSet) {
+    mmu_dir_get_flags_fake.return_val = MMU_DIR_FLAG_PRESENT;
+    mmu_dir_get_addr_fake.return_val  = 0x1000;
+    mmu_dir_set_fake.return_val       = -1;
+
+    EXPECT_NE(0, paging_remove_table(&dir, 1));
+}
+
+TEST_F(Paging, paging_remove_table_FailFree) {
+    mmu_dir_get_flags_fake.return_val = MMU_DIR_FLAG_PRESENT;
+    mmu_dir_get_addr_fake.return_val  = 0x1000;
+    ram_page_free_fake.return_val     = -1;
+
+    EXPECT_EQ(0, paging_remove_table(&dir, 1));
 }

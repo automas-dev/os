@@ -304,6 +304,35 @@ TEST_F(MemoryAlloc, memory_realloc) {
     */
 }
 
+TEST_F(MemoryAlloc, memory_realloc_ReuseExistingEntry) {
+    entry_1->magic = MAGIC_USED;
+
+    EXPECT_EQ(ENTRY_PTR(entry_1), memory_realloc(&mem, ENTRY_PTR(entry_1), entry_1->size));
+    EXPECT_EQ(ENTRY_PTR(entry_1), memory_realloc(&mem, ENTRY_PTR(entry_1), entry_1->size + 4));
+}
+
+TEST_F(MemoryAlloc, memory_realloc_MoveAndCopy) {
+    entry_1->magic = MAGIC_USED;
+    char * old_data = (char *)ENTRY_PTR(entry_1);
+    old_data[0]     = 'a';
+
+    void * new_ptr = memory_realloc(&mem, old_data, entry_1->size - 4);
+
+    ASSERT_NE(nullptr, new_ptr);
+    EXPECT_NE(old_data, new_ptr);
+    EXPECT_EQ('a', *(char *)new_ptr);
+    EXPECT_EQ(MAGIC_FREE, entry_1->magic);
+}
+
+TEST_F(MemoryAlloc, memory_realloc_MoveFails) {
+    entry_1->magic = MAGIC_USED;
+    entry_2->magic = MAGIC_USED;
+    entry_3->magic = MAGIC_USED;
+    alloc_page_fake.return_val = 0;
+
+    EXPECT_EQ(nullptr, memory_realloc(&mem, ENTRY_PTR(entry_1), entry_1->size - 4));
+}
+
 TEST_F(MemoryAlloc, memory_free) {
     entry_2->magic = MAGIC_USED;
 

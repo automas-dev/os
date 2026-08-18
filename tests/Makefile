@@ -18,7 +18,7 @@ coverage:
 		--fail-under-branch 100 \
 		--lcov build/coverage.lcov \
 		-r ../ \
-		-e $(PWD) \
+		-e $(CURDIR) \
 		-e ../build \
 		--object-directory=$(PWD)/build
 

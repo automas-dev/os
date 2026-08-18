@@ -138,6 +138,10 @@ void * htable_remove(htable_t * table, const char * key) {
     size_t hash_key = hash(key, table->hash_size);
 
     htable_list_t * list = table->list[hash_key];
+    if (!list) {
+        return 0;
+    }
+
     if (kstrcmp(key, list->key) == 0) {
         void * data           = list->data;
         table->list[hash_key] = list->next;
@@ -175,6 +179,10 @@ int htable_delete(htable_t * table, const char * key) {
     size_t hash_key = hash(key, table->hash_size);
 
     htable_list_t * list = table->list[hash_key];
+    if (!list) {
+        return -1;
+    }
+
     if (kstrcmp(key, list->key) == 0) {
         void * data           = list->data;
         table->list[hash_key] = list->next;

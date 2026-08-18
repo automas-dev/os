@@ -20,12 +20,22 @@ protected:
 
         RESET_FAKE(pmalloc);
         pmalloc_fake.custom_fake = malloc;
+        pfree_fake.custom_fake   = free;
     }
 
     void TearDown() override {
         htable_free(&table);
     }
 };
+
+static char * copy_key(const char * key) {
+    size_t length = strlen(key) + 1;
+    char * result = (char *)malloc(length);
+    if (result) {
+        memcpy(result, key, length);
+    }
+    return result;
+}
 
 TEST_F(Table, htable_create) {
     // Invalid Parameters
@@ -40,10 +50,10 @@ TEST_F(Table, htable_create) {
     EXPECT_EQ(0, htable_create(&table, 4));
 
     ASSERT_EQ(1, pmalloc_fake.call_count);
-    EXPECT_EQ(4, pmalloc_fake.arg0_val);
+    EXPECT_EQ(sizeof(htable_list_t *) * 4, pmalloc_fake.arg0_val);
 
     ASSERT_EQ(1, pmalloc_fake.call_count);
-    EXPECT_EQ(8, pmalloc_fake.arg0_val);
+    EXPECT_EQ(sizeof(htable_list_t *) * 4, pmalloc_fake.arg0_val);
 
     SetUp();
 
@@ -53,7 +63,126 @@ TEST_F(Table, htable_create) {
     // First malloc fails
     EXPECT_NE(0, htable_create(&table, 4));
     EXPECT_EQ(1, pmalloc_fake.call_count);
-    EXPECT_EQ(4, pmalloc_fake.arg0_val);
+    EXPECT_EQ(sizeof(htable_list_t *) * 4, pmalloc_fake.arg0_val);
+}
+
+TEST_F(Table, htable_free) {
+    htable_free(0);
+
+    char * data = (char *)malloc(1);
+    str_copy_fake.custom_fake = copy_key;
+    ASSERT_EQ(0, htable_set(&table, "key", data));
+
+    htable_free(&table);
+    EXPECT_EQ(4, pfree_fake.call_count);
+    table.list = 0;
+}
+
+TEST_F(Table, htable_free_empty_entries) {
+    htable_free(&table);
+    table.list = (htable_list_t **)malloc(sizeof(htable_list_t *));
+    table.hash_size = 1;
+    table.list[0] = (htable_list_t *)malloc(sizeof(htable_list_t));
+    table.list[0]->next = 0;
+    table.list[0]->key  = 0;
+    table.list[0]->data = 0;
+
+    htable_free(&table);
+    table.list = 0;
+}
+
+TEST_F(Table, htable_free_no_delete) {
+    htable_free_no_delete(0);
+
+    char * data = (char *)malloc(1);
+    str_copy_fake.custom_fake = copy_key;
+    ASSERT_EQ(0, htable_set(&table, "key", data));
+
+    htable_free_no_delete(&table);
+    EXPECT_EQ(3, pfree_fake.call_count);
+    table.list = 0;
+}
+
+TEST_F(Table, htable_size) {
+    EXPECT_EQ(-1, htable_size(0));
+    str_copy_fake.custom_fake = copy_key;
+    EXPECT_EQ(0, htable_size(&table));
+    ASSERT_EQ(0, htable_set(&table, "one", malloc(1)));
+    ASSERT_EQ(0, htable_set(&table, "two", malloc(1)));
+    EXPECT_EQ(2, htable_size(&table));
+}
+
+TEST_F(Table, htable_set) {
+    char value = 'a';
+    EXPECT_NE(0, htable_set(0, "key", &value));
+    EXPECT_NE(0, htable_set(&table, 0, &value));
+    EXPECT_NE(0, htable_set(&table, "key", 0));
+
+    str_copy_fake.return_val = 0;
+    EXPECT_NE(0, htable_set(&table, "key", &value));
+
+    str_copy_fake.custom_fake = copy_key;
+    pmalloc_fake.custom_fake  = 0;
+    pmalloc_fake.return_val   = 0;
+    EXPECT_NE(0, htable_set(&table, "key", &value));
+}
+
+TEST_F(Table, htable_set_and_get) {
+    char * first  = (char *)malloc(1);
+    char * second = (char *)malloc(1);
+    str_copy_fake.custom_fake = copy_key;
+    ASSERT_EQ(0, htable_set(&table, "key", first));
+    ASSERT_EQ(0, htable_set(&table, "other", second));
+
+    EXPECT_EQ(first, htable_get(&table, "key"));
+    EXPECT_EQ(second, htable_get(&table, "other"));
+    EXPECT_EQ(0, htable_get(&table, "missing"));
+    EXPECT_EQ(0, htable_get(0, "key"));
+    EXPECT_EQ(0, htable_get(&table, 0));
+}
+
+TEST_F(Table, htable_get_collision_miss) {
+    char * data = (char *)malloc(1);
+    htable_free(&table);
+    ASSERT_EQ(0, htable_create(&table, 1));
+    str_copy_fake.custom_fake = copy_key;
+    ASSERT_EQ(0, htable_set(&table, "key", data));
+
+    EXPECT_EQ(0, htable_get(&table, "missing"));
+}
+
+TEST_F(Table, htable_remove) {
+    char first  = 'a';
+    char second = 'b';
+    htable_free(&table);
+    ASSERT_EQ(0, htable_create(&table, 1));
+    str_copy_fake.custom_fake = copy_key;
+    ASSERT_EQ(0, htable_set(&table, "first", &first));
+    ASSERT_EQ(0, htable_set(&table, "second", &second));
+
+    EXPECT_EQ(0, htable_remove(&table, "missing"));
+    EXPECT_EQ(&first, htable_remove(&table, "first"));
+    EXPECT_EQ(&second, htable_remove(&table, "second"));
+    EXPECT_EQ(0, htable_remove(&table, "missing"));
+    EXPECT_EQ(0, htable_remove(0, "key"));
+    EXPECT_EQ(0, htable_remove(&table, 0));
+}
+
+TEST_F(Table, htable_delete) {
+    char * first  = (char *)malloc(1);
+    char * second = (char *)malloc(1);
+    htable_free(&table);
+    ASSERT_EQ(0, htable_create(&table, 1));
+    str_copy_fake.custom_fake = copy_key;
+    ASSERT_EQ(0, htable_set(&table, "first", first));
+    ASSERT_EQ(0, htable_set(&table, "second", second));
+
+    EXPECT_EQ(-1, htable_delete(&table, "missing"));
+    EXPECT_EQ(0, htable_delete(&table, "first"));
+    EXPECT_EQ(0, htable_delete(&table, "second"));
+    EXPECT_EQ(-1, htable_delete(&table, "missing"));
+    EXPECT_EQ(-1, htable_delete(0, "key"));
+    EXPECT_EQ(-1, htable_delete(&table, 0));
 }
 
 // TEST_F(Table, arr_free) {
