@@ -54,14 +54,13 @@ KLOG_INFO("message %u name %s", 42, "hello world");
 The logging system is limited to the kernel and should not be used in
 application or user space code.
 
-| Level   | Macro          | Usage                                             |
-| ------- | -------------- | ------------------------------------------------- |
-| Error   | `KLOG_ERROR`   | Something is wrong with the code                  |
-| Warning | `KLOG_WARNING` | Someone is using the code incorrectly             |
-| Info    | `KLOG_INFO`    | Information that's useful during normal operation |
-| Debug   | `KLOG_DEBUG`   | Information that's useful during troubleshooting  |
-| Trace   | `KLOG_TRACE`   | Information that's useful during development      |
-
+| Level   | Macro          | Usage                                               |
+| ------- | -------------- | --------------------------------------------------- |
+| Error   | `KLOG_ERROR`   | Something is wrong with the code                    |
+| Warning | `KLOG_WARNING` | Someone is using the code incorrectly               |
+| Info    | `KLOG_INFO`    | Information that's useful during normal operation   |
+| Debug   | `KLOG_DEBUG`   | Information that's useful during troubleshooting    |
+| Trace   | `KLOG_TRACE`   | I want to know what code is executing or some value |
 
 ### When to use Error
 
