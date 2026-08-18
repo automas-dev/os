@@ -10,12 +10,11 @@ unit_test(
     TARGET_FILES kernel/src/paging.c
 )
 
-# TODO need more mocks to test this
-# unit_test(
-#     TARGET test_process
-#     TEST_FILES test_process.cpp
-#     TARGET_FILES kernel/src/process.c
-# )
+unit_test(
+    TARGET test_process
+    TEST_FILES test_process.cpp
+    TARGET_FILES kernel/src/process.c
+)
 
 unit_test(
     TARGET test_ram

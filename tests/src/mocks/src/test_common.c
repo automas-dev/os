@@ -13,6 +13,10 @@ void init_mocks() {
     reset_libc_proc_mock();
     reset_libc_string_mock();
     reset_libk_sys_call_mock();
+    reset_kernel_memory_mock();
+    reset_kernel_io_buffer_mock();
+    reset_kernel_screen_mock();
+    reset_kernel_panic_mock();
     reset_log_mock();
     reset_ebus_mock();
     reset_memory_alloc_mock();

@@ -30,7 +30,6 @@ add_subdirectory(drivers)
 add_subdirectory(kernel)
 add_subdirectory(libc)
 add_subdirectory(libk)
-# add_subdirectory(process)
 
 add_custom_target(${PROJECT_NAME}_all
     DEPENDS
@@ -40,5 +39,4 @@ add_custom_target(${PROJECT_NAME}_all
     libc
     libk
     # memory_alloc
-    # process
 )
