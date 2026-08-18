@@ -46,7 +46,9 @@ int sys_call_io_cb(uint32_t call_id, void * args_data, registers_t * regs) {
 
             io_device_t * d = device_fs_file_open(args->path, args->mode);
             if (!d) {
-                KLOG_WARNING("Failed to open fs file for %s in mode %s", args->path, args->mode);
+                // already logged as warning in device_fs_file_open
+                // TODO should this be debug or info or nothing?
+                KLOG_DEBUG("Failed to open fs file for %s in mode %s", args->path, args->mode);
                 return 0;
             }
 
