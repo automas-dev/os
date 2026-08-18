@@ -7,3 +7,5 @@ build/
 drive.img
 drive.tar
 qemu_log.txt
+
+cross-build/
