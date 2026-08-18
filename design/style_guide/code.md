@@ -9,7 +9,9 @@
 
 All C code in src/ should use traditional guard style with the file path
 (excluding src prefix) in upper snake case separated with underscores. A
-comment should be included on the `#endif` line with the same name.
+comment should be included on the `#endif` line with the same name. This name
+should include the component (ie. src/kernel/include/paging.c should have a
+header guard `KERNEL_PAGING_H`).
 
 ```c
 #ifndef PATH_UPPER_SNAKE_CASE_H
