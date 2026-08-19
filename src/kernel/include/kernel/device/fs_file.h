@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-#include "kernel/io_fs.h"
+#include "kernel/io/fs.h"
 
 /// TODO remove
 /// @deprecated

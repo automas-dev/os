@@ -1,6 +1,6 @@
 #define KLOG_SERVICE "IO_DEVICE"
 
-#include "kernel/io_device.h"
+#include "kernel/io/device.h"
 
 #include "kernel/logs.h"
 

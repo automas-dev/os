@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 #include "drivers/vga.h"
-#include "kernel/io_device.h"
+#include "kernel/io/device.h"
 
 io_device_t * io_device_screen_open();
 

@@ -6,8 +6,8 @@
 
 #include "drivers/tar.h"
 #include "ebus.h"
-#include "kernel/io_device.h"
-#include "kernel/io_fs.h"
+#include "kernel/io/device.h"
+#include "kernel/io/fs.h"
 #include "kernel/memory.h"
 #include "kernel/panic.h"
 #include "kernel/scheduler.h"

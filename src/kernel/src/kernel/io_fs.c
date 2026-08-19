@@ -1,6 +1,6 @@
 #define KLOG_SERVICE "IO_FS"
 
-#include "kernel/io_fs.h"
+#include "kernel/io/fs.h"
 
 #include "kernel/logs.h"
 

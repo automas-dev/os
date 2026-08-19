@@ -8,7 +8,7 @@
 
 #include "ebus.h"
 #include "kernel/io.h"
-#include "kernel/io_buffer.h"
+#include "kernel/io/buffer.h"
 #include "libc/datastruct/array.h"
 #include "libc/file.h"
 #include "memory_alloc.h"

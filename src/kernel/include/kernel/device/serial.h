@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-#include "kernel/io_device.h"
+#include "kernel/io/device.h"
 
 io_device_t * io_device_serial_open();
 

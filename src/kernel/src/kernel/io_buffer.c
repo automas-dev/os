@@ -1,6 +1,6 @@
 #define KLOG_SERVICE "IO_DEVICE"
 
-#include "kernel/io_buffer.h"
+#include "kernel/io/buffer.h"
 
 #include "kernel/logs.h"
 #include "libc/memory.h"

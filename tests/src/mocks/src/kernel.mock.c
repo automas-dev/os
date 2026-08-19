@@ -1,5 +1,5 @@
 #include "kernel/memory.mock.h"
-#include "kernel/io_buffer.mock.h"
+#include "kernel/io/buffer.mock.h"
 #include "kernel/device/screen.mock.h"
 #include "kernel/panic.mock.h"
 

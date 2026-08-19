@@ -1,7 +1,7 @@
 #include "kernel/device/fs_file.h"
 
 #include "kernel.h"
-#include "kernel/io_fs.h"
+#include "kernel/io/fs.h"
 #include "kernel/memory.h"
 #include "libc/string.h"
 
