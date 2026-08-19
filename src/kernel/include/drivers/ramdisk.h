@@ -1,5 +1,5 @@
-#ifndef DRIVER_RAMDISK_H
-#define DRIVER_RAMDISK_H
+#ifndef DRIVERS_RAMDISK_H
+#define DRIVERS_RAMDISK_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -18,4 +18,4 @@ size_t ramdisk_size(ramdisk_t * drive);
 size_t ramdisk_read(ramdisk_t * drive, uint8_t * buff, size_t count, size_t pos);
 size_t ramdisk_write(ramdisk_t * drive, uint8_t * buff, size_t count, size_t pos);
 
-#endif // DRIVER_RAMDISK_H
+#endif // DRIVERS_RAMDISK_H

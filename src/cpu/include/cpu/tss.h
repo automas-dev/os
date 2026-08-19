@@ -1,5 +1,5 @@
-#ifndef TSS_H
-#define TSS_H
+#ifndef CPU_TSS_H
+#define CPU_TSS_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -54,4 +54,4 @@ tss_entry_t * tss_get_entry(size_t i);
 uint32_t tss_get_esp0(void);
 void     tss_set_esp0(uint32_t stack);
 
-#endif // TSS_H
+#endif // CPU_TSS_H

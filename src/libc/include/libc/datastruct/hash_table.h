@@ -1,5 +1,5 @@
-#ifndef LIBC_DATASTRUCT_HASHTABLE_H
-#define LIBC_DATASTRUCT_HASHTABLE_H
+#ifndef LIBC_DATASTRUCT_HASH_TABLE_H
+#define LIBC_DATASTRUCT_HASH_TABLE_H
 
 #include <stddef.h>
 
@@ -119,4 +119,4 @@ void * htable_remove(htable_t * table, const char * key);
  */
 int htable_delete(htable_t * table, const char * key);
 
-#endif // LIBC_DATASTRUCT_HASHTABLE_H
+#endif // LIBC_DATASTRUCT_HASH_TABLE_H

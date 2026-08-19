@@ -1,5 +1,5 @@
-#ifndef GDT_H
-#define GDT_H
+#ifndef CPU_GDT_H
+#define CPU_GDT_H
 
 #include "cpu/tss.h"
 #include "defs.h"
@@ -89,4 +89,4 @@ int gdt_set_limit(size_t i, uint64_t limit);
 int gdt_set_access(size_t i, uint8_t access);
 int gdt_set_flags(size_t i, uint8_t flags);
 
-#endif // GDT_H
+#endif // CPU_GDT_H

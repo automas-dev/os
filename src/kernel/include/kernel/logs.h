@@ -1,5 +1,5 @@
-#ifndef KERNEL_LOG_H
-#define KERNEL_LOG_H
+#ifndef KERNEL_LOGS_H
+#define KERNEL_LOGS_H
 
 #include <stdarg.h>
 #include <stddef.h>
@@ -67,4 +67,4 @@ void kernel_log_set_level(int level);
 
 void kernel_log(int level, const char * file, size_t lineno, const char * service, const char * fmt, ...);
 
-#endif // KERNEL_LOG_H
+#endif // KERNEL_LOGS_H

@@ -1,5 +1,5 @@
-#ifndef DRIVER_DISK_H
-#define DRIVER_DISK_H
+#ifndef DRIVERS_DISK_H
+#define DRIVERS_DISK_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -20,4 +20,4 @@ size_t disk_size(disk_t * disk);
 size_t disk_read(disk_t * disk, uint8_t * buff, size_t count, size_t pos);
 size_t disk_write(disk_t * disk, uint8_t * buff, size_t count, size_t pos);
 
-#endif // DRIVER_DISK_H
+#endif // DRIVERS_DISK_H

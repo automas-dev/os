@@ -1,5 +1,5 @@
-#ifndef DRIVER_TAR_H
-#define DRIVER_TAR_H
+#ifndef DRIVERS_TAR_H
+#define DRIVERS_TAR_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -80,4 +80,4 @@ int    tar_file_tell(tar_fs_file_t * file);
 
 size_t tar_file_read(tar_fs_file_t * file, char * buff, size_t count);
 
-#endif // DRIVER_TAR_H
+#endif // DRIVERS_TAR_H

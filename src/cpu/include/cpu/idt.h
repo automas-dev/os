@@ -1,5 +1,5 @@
-#ifndef IDT_H
-#define IDT_H
+#ifndef CPU_IDT_H
+#define CPU_IDT_H
 
 #include <stdint.h>
 
@@ -31,4 +31,4 @@ typedef struct {
 void set_idt_gate(int n, uint32_t handler);
 void set_idt();
 
-#endif // IDT_H
+#endif // CPU_IDT_H

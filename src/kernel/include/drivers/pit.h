@@ -1,5 +1,5 @@
-#ifndef DRIVER_PIT_H
-#define DRIVER_PIT_H
+#ifndef DRIVERS_PIT_H
+#define DRIVERS_PIT_H
 
 #include <stdint.h>
 
@@ -33,4 +33,4 @@ int pit_write_channel(uint8_t channel, uint8_t access_mode, uint8_t channel_mode
 
 // int pit_read_count(uint8_t channel);
 
-#endif // DRIVER_PIT_H
+#endif // DRIVERS_PIT_H

@@ -1,5 +1,5 @@
-#ifndef KERNEL_PROCESS_MANAGER_H
-#define KERNEL_PROCESS_MANAGER_H
+#ifndef PROCESS_MANAGER_H
+#define PROCESS_MANAGER_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -30,4 +30,4 @@ process_t * pm_get_next(proc_man_t * pm);
 
 int pm_push_event(proc_man_t * pm, ebus_event_t * event);
 
-#endif // KERNEL_PROCESS_MANAGER_H
+#endif // PROCESS_MANAGER_H

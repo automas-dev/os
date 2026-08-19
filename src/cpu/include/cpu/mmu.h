@@ -1,5 +1,5 @@
-#ifndef MMU_H
-#define MMU_H
+#ifndef CPU_MMU_H
+#define CPU_MMU_H
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -73,4 +73,4 @@ extern void     mmu_change_dir(uint32_t addr);
 extern uint32_t mmu_get_curr_dir(void);
 extern void     mmu_reload_dir(void);
 
-#endif // MMU_H
+#endif // CPU_MMU_H
