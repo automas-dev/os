@@ -9,15 +9,20 @@
 
 All C code in src/ should use traditional guard style with the file path
 (excluding src prefix) in upper snake case separated with underscores. A
-comment should be included on the `#endif` line with the same name. This name
-should include the component (ie. src/kernel/include/paging.c should have a
-header guard `KERNEL_PAGING_H`).
+comment should be included on the `#endif` line with the same name.
+
+The name should be the file path under include/ (ie.
+src/kernel/include/drivers/ata.h should have a header guard `DRIVERS_ATA_H`).
+
+**Example**
+
+src/kernel/include/kernel/device/ata.h
 
 ```c
-#ifndef PATH_UPPER_SNAKE_CASE_H
-#define PATH_UPPER_SNAKE_CASE_H
+#ifndef KERNEL_DEVICE_ATA_H
+#define KERNEL_DEVICE_ATA_H
 ...
-#endif // PATH_UPPER_SNAKE_CASE_H
+#endif // KERNEL_DEVICE_ATA_H
 ```
 
 All C++ code or C code outside src/ should use `#pragma once`
