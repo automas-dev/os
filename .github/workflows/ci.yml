@@ -62,6 +62,15 @@ jobs:
           clang-format-version: "18"
           check-path: tests/src
 
+  header-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check header guards
+        run: ./.github/scripts/check_header_guards.sh
+
   increment_version:
     name: Increment Version
     uses: automas-dev/reusable-workflows/.github/workflows/increment_version.yml@v1.1
@@ -83,6 +92,7 @@ jobs:
     needs:
       # - test
       - lint
+      - header-check
       - increment_version
 
     timeout-minutes: 1
