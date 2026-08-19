@@ -64,13 +64,13 @@ protected:
 
         proc.next_heap_page = 2;
 
-        mmu_dir_set_fake.custom_fake   = custom_mmu_dir_set;
-        mmu_table_set_fake.custom_fake = custom_mmu_table_set;
-        mmu_dir_get_addr_fake.return_val = 0x5000;
+        mmu_dir_set_fake.custom_fake       = custom_mmu_dir_set;
+        mmu_table_set_fake.custom_fake     = custom_mmu_table_set;
+        mmu_dir_get_addr_fake.return_val   = 0x5000;
         mmu_table_get_addr_fake.return_val = 0x6000;
 
-        paging_temp_map_fake.return_val = temp_page.data();
-        io_buffer_create_fake.return_val = &io_buffer;
+        paging_temp_map_fake.return_val       = temp_page.data();
+        io_buffer_create_fake.return_val      = &io_buffer;
         io_device_screen_open_fake.return_val = &io_device;
     }
 };

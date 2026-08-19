@@ -69,7 +69,7 @@ TEST_F(Table, htable_create) {
 TEST_F(Table, htable_free) {
     htable_free(0);
 
-    char * data = (char *)malloc(1);
+    char * data               = (char *)malloc(1);
     str_copy_fake.custom_fake = copy_key;
     ASSERT_EQ(0, htable_set(&table, "key", data));
 
@@ -80,9 +80,9 @@ TEST_F(Table, htable_free) {
 
 TEST_F(Table, htable_free_empty_entries) {
     htable_free(&table);
-    table.list = (htable_list_t **)malloc(sizeof(htable_list_t *));
-    table.hash_size = 1;
-    table.list[0] = (htable_list_t *)malloc(sizeof(htable_list_t));
+    table.list          = (htable_list_t **)malloc(sizeof(htable_list_t *));
+    table.hash_size     = 1;
+    table.list[0]       = (htable_list_t *)malloc(sizeof(htable_list_t));
     table.list[0]->next = 0;
     table.list[0]->key  = 0;
     table.list[0]->data = 0;
@@ -94,7 +94,7 @@ TEST_F(Table, htable_free_empty_entries) {
 TEST_F(Table, htable_free_no_delete) {
     htable_free_no_delete(0);
 
-    char * data = (char *)malloc(1);
+    char * data               = (char *)malloc(1);
     str_copy_fake.custom_fake = copy_key;
     ASSERT_EQ(0, htable_set(&table, "key", data));
 
@@ -128,8 +128,8 @@ TEST_F(Table, htable_set) {
 }
 
 TEST_F(Table, htable_set_and_get) {
-    char * first  = (char *)malloc(1);
-    char * second = (char *)malloc(1);
+    char * first              = (char *)malloc(1);
+    char * second             = (char *)malloc(1);
     str_copy_fake.custom_fake = copy_key;
     ASSERT_EQ(0, htable_set(&table, "key", first));
     ASSERT_EQ(0, htable_set(&table, "other", second));

@@ -39,7 +39,7 @@ TEST(PagingStatic, paging_init) {
 TEST(PagingStatic, paging_init_FailClear) {
     init_mocks();
     kmemset_fake.custom_fake = 0;
-    kmemset_fake.return_val = 0;
+    kmemset_fake.return_val  = 0;
 
     EXPECT_NE(0, paging_init());
 }

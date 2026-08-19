@@ -1,6 +1,6 @@
-#include "kernel/memory.mock.h"
-#include "kernel/io/buffer.mock.h"
 #include "kernel/device/screen.mock.h"
+#include "kernel/io/buffer.mock.h"
+#include "kernel/memory.mock.h"
 #include "kernel/panic.mock.h"
 
 DEFINE_FAKE_VOID_FUNC(kmalloc_init, size_t);

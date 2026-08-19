@@ -1,7 +1,6 @@
 #define KLOG_SERVICE "IO_FS"
 
 #include "kernel/io/fs.h"
-
 #include "kernel/logs.h"
 
 // TODO should null ptr checks be here or in each read function?
