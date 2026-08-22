@@ -62,31 +62,19 @@ jobs:
           clang-format-version: "18"
           check-path: tests/src
 
-  test-inc-version:
-    runs-on: ubuntu-latest
+  increment_version:
+    name: Increment Version
+    uses: automas-dev/reusable-workflows/.github/workflows/increment_version.yml@v1.1
+    secrets: inherit
+    with:
+      dry-run: ${{ github.ref != 'refs/heads/main' }}
 
-    steps:
-      - uses: actions/checkout@v6
+    needs:
+      # - test
+      - lint
 
-      - uses: automas-dev/reusable-workflows/increment_version@enforce_title
-        id: version
-        with:
-          dry-run: true
-          enforce-conventional-commit: false
-
-  # increment_version:
-  #   name: Increment Version
-  #   uses: automas-dev/reusable-workflows/.github/workflows/increment_version.yml@v1.1
-  #   secrets: inherit
-  #   with:
-  #     dry-run: ${{ github.ref != 'refs/heads/main' }}
-
-  #   needs:
-  #     # - test
-  #     - lint
-
-  #   permissions:
-  #     contents: write
+    permissions:
+      contents: write
 
   check:
     runs-on: ubuntu-latest
@@ -95,8 +83,7 @@ jobs:
     needs:
       # - test
       - lint
-      # - increment_version
-      - test-inc-version
+      - increment_version
 
     timeout-minutes: 1
 
