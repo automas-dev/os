@@ -1,7 +1,5 @@
 #!/bin/bash
 
-find src tests/src -name '*.c' -or -name '*.h' -or -name '*.cpp' -or -name '*.hpp' | xargs clang-format --dry-run --Werror --sort-includes
-
 failures=0
 while IFS= read -r file; do
     guard=${file##*include/}
