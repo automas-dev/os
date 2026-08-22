@@ -72,7 +72,7 @@ jobs:
         id: version
         with:
           dry-run: true
-          enforce-conventional-commit: true
+          enforce-conventional-commit: false
 
   # increment_version:
   #   name: Increment Version
