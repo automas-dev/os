@@ -74,9 +74,12 @@ coverage:
 
 lint:
 	@find src tests/src -name '*.c' -or -name '*.h' -or -name '*.cpp' -or -name '*.hpp' | xargs clang-format --dry-run --Werror --sort-includes
+	@.github/scripts/check_header_guards.sh
 
 format:
 	@find src tests/src -name '*.c' -or -name '*.h' -or -name '*.cpp' -or -name '*.hpp' | xargs clang-format -i --Werror --sort-includes
+# Doesn't do anything to fix errors, just here to check and throw
+	@.github/scripts/check_header_guards.sh
 
 checks: lint build test_cov
 
