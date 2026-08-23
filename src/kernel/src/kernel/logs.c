@@ -12,9 +12,9 @@
 #include "libc/stdio_impl.h"
 #include "libc/string.h"
 
-int __enabled;
-int __time_enabled;
-int __level;
+static int __enabled;
+static int __time_enabled;
+static int __level;
 
 static void put_time();
 
