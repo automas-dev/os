@@ -80,15 +80,16 @@ void kernel_log(int level, const char * file, size_t lineno, const char * servic
 
     printf("[%s]", KERNEL_LOG_LEVEL_NAME[level]);
 
-    if (file) {
-        if (kstrlen(file) > FILE_PREFIX_LENGTH) {
-            file += FILE_PREFIX_LENGTH;
-        }
-        printf("[%s:%u]", file, lineno);
-    }
+    // if (file) {
+    //     if (kstrlen(file) > FILE_PREFIX_LENGTH) {
+    //         file += FILE_PREFIX_LENGTH;
+    //     }
+    //     printf("[%s:%u]", file, lineno);
+    // }
 
     if (service) {
-        printf("[%s]", service);
+        // printf("[%s]", service);
+        printf("[%s:%u]", service, lineno);
     }
 
     puts(": ");
