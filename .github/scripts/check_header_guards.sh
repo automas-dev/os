@@ -5,7 +5,7 @@ while IFS= read -r file; do
     guard=${file##*include/}
     guard=${guard^^}
     guard=$(echo "$guard" | tr . _ | tr / _)
-    # echo "header check $file has guard $guard"
+    # echo "check header $file has guard $guard"
     if ! head -1 "$file" | grep "#ifndef ${guard}" >/dev/null; then
         echo "$file failed typeguard check"
         failures=1

@@ -64,6 +64,9 @@ jobs:
       - name: Check header guards
         run: ./.github/scripts/check_header_guards.sh
 
+      - name: Check log service names
+        run: ./.github/scripts/check_log_service_names.sh
+
   increment_version:
     name: Increment Version
     uses: automas-dev/reusable-workflows/.github/workflows/increment_version.yml@v1.1
