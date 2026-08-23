@@ -1,5 +1,5 @@
-#define KLOG_SERVICE "KERNEL/PROCESS_MANAGER"
-// #define KLOG_LEVEL   KLOG_LEVEL_TRACE
+#define KLOG_SERVICE "PROCESS_MANAGER"
+// #define KLOG_LEVEL   KERNEL_LOG_LEVEL_TRACE
 
 #include "process_manager.h"
 

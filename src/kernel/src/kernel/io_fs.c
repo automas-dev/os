@@ -1,4 +1,4 @@
-#define KLOG_SERVICE "IO_FS"
+#define KLOG_SERVICE "KERNEL/IO_FS"
 
 #include "kernel/io/fs.h"
 #include "kernel/logs.h"

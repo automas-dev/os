@@ -1,5 +1,5 @@
 #define KLOG_SERVICE "MEMORY_ALLOC"
-// #define KLOG_LEVEL   KLOG_LEVEL_TRACE
+// #define KLOG_LEVEL   KERNEL_LOG_LEVEL_TRACE
 
 #include "memory_alloc.h"
 

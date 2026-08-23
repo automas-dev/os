@@ -1,4 +1,4 @@
-#define KLOG_SERVICE "IO_DEVICE"
+#define KLOG_SERVICE "KERNEL/IO_DEVICE"
 
 #include "kernel/io/device.h"
 #include "kernel/logs.h"

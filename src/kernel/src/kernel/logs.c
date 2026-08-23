@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "KERNEL/LOGS"
+
 #include "kernel/logs.h"
 
 #include <stdarg.h>

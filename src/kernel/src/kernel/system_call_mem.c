@@ -1,4 +1,4 @@
-#define KLOG_SERVICE "SYSCALL/MEMORY"
+#define KLOG_SERVICE "KERNEL/SYSTEM_CALL_MEM"
 
 #include "kernel/system_call_mem.h"
 
