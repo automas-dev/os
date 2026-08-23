@@ -1,11 +1,11 @@
+#define KLOG_SERVICE "LOADER"
+
 /**
  * @brief Loader starts in raw memory before paging is enabled. After paging is
  * enabled, initialize the kernel then load and launch init program.
  *
  * Documentation moved to design/boot_stages.md
  */
-#define KLOG_SERVICE "LOADER"
-
 #include <stdint.h>
 
 #include "boot_params.h"
@@ -35,10 +35,11 @@ static void id_map_page(mmu_table_t * table, size_t page);
 
 static process_t * load_init();
 
-extern volatile int start_now;
+extern volatile int kernel_logs_enable_serial_newlines;
 
 void __start() {
-    start_now = 1;
+    // Enable newlines in serial output (must be disabled later for one stage)
+    kernel_logs_enable_serial_newlines = 1;
 
     // 1. Setup kernel logging (serial only)
     kernel_log_init();
@@ -88,7 +89,7 @@ void __start() {
     mmu_dir_clear(pdir);
 
     // This needs to be disabled here because something around enable paging blocks if it's enabled
-    start_now = 0;
+    kernel_logs_enable_serial_newlines = 0;
 
     KLOG_DEBUG("page dir created");
 
@@ -119,7 +120,7 @@ void __start() {
     // 7. Enable paging
     mmu_enable_paging(PADDR_KERNEL_DIR);
     // This needs to be enabled here because something around enable paging blocks if it's enabled
-    start_now = 1;
+    kernel_logs_enable_serial_newlines = 1;
     KLOG_DEBUG("paging enabled");
 
     // 8. Initialize kernel
@@ -276,7 +277,7 @@ static process_t * load_init() {
 
     io_fs_stat_t stat;
     if (io_fs_file_stat(kernel_get_fs(), filename, &stat)) {
-        KLOG_ERROR("Failed to find file\n");
+        KLOG_ERROR("Failed to find file");
         return 0;
     }
 
