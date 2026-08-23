@@ -37,6 +37,15 @@ All C++ code or C code outside src/ should use `#pragma once`
 Function names should include the module (ie. path) as a prefix using snake
 case.
 
+## Global Variables
+
+Global variables should not be shared between files, but for several systems it
+makes sense to have an internal state (eg. next pid counter, pointer to kernel
+struct, etc.). Global variables should be limited to a single file and should be
+declared as static. Constants (eg. log level name lookup) can use a const type
+with upper snake case name. Variables should use lower snake case and have a
+double underscore (`__`) prefix.
+
 ## Memory Ownership
 
 TODO
