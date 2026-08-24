@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "LOADER"
+
 /**
  * @brief Loader starts in raw memory before paging is enabled. After paging is
  * enabled, initialize the kernel then load and launch init program.
