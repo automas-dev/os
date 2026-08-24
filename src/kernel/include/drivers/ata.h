@@ -1,5 +1,5 @@
-#ifndef DRIVER_ATA_H
-#define DRIVER_ATA_H
+#ifndef DRIVERS_ATA_H
+#define DRIVERS_ATA_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -24,4 +24,4 @@ bool   ata_status(ata_t * drive);
 size_t ata_sect_read(ata_t * drive, uint8_t * buff, size_t sect_count, uint32_t lba);
 size_t ata_sect_write(ata_t * drive, const uint8_t * buff, size_t sect_count, uint32_t lba);
 
-#endif // DRIVER_ATA_H
+#endif // DRIVERS_ATA_H

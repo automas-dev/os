@@ -1,4 +1,4 @@
-#define KLOG_SERVICE "DRIVER/KEYBOARD"
+#define KLOG_SERVICE "DRIVERS/KEYBOARD"
 
 #include "drivers/keyboard.h"
 

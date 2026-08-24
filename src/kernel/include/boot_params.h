@@ -1,5 +1,5 @@
-#ifndef KERNEL_BOOT_PARAMS_H
-#define KERNEL_BOOT_PARAMS_H
+#ifndef BOOT_PARAMS_H
+#define BOOT_PARAMS_H
 
 #include "defs.h"
 
@@ -26,4 +26,4 @@ typedef struct {
 
 boot_params_t * get_boot_params();
 
-#endif // KERNEL_BOOT_PARAMS_H
+#endif // BOOT_PARAMS_H

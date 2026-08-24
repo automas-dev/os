@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "KERNEL/PANIC"
+
 #include "kernel/panic.h"
 
 #include "drivers/vga.h"

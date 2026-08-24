@@ -1,4 +1,4 @@
-#define KLOG_SERVICE "DRIVER/RTC"
+#define KLOG_SERVICE "DRIVERS/RTC"
 
 #include "drivers/rtc.h"
 

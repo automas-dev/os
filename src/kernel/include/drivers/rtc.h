@@ -1,5 +1,5 @@
-#ifndef DRIVER_RTC_H
-#define DRIVER_RTC_H
+#ifndef DRIVERS_RTC_H
+#define DRIVERS_RTC_H
 
 #include <stdint.h>
 
@@ -38,4 +38,4 @@ void rtc_init(rtc_rate_t rate);
 
 rtc_time_t * rtc_time();
 
-#endif // DRIVER_RTC_H
+#endif // DRIVERS_RTC_H

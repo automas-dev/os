@@ -25,8 +25,8 @@ Features include
 Each C file should define `KLOG_SERVICE` as the first line in the file. This
 must be defined before including `"kernel/logs.h"`. The service name should be
 all uppercase with the component name and file path under the components src/
-separated by `/` (eg. src/kernel/src/memory.c would be `KERNEL/MEMORY` excluding
-the prefix and interior src/).
+separated by `/` (eg. src/kernel/src/kernel/memory.c would be `KERNEL/MEMORY`
+excluding the src/kernel/src prefix).
 
 ```c
 #define KLOG_SERVICE "KERNEL/MEMORY"
@@ -54,14 +54,13 @@ KLOG_INFO("message %u name %s", 42, "hello world");
 The logging system is limited to the kernel and should not be used in
 application or user space code.
 
-| Level   | Macro          | Usage                                             |
-| ------- | -------------- | ------------------------------------------------- |
-| Error   | `KLOG_ERROR`   | Something is wrong with the code                  |
-| Warning | `KLOG_WARNING` | Someone is using the code incorrectly             |
-| Info    | `KLOG_INFO`    | Information that's useful during normal operation |
-| Debug   | `KLOG_DEBUG`   | Information that's useful during troubleshooting  |
-| Trace   | `KLOG_TRACE`   | Information that's useful during development      |
-
+| Level   | Macro          | Usage                                               |
+| ------- | -------------- | --------------------------------------------------- |
+| Error   | `KLOG_ERROR`   | Something is wrong with the code                    |
+| Warning | `KLOG_WARNING` | Someone is using the code incorrectly               |
+| Info    | `KLOG_INFO`    | Information that's useful during normal operation   |
+| Debug   | `KLOG_DEBUG`   | Information that's useful during troubleshooting    |
+| Trace   | `KLOG_TRACE`   | I want to know what code is executing or some value |
 
 ### When to use Error
 
@@ -80,12 +79,13 @@ further logging if possible.
 **Example**
 
 ```c
-int open_something(const char * path) {
-    if (!path) {
-        KLOG_ERROR("Trying to open path from null pointer");
+int open_something() {
+    int id = ata_device_open();
+    if (!id) {
+        KLOG_ERROR("Failed to open ata device");
         return 0;
     }
-    ...
+    return id;
 }
 int check_something(const char * path) {
     int id = open_something(path);

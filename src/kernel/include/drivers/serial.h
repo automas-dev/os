@@ -1,5 +1,5 @@
-#ifndef DRIVER_SERIAL_H
-#define DRIVER_SERIAL_H
+#ifndef DRIVERS_SERIAL_H
+#define DRIVERS_SERIAL_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -23,4 +23,4 @@ char serial_read(uint16_t port);
 void serial_write_str(uint16_t port, const char * str);
 void serial_write(uint16_t port, const char * str, size_t count);
 
-#endif // DRIVER_SERIAL_H
+#endif // DRIVERS_SERIAL_H

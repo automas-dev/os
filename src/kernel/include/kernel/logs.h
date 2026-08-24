@@ -1,5 +1,5 @@
-#ifndef KERNEL_LOG_H
-#define KERNEL_LOG_H
+#ifndef KERNEL_LOGS_H
+#define KERNEL_LOGS_H
 
 #include <stdarg.h>
 #include <stddef.h>
@@ -9,7 +9,7 @@
 #define KERNEL_LOG_LEVEL_INFO    2
 #define KERNEL_LOG_LEVEL_WARNING 3
 #define KERNEL_LOG_LEVEL_ERROR   4
-#define KERNEL_LOG_LEVEL__LENGTH 5 // Number of log levels, used to bounds check name lookup
+#define KERNEL_LOG_LEVEL__LENGTH 5 // Number of log levels, used to bound name lookup
 
 #define STRINGIZE(x)  STRINGIZE2(x)
 #define STRINGIZE2(x) #x
@@ -17,7 +17,7 @@
 #define PREFIX        __BASE_FILE__ ":" LINE_STRING
 
 #ifndef KLOG_SERVICE
-#define KLOG_SERVICE 0
+#error "KLOG_SERVICE must be defined before including kernel/logs.h"
 #endif
 
 #ifndef KLOG_LEVEL
@@ -67,4 +67,4 @@ void kernel_log_set_level(int level);
 
 void kernel_log(int level, const char * file, size_t lineno, const char * service, const char * fmt, ...);
 
-#endif // KERNEL_LOG_H
+#endif // KERNEL_LOGS_H
