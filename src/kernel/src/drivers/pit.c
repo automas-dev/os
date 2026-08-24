@@ -1,4 +1,4 @@
-#define KLOG_SERVICE "DRIVER/PIT"
+#define KLOG_SERVICE "DRIVERS/PIT"
 
 #include "drivers/pit.h"
 

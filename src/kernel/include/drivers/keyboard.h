@@ -1,5 +1,5 @@
-#ifndef DRIVER_KEYBOARD_H
-#define DRIVER_KEYBOARD_H
+#ifndef DRIVERS_KEYBOARD_H
+#define DRIVERS_KEYBOARD_H
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -82,4 +82,4 @@ typedef enum keyboard_key {
 
 void keyboard_init();
 
-#endif // DRIVER_KEYBOARD_H
+#endif // DRIVERS_KEYBOARD_H

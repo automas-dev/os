@@ -1,4 +1,4 @@
-#define KLOG_SERVICE "DRIVER/ATA"
+#define KLOG_SERVICE "DRIVERS/ATA"
 
 #include "drivers/ata.h"
 
@@ -199,28 +199,28 @@ bool ata_status(ata_t * drive) {
     if (status & ATA_STATUS_FLAG_ERR) {
         uint8_t error = port_byte_in(drive->io_base + ATA_IO_ERROR);
         if (error & ATA_ERROR_FLAG_AMNF) {
-            KLOG_ERROR("AMNF - Address mark not found\n");
+            KLOG_ERROR("AMNF - Address mark not found");
         }
         if (error & ATA_ERROR_FLAG_TKZNK) {
-            KLOG_ERROR("TKZNK - Track zero not found\n");
+            KLOG_ERROR("TKZNK - Track zero not found");
         }
         if (error & ATA_ERROR_FLAG_ABRT) {
-            KLOG_ERROR("ABRT - Aborted command\n");
+            KLOG_ERROR("ABRT - Aborted command");
         }
         if (error & ATA_ERROR_FLAG_MCR) {
-            KLOG_ERROR("MCR - Media change request\n");
+            KLOG_ERROR("MCR - Media change request");
         }
         if (error & ATA_ERROR_FLAG_IDNF) {
-            KLOG_ERROR("IDNF - ID not found\n");
+            KLOG_ERROR("IDNF - ID not found");
         }
         if (error & ATA_ERROR_FLAG_MC) {
-            KLOG_ERROR("MC - Media changed\n");
+            KLOG_ERROR("MC - Media changed");
         }
         if (error & ATA_ERROR_FLAG_UNC) {
-            KLOG_ERROR("UNC - Uncorrectable data error\n");
+            KLOG_ERROR("UNC - Uncorrectable data error");
         }
         if (error & ATA_ERROR_FLAG_BBK) {
-            KLOG_ERROR("BBK - Bad block detected\n");
+            KLOG_ERROR("BBK - Bad block detected");
         }
         return false;
     }

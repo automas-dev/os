@@ -1,4 +1,4 @@
-#define KLOG_SERVICE "KERNEL/PROCESS"
+#define KLOG_SERVICE "PROCESS"
 
 #include "process.h"
 

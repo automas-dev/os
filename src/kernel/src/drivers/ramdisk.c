@@ -1,4 +1,4 @@
-#define KLOG_SERVICE "DRIVER/RAMDISK"
+#define KLOG_SERVICE "DRIVERS/RAMDISK"
 
 #include "drivers/ramdisk.h"
 

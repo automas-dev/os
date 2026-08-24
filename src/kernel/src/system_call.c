@@ -1,4 +1,4 @@
-#define KLOG_SERVICE "SYSCALL"
+#define KLOG_SERVICE "SYSTEM_CALL"
 
 #include "system_call.h"
 

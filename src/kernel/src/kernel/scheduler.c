@@ -1,4 +1,4 @@
-#define KLOG_SERVICE "SCHEDULER"
+#define KLOG_SERVICE "KERNEL/SCHEDULER"
 
 #include "kernel/scheduler.h"
 

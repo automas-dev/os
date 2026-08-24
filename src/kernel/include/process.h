@@ -1,5 +1,7 @@
-#ifndef KERNEL_PROCESS_H
-#define KERNEL_PROCESS_H
+#ifndef PROCESS_H
+#define PROCESS_H
+
+// If this file moves, update the comment in src/kernel_entry.asm
 
 #include <stddef.h>
 #include <stdint.h>
@@ -207,4 +209,4 @@ extern process_t * get_active_task(void);
 extern void        switch_task(process_t * proc);
 extern void        start_first_task(process_t * proc);
 
-#endif // KERNEL_PROCESS_H
+#endif // PROCESS_H

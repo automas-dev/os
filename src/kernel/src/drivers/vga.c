@@ -1,4 +1,4 @@
-#define KLOG_SERVICE "DRIVER/VGA"
+#define KLOG_SERVICE "DRIVERS/VGA"
 
 #include "drivers/vga.h"
 

@@ -1,4 +1,4 @@
-#define KLOG_SERVICE "KERNEL/EXEC"
+#define KLOG_SERVICE "EXEC"
 
 #include "exec.h"
 

@@ -1,4 +1,4 @@
-#define KLOG_SERVICE "KERNEL/PAGING"
+#define KLOG_SERVICE "PAGING"
 
 #include "paging.h"
 

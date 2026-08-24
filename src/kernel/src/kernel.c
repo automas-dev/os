@@ -1,10 +1,10 @@
+#define KLOG_SERVICE "KERNEL"
+
 /**
  * @brief Higher kernel operates in virtual memory after paging is enabled.
  *
  * Documentation moved to design/boot_stages.md
  */
-#define KLOG_SERVICE "KERNEL"
-
 #include "kernel.h"
 
 #include "defs.h"
@@ -61,7 +61,7 @@ void kernel_init() {
     // 8.5 Setup event bus
     // Create ebus for kernel (target of queue_event)
     if (ebus_create(&__kernel.event_queue, 4096)) {
-        KPANIC("Failed to init ebus\n");
+        KPANIC("Failed to init ebus");
     }
 
     _libc_config_queue_event_call(kernel_queue_event);
@@ -188,7 +188,7 @@ tar_fs_t * kernel_get_tar() {
 
 void tmp_register_signals_cb(signals_master_cb_t cb) {
     get_active_task()->signals_callback = cb;
-    KLOG_DEBUG("Attached master signal callback at %p\n", get_active_task()->signals_callback);
+    KLOG_DEBUG("Attached master signal callback at %p", get_active_task()->signals_callback);
 }
 
 kernel_t * get_kernel() {

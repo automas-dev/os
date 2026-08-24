@@ -1,5 +1,5 @@
-#ifndef KERNEL_PAGING_H
-#define KERNEL_PAGING_H
+#ifndef PAGING_H
+#define PAGING_H
 
 #include <stdint.h>
 
@@ -111,4 +111,4 @@ int paging_add_table(mmu_dir_t * dir, size_t dir_i);
  */
 int paging_remove_table(mmu_dir_t * dir, size_t dir_i);
 
-#endif // KERNEL_PAGING_H
+#endif // PAGING_H

@@ -1,4 +1,4 @@
-#define KLOG_SERVICE "DRIVER/TAR"
+#define KLOG_SERVICE "DRIVERS/TAR"
 
 #include "drivers/tar.h"
 

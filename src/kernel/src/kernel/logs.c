@@ -1,3 +1,5 @@
+#define KLOG_SERVICE "KERNEL/LOGS"
+
 #include "kernel/logs.h"
 
 #include <stdarg.h>
@@ -10,13 +12,13 @@
 #include "libc/stdio_impl.h"
 #include "libc/string.h"
 
-int __enabled;
-int __time_enabled;
-int __level;
+static int __enabled;
+static int __time_enabled;
+static int __level;
 
 static void put_time();
 
-static char * KERNEL_LOG_LEVEL_NAME[] = {
+static const char * KERNEL_LOG_LEVEL_NAME[] = {
     "TRACE",
     "DEBUG",
     "INFO",
@@ -50,9 +52,13 @@ void kernel_log_set_level(int level) {
     __level = level;
 }
 
-volatile int start_now = 0;
+volatile int kernel_logs_enable_serial_newlines = 0;
 
 void kernel_log(int level, const char * file, size_t lineno, const char * service, const char * fmt, ...) {
+    if (!__enabled) {
+        return;
+    }
+
     if (level < __level) {
         return;
     }
@@ -68,21 +74,22 @@ void kernel_log(int level, const char * file, size_t lineno, const char * servic
     if (level < 0) {
         level = 0;
     }
-    else if (level > KERNEL_LOG_LEVEL__LENGTH) {
-        level = KERNEL_LOG_LEVEL__LENGTH;
+    else if (level >= KERNEL_LOG_LEVEL__LENGTH) {
+        level = KERNEL_LOG_LEVEL__LENGTH - 1;
     }
 
     printf("[%s]", KERNEL_LOG_LEVEL_NAME[level]);
 
-    if (file) {
-        if (kstrlen(file) > FILE_PREFIX_LENGTH) {
-            file += FILE_PREFIX_LENGTH;
-        }
-        printf("[%s:%u]", file, lineno);
-    }
+    // if (file) {
+    //     if (kstrlen(file) > FILE_PREFIX_LENGTH) {
+    //         file += FILE_PREFIX_LENGTH;
+    //     }
+    //     printf("[%s:%u]", file, lineno);
+    // }
 
     if (service) {
-        printf("[%s]", service);
+        // printf("[%s]", service);
+        printf("[%s:%u]", service, lineno);
     }
 
     puts(": ");
@@ -90,7 +97,8 @@ void kernel_log(int level, const char * file, size_t lineno, const char * servic
     va_list params;
     va_start(params, fmt);
     vprintf(stdout, fmt, params);
-    if (start_now) {
+    // Printing a newline to serial during mmu / gdt / tss blocks the kernel, idk why
+    if (kernel_logs_enable_serial_newlines) {
         putc('\n');
     }
 }

@@ -1,4 +1,4 @@
-#define KLOG_SERVICE "SYSCALL/EVENT"
+#define KLOG_SERVICE "KERNEL/SYSTEM_CALL_EVENT"
 // #define KLOG_LEVEL   KERNEL_LOG_LEVEL_TRACE
 
 #include "kernel/system_call_event.h"
@@ -84,7 +84,7 @@ int sys_call_event_cb(uint32_t call_id, void * args_data, registers_t * regs) {
             }
 
             if (timer_id < 1) {
-                KLOG_WARNING("Failed to start timer of %u ms\n", args->ms);
+                KLOG_WARNING("Failed to start timer of %u ms", args->ms);
                 return 1;
             }
 
