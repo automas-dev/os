@@ -37,7 +37,8 @@ io_fs_t * io_fs_tar_open(io_device_t * device) {
 
     kmemset(fs, 0, sizeof(io_fs_t));
 
-    fs->dev = device;
+    fs->dev   = device;
+    fs->flags = IO_FS_FLAG_READ;
 
     fs->close_fn = _tar_close;
 
@@ -103,16 +104,16 @@ static io_fs_file_t * _tar_file_open(void * fs_data, const char * path, const ch
         while (*mode) {
             switch (*mode) {
                 case 'r':
-                    file->flags |= IO_FS_FLAG_READ;
+                    file->flags |= IO_FS_FILE_FLAG_READ;
                     KLOG_TRACE("File has read flag");
                     break;
                 case 'w':
-                    file->flags |= IO_FS_FLAG_WRITE;
+                    file->flags |= IO_FS_FILE_FLAG_WRITE;
                     KLOG_TRACE("File has write flag");
                     break;
                 // TODO handle append mode
                 case 'a':
-                    file->flags |= IO_FS_FLAG_WRITE;
+                    file->flags |= IO_FS_FILE_FLAG_WRITE;
                     KLOG_TRACE("File has append flag");
                     if (_tar_file_seek(fs_data, tar_file, 0, IO_FS_SEEK_ORIGIN_END)) {
                         KLOG_ERROR("Failed to seek end of file for append mode");

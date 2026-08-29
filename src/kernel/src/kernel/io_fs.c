@@ -51,7 +51,7 @@ size_t io_fs_file_read(io_fs_file_t * file, char * buff, size_t count) {
         return 0;
     }
 
-    if (!(file->flags & IO_FS_FLAG_READ)) {
+    if (!(file->flags & IO_FS_FILE_FLAG_READ)) {
         KLOG_WARNING("io_fs_file_read called on file without read flag");
         return 0;
     }
@@ -70,7 +70,7 @@ size_t io_fs_file_write(io_fs_file_t * file, const char * buff, size_t count) {
         return 0;
     }
 
-    if (!(file->flags & IO_FS_FLAG_WRITE)) {
+    if (!(file->flags & IO_FS_FILE_FLAG_WRITE)) {
         KLOG_WARNING("io_fs_file_write called on file without write flag");
         return 0;
     }
