@@ -54,13 +54,13 @@ KLOG_INFO("message %u name %s", 42, "hello world");
 The logging system is limited to the kernel and should not be used in
 application or user space code.
 
-| Level   | Macro          | Usage                                               |
-| ------- | -------------- | --------------------------------------------------- |
-| Error   | `KLOG_ERROR`   | An internal invariant was broken or an operation that should always succeed failed |
-| Warning | `KLOG_WARNING` | The calling code passed bad or unexpected input, handled gracefully |
-| Info    | `KLOG_INFO`    | A resource's lifecycle changed (opened/closed, started/stopped) |
+| Level   | Macro          | Usage                                                                                                        |
+| ------- | -------------- | ------------------------------------------------------------------------------------------------------------ |
+| Error   | `KLOG_ERROR`   | An internal invariant was broken or an operation that should always succeed failed                           |
+| Warning | `KLOG_WARNING` | The calling code passed bad or unexpected input, handled gracefully                                          |
+| Info    | `KLOG_INFO`    | A resource's lifecycle changed (opened/closed, started/stopped)                                              |
 | Debug   | `KLOG_DEBUG`   | Information that's useful during troubleshooting, including short context when catching a propagated failure |
-| Trace   | `KLOG_TRACE`   | I want to know what code is executing or some value |
+| Trace   | `KLOG_TRACE`   | I want to know what code is executing or some value                                                          |
 
 ### When to use Error
 
@@ -68,8 +68,8 @@ Use Error when an internal invariant is broken or an operation that should
 always succeed unexpectedly fails (eg. allocation failure, corrupted internal
 state, a required kernel resource missing). Error signals a kernel bug or
 unrecoverable resource exhaustion, not bad input from a caller. These messages
-should be short but descriptive, avoiding format variables where practical (ie.
-don't include all function args in the message).
+should be short but descriptive, avoiding too many format variables where
+practical (ie. don't include all function args in the message if not relevant).
 
 **Example**
 
@@ -86,12 +86,11 @@ int memory_init(memory_t * mem, memory_alloc_pages_t alloc_pages_fn) {
 
 ### When to use Warning
 
-Use Warning when the calling code (kernel-internal or user-space via a system
-call) passed bad, invalid, or out-of-range input, and the function handles it
-gracefully (eg. null argument, out-of-range index, misaligned pointer, bad
-syscall arguments). Warning indicates misuse of an API, not a kernel defect.
-These messages should be short but descriptive, avoiding format variables
-where practical.
+Use Warning in kernel functions when the calling code passes bad / invalid
+inputs, and the function handles it gracefully (eg. null argument bad syscall
+arguments). These messages should be short but descriptive, avoiding too many
+format variables where practical (ie. don't include all function args in the
+message if not relevant).
 
 **Example**
 
@@ -107,14 +106,14 @@ int malloc(size_t size) {
 ### Logging error chains (propagation)
 
 An error should be logged exactly once, as close to the origin of the fault as
-possible, at whichever level (Error or Warning) applies per the sections
-above. A function that merely forwards a failure from a callee (eg. by
-returning 0, NULL, or a negative status code without changing its meaning)
-must not repeat an Error or Warning log for the same failure.
+possible, at whichever level (Error or Warning) applies per the sections above.
+A function that merely forwards a failure from a callee (eg. by returning 0,
+NULL, or a negative status code without changing its meaning) must not repeat an
+Error or Warning log for the same failure.
 
-A caller catching a propagated failure may add exactly one `KLOG_DEBUG` line
-naming the higher-level operation that failed, to keep a readable call chain
-in verbose logs. It must not repeat the Error/Warning level.
+A caller catching a propagated failure may add a `KLOG_DEBUG` line naming the
+higher-level operation that failed, to keep a readable call chain in verbose
+logs. It should not use the Error/Warning level.
 
 **Example**
 
@@ -141,31 +140,33 @@ int check_something(const char * path) {
 ### When to use Info
 
 Use Info for a resource's lifecycle transitions (eg. opening/closing a device,
-init/teardown of a subsystem). Both sides of a matched lifecycle pair (open
-and close, init and free) should use the same level so the pairing is easy to
-spot in logs. Reserve Info for lifecycle events that happen a limited number
-of times, not high-frequency internal operations.
+init/teardown of a subsystem). Both sides of a matched lifecycle pair (open and
+close, init and free) should use the same level. Reserve Info for lifecycle
+events that happen a limited number of times, not high-frequency internal
+operations.
 
 **Example**
 
 ```c
 KLOG_INFO("Loader Start");
 KLOG_INFO("Kernel Start");
-...
 KLOG_INFO("Halting");
+
+KLOG_INFO("Opening ATA drive 0");
+KLOG_INFO("Closing ATA drive 0");
 ```
 
 ### When to use Debug
 
 Use the debug level for state or decisions, and for the optional propagation
-context line described above. These can include printf values when relevant
-but logging many variables should use trace where possible. Avoid using in
-loops or functions with high call frequency.
+context line described above. These can include printf values when relevant but
+logging many variables should use trace where possible. Avoid using in loops or
+functions with high call frequency.
 
 **Example**
 
 ```c
-KLOG_DEBUG("vga init finished");
+KLOG_DEBUG("Using 4 KiB pages for kernel heap");
 ```
 
 ### When to use Trace
