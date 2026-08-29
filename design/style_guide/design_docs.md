@@ -5,7 +5,7 @@
 \[ [Table of Contents](#table-of-contents) \]
 \[ [Inline Code](#inline-code) \]
 \[ [Note and ToDO](#note-and-todo) \]
-\[ [Alerts / Callouts / Admonitions](#alerts--callouts--admonitions) \]
+\[ [Admonitions / Alerts / Callouts](#admonitions--alerts--callouts) \]
 
 ## Table of Contents
 
@@ -29,6 +29,10 @@ One drawback is the need for manual updates, however these headers are not
 frequently updated for well established documents.
 
 ## Inline Code
+
+> [!WARNING]
+> This section is mostly me rambling and is not finalized. Following the
+> guidance here is recommended but not required until it's had some more tlc.
 
 > [!NOTE]
 > I'm feeling conflicted after writing this section. A the time of writing I was
@@ -76,10 +80,12 @@ to explain why they are appropriate.
 
 Compared to
 
-> | Start     | End      | size      | description                            |
-> | -------- | --------- | --------- | -------------------------------------- |
-> | 0x7000   | 0x07bff   | 3 KiB     | Good, larger font with higher contrast |
-> | 0x7c00   | 0x07dff   | 512 bytes | Good, larger font with higher contrast |
+> | Start      | End         | size      | description                            |
+> | ---------- | ----------- | --------- | -------------------------------------- |
+> | 0x7000     | 0x07bff     | 3 KiB     | Good, larger font with higher contrast |
+> | 0x7c00     | 0x07dff     | 512 bytes | Good, larger font with higher contrast |
+> | **0x7000** | **0x07bff** | 3 KiB     | Good, bold font with higher contrast   |
+> | **0x7c00** | **0x07dff** | 512 bytes | Good, bold font with higher contrast   |
 
 **Bad Usage** - Mix of numbers with plain text numbers and inline code
 
@@ -98,7 +104,7 @@ single quote. Exceptions can be made where impractical.
 
 **Good Usage** - Formula including numbers and operators
 
-> Bits per page = `Page Size * 8` = `4096 * 8` = `32768 (0x8000)`
+> Bits per page = `Page Size * 8` = `4096 * 8` = `32768` (`0x8000`)
 
 **Bad Usage** - Quote entire line
 
@@ -116,7 +122,7 @@ use a larger font with higher contrast between letters and background.
 An alternative to alerts ia **Note** and **ToDo** (can also be upper case
 **NOTE** and **TODO**). These are bold at the start of a paragraph followed by
 non-bold text. **Note** is typically used to communicate details that may be
-unintuitive or not obvious, but are not important enough to ues an alert.
+unintuitive or not obvious, but are not important enough to ues an admonition.
 **ToDo** is typically used as a note or reminder to the writer for future
 content and communicates to the reader that a section may be incomplete or
 inaccurate.
@@ -125,11 +131,11 @@ When used with all caps, **TODO** can also be highlighted by vscode using the
 [TODO Highlights](https://marketplace.visualstudio.com/items?itemName=wayou.vscode-todo-highlight)
 extension.
 
-## Alerts / Callouts / Admonitions
+## Admonitions / Alerts / Callouts
 
-Alerts can be useful to call attention to some information or visually break up
-sections of text. To retain meaning and effectiveness at capturing the readers
-attention, alerts should be uses sparingly and with short content.
+Admonitions can be useful to call attention to some information or visually
+break up sections of text. To retain meaning and effectiveness at capturing the
+readers attention, admonitions should be uses sparingly and with short content.
 
 **Note** In vscode, alerts can have an altered title by following the type `[!...]` with
 some text. This fails to render in GitHub so should be avoided.
