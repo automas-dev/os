@@ -252,7 +252,7 @@ size_t ata_sect_read(ata_t * drive, uint8_t * buff, size_t sect_count, uint32_t 
         sect_count = drive->sect_count - lba;
     }
     if (!sect_count) {
-        KLOG_WARNING("Read sector count is 0 of drive %u", lba + sect_count, drive->sect_count, drive->sect_count - lba, drive->id);
+        KLOG_WARNING("Read sector count is 0 of drive %u", drive->id);
         return 0;
     }
 
