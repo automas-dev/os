@@ -4,7 +4,7 @@
 
 #include "drivers/vga.h"
 #include "kernel.h"
-#include "kernel/device/fs_file.h"
+#include "kernel/io.h"
 #include "kernel/logs.h"
 #include "libc/datastruct/array.h"
 #include "libk/defs.h"
@@ -44,10 +44,8 @@ int sys_call_io_cb(uint32_t call_id, void * args_data, registers_t * regs) {
                 return 0;
             }
 
-            io_device_t * d = device_fs_file_open(args->path, args->mode);
+            io_device_t * d = io_fs_file_open(kernel_get_fs(), args->path, args->mode);
             if (!d) {
-                // already logged as warning in device_fs_file_open
-                // TODO should this be debug or info or nothing?
                 KLOG_DEBUG("Failed to open fs file for %s in mode %s", args->path, args->mode);
                 return 0;
             }
