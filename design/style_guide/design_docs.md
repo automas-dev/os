@@ -62,6 +62,11 @@ to explain why they are appropriate.
 > Kernel Size in Protected Mode is smaller than in real mode. Reserved memory in
 > protected mode starts at `0x9fc00` while real mode starts at `0xa0000`
 
+**Good Usage** - Distinguish variable names from their surroundings
+
+> Use the `name` value to generate a string with `version_major` and
+> `version_minor` numbers separated by a dot (`.`)
+
 **Bad Usage** - Hexadecimal column values in a table, smaller font with lower contrast
 
 > | Start    | End       | size      | description                            |
