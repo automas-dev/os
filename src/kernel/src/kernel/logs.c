@@ -19,11 +19,11 @@ static int __level;
 static void put_time();
 
 static const char * KERNEL_LOG_LEVEL_NAME[] = {
-    "TRACE",
-    "DEBUG",
-    "INFO",
+    "TRACE  ",
+    "DEBUG  ",
+    "INFO   ",
     "WARNING",
-    "ERROR",
+    "ERROR  ",
 };
 
 void kernel_log_init() {
@@ -63,13 +63,6 @@ void kernel_log(int level, const char * file, size_t lineno, const char * servic
         return;
     }
 
-    if (__time_enabled) {
-        put_time();
-    }
-    // else {
-    //     puts("[0.000]");
-    // }
-
     // Bounds check for name lookup
     if (level < 0) {
         level = 0;
@@ -78,6 +71,7 @@ void kernel_log(int level, const char * file, size_t lineno, const char * servic
         level = KERNEL_LOG_LEVEL__LENGTH - 1;
     }
 
+    put_time();
     printf("[%s]", KERNEL_LOG_LEVEL_NAME[level]);
 
     // if (file) {
@@ -108,6 +102,6 @@ static void put_time() {
     uint32_t s  = ms / 1e3;
     ms %= 1000;
 
-    // printf("[%3u.%03u]", s, ms);
-    printf("[%u.%03u]", s, ms);
+    printf("[%3u.%03u]", s, ms);
+    // printf("[%u.%03u]", s, ms);
 }
