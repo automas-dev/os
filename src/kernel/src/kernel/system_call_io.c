@@ -146,9 +146,7 @@ int sys_call_io_cb(uint32_t call_id, void * args_data, registers_t * regs) {
                     return 0;
                 }
 
-                io_device_t * d = h->device;
-
-                return d->read_fn(d->device_data, args->buff, args->count, args->pos);
+                return io_device_read(h->device, args->buff, args->count, args->pos);
             }
         } break;
 
@@ -170,9 +168,7 @@ int sys_call_io_cb(uint32_t call_id, void * args_data, registers_t * regs) {
                 return 0;
             }
 
-            io_device_t * d = h->device;
-
-            return d->write_fn(d->device_data, args->buff, args->count, args->pos);
+            return io_device_write(h->device, args->buff, args->count, args->pos);
         } break;
 
         case SYS_CALL_IO_SIZE: {
@@ -193,9 +189,7 @@ int sys_call_io_cb(uint32_t call_id, void * args_data, registers_t * regs) {
                 return 0;
             }
 
-            io_device_t * d = h->device;
-
-            return d->size_fn(d->device_data);
+            return io_device_size(h->device);
         } break;
     }
 
