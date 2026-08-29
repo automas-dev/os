@@ -2,6 +2,7 @@
 
 #include "kernel/io/device.h"
 #include "kernel/logs.h"
+#include "kernel/memory.h"
 
 size_t io_device_read(io_device_t * dev, char * buff, size_t count, size_t pos) {
     if (!dev) {
@@ -71,5 +72,11 @@ int io_device_close(io_device_t * dev) {
         return 0;
     }
 
-    return dev->close_fn(dev->device_data);
+    int close_res = dev->close_fn(dev->device_data);
+    if (!close_res) {
+        KLOG_DEBUG("Device close function returned an error %d", close_res);
+    }
+
+    kfree(dev);
+    return close_res;
 }
