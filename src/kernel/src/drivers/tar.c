@@ -58,6 +58,11 @@ tar_fs_t * tar_open(io_device_t * disk_device) {
         return 0;
     }
 
+    if (!(disk_device->flags & IO_DEVICE_FLAG_READ)) {
+        KLOG_WARNING("Device is not readable");
+        return 0;
+    }
+
     tar_fs_t * tar = kmalloc(sizeof(tar_fs_t));
     if (!tar) {
         KLOG_ERROR("Failed to malloc tar_fs_t");
