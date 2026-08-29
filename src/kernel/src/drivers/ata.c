@@ -108,7 +108,7 @@ static void ata_callback(registers_t * regs) {
 
 ata_t * ata_open(uint8_t id) {
     if (id > 0) {
-        KLOG_ERROR("Failed to open drive with id %u, only 0 is supported", id);
+        KLOG_WARNING("Failed to open drive with id %u, only 0 is supported", id);
         return 0;
     }
 
@@ -134,7 +134,7 @@ ata_t * ata_open(uint8_t id) {
 
 void ata_close(ata_t * drive) {
     if (!drive) {
-        KLOG_ERROR("Tried to free of null pointer");
+        KLOG_WARNING("Tried to free of null pointer");
         return;
     }
     KLOG_DEBUG("Closing drive %u", drive->id);
@@ -150,7 +150,7 @@ void ata_init() {
 
 size_t ata_size(ata_t * drive) {
     if (!drive) {
-        KLOG_ERROR("Tried to get size of null pointer");
+        KLOG_WARNING("Tried to get size of null pointer");
         return 0;
     }
     return drive->sect_count * ATA_SECTOR_BYTES;
@@ -158,7 +158,7 @@ size_t ata_size(ata_t * drive) {
 
 size_t ata_sector_count(ata_t * drive) {
     if (!drive) {
-        KLOG_ERROR("Tried to get sector count of null pointer");
+        KLOG_WARNING("Tried to get sector count of null pointer");
         return 0;
     }
     return drive->sect_count;
@@ -166,7 +166,7 @@ size_t ata_sector_count(ata_t * drive) {
 
 bool ata_status(ata_t * drive) {
     if (!drive) {
-        KLOG_ERROR("Tried to get status of null pointer");
+        KLOG_WARNING("Tried to get status of null pointer");
         return false;
     }
 
@@ -224,12 +224,12 @@ bool ata_status(ata_t * drive) {
 
 size_t ata_sect_read(ata_t * drive, uint8_t * buff, size_t sect_count, uint32_t lba) {
     if (!drive) {
-        KLOG_ERROR("Tried to read from a null pointer");
+        KLOG_WARNING("Tried to read from a null pointer");
         return 0;
     }
     KLOG_TRACE("Read sector drive=%u buff=%p sector count=%u lba = %u", drive->id, buff, sect_count, lba);
     if (!buff) {
-        KLOG_ERROR("Tried to read into a null buffer from drive %u", drive->id);
+        KLOG_WARNING("Tried to read into a null buffer from drive %u", drive->id);
         return 0;
     }
     if (!sect_count) {
@@ -302,12 +302,12 @@ size_t ata_sect_read(ata_t * drive, uint8_t * buff, size_t sect_count, uint32_t 
 
 size_t ata_sect_write(ata_t * drive, const uint8_t * buff, size_t sect_count, uint32_t lba) {
     if (!drive) {
-        KLOG_ERROR("Tried to write to a null pointer");
+        KLOG_WARNING("Tried to write to a null pointer");
         return 0;
     }
     KLOG_TRACE("Write sector drive=%u buff=%p sector count=%u lba = %u", drive->id, buff, sect_count, lba);
     if (!buff) {
-        KLOG_ERROR("Tried to write from a null buffer to drive %u", drive->id);
+        KLOG_WARNING("Tried to write from a null buffer to drive %u", drive->id);
         return 0;
     }
     if (!sect_count) {
@@ -377,7 +377,7 @@ size_t ata_sect_write(ata_t * drive, const uint8_t * buff, size_t sect_count, ui
 
 static bool ata_identify(ata_t * drive) {
     if (!drive) {
-        KLOG_ERROR("Tried to identify a null pointer");
+        KLOG_WARNING("Tried to identify a null pointer");
         return false;
     }
 
@@ -462,7 +462,7 @@ static bool ata_identify(ata_t * drive) {
 
 static void software_reset(ata_t * drive) {
     if (!drive) {
-        KLOG_ERROR("Tried to reset a null pointer");
+        KLOG_WARNING("Tried to reset a null pointer");
         return;
     }
     KLOG_TRACE("Software reset drive %u", drive->id);

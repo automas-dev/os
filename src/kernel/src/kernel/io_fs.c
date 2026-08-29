@@ -5,7 +5,7 @@
 
 io_fs_file_t * io_fs_file_open(io_fs_t * fs, const char * path, const char * mode) {
     if (!fs) {
-        KLOG_ERROR("io_fs_file_open received a null pointer for fs struct");
+        KLOG_WARNING("io_fs_file_open received a null pointer for fs struct");
         return 0;
     }
 
@@ -14,7 +14,7 @@ io_fs_file_t * io_fs_file_open(io_fs_t * fs, const char * path, const char * mod
 
 int io_fs_file_close(io_fs_file_t * file) {
     if (!file) {
-        KLOG_ERROR("io_fs_file_close received a null pointer for file struct");
+        KLOG_WARNING("io_fs_file_close received a null pointer for file struct");
         return -1;
     }
 
@@ -23,7 +23,7 @@ int io_fs_file_close(io_fs_file_t * file) {
 
 int io_fs_file_stat(io_fs_t * fs, const char * path, io_fs_stat_t * stat_out) {
     if (!fs) {
-        KLOG_ERROR("io_fs_file_stat received a null pointer for fs struct");
+        KLOG_WARNING("io_fs_file_stat received a null pointer for fs struct");
         return -1;
     }
 
@@ -32,13 +32,13 @@ int io_fs_file_stat(io_fs_t * fs, const char * path, io_fs_stat_t * stat_out) {
 
 size_t io_fs_file_read(io_fs_file_t * file, char * buff, size_t count) {
     if (!file) {
-        KLOG_ERROR("io_fs_file_read received a null pointer for file struct");
+        KLOG_WARNING("io_fs_file_read received a null pointer for file struct");
         return 0;
     }
 
     // TODO include pointer
     if (!(file->flags & IO_FS_FLAG_READ)) {
-        KLOG_ERROR("io_fs_file_read called on file without read flag");
+        KLOG_WARNING("io_fs_file_read called on file without read flag");
         return 0;
     }
 
@@ -47,13 +47,13 @@ size_t io_fs_file_read(io_fs_file_t * file, char * buff, size_t count) {
 
 size_t io_fs_file_write(io_fs_file_t * file, const char * buff, size_t count) {
     if (!file) {
-        KLOG_ERROR("io_fs_file_write received a null pointer for file struct");
+        KLOG_WARNING("io_fs_file_write received a null pointer for file struct");
         return 0;
     }
 
     // TODO include pointer
     if (!(file->flags & IO_FS_FLAG_WRITE)) {
-        KLOG_ERROR("io_fs_file_write called on file without write flag");
+        KLOG_WARNING("io_fs_file_write called on file without write flag");
         return 0;
     }
 
@@ -62,7 +62,7 @@ size_t io_fs_file_write(io_fs_file_t * file, const char * buff, size_t count) {
 
 int io_fs_file_seek(io_fs_file_t * file, int offset, int origin) {
     if (!file) {
-        KLOG_ERROR("io_fs_file_seek received a null pointer for file");
+        KLOG_WARNING("io_fs_file_seek received a null pointer for file");
         return -1;
     }
 
@@ -71,7 +71,7 @@ int io_fs_file_seek(io_fs_file_t * file, int offset, int origin) {
 
 int io_fs_file_tell(io_fs_file_t * file) {
     if (!file) {
-        KLOG_ERROR("io_fs_file_tell received a null pointer for file");
+        KLOG_WARNING("io_fs_file_tell received a null pointer for file");
         return -1;
     }
 

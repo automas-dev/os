@@ -190,7 +190,7 @@ static void id_map_page(mmu_table_t * table, size_t page) {
 
 static char * copy_string(const char * str) {
     if (!str) {
-        KLOG_ERROR("Tried to copy null string");
+        KLOG_WARNING("Tried to copy null string");
         return 0;
     }
     int    len     = kstrlen(str);
@@ -208,15 +208,15 @@ static char * copy_string(const char * str) {
 
 static int copy_args(process_t * proc, const char * filepath, int argc, char ** argv) {
     if (!proc) {
-        KLOG_ERROR("Tried to copy args for null process");
+        KLOG_WARNING("Tried to copy args for null process");
         return -1;
     }
     if (!filepath) {
-        KLOG_ERROR("Missing filepath");
+        KLOG_WARNING("Missing filepath");
         return -1;
     }
     if (argc && !argv) {
-        KLOG_ERROR("Missing argv");
+        KLOG_WARNING("Missing argv");
         return -1;
     }
 

@@ -114,7 +114,7 @@ static void setup_system_calls() {
 
 int kernel_exec(const char * filename, size_t argc, char ** argv) {
     if (!filename) {
-        KLOG_ERROR("Missing filename");
+        KLOG_WARNING("Missing filename");
         return -1;
     }
     io_fs_stat_t stat;

@@ -55,11 +55,11 @@ static void catch_invalid_entry(const memory_entry_t * entry) {
 
 int memory_init(memory_t * mem, memory_alloc_pages_t alloc_pages_fn) {
     if (!mem) {
-        KLOG_ERROR("Called memory_realloc with null memory struct");
+        KLOG_WARNING("Called memory_realloc with null memory struct");
         return -1;
     }
     if (!alloc_pages_fn) {
-        KLOG_ERROR("Called memory_init with no page allocation function");
+        KLOG_WARNING("Called memory_init with no page allocation function");
         return -1;
     }
 
@@ -86,11 +86,11 @@ int memory_init(memory_t * mem, memory_alloc_pages_t alloc_pages_fn) {
 
 void * memory_alloc(memory_t * mem, size_t size) {
     if (!mem) {
-        KLOG_ERROR("Called memory_realloc with null memory struct");
+        KLOG_WARNING("Called memory_realloc with null memory struct");
         return 0;
     }
     if (!size) {
-        KLOG_ERROR("Called memory_alloc with 0 size");
+        KLOG_WARNING("Called memory_alloc with 0 size");
         return 0;
     }
 
@@ -143,21 +143,21 @@ void * memory_alloc(memory_t * mem, size_t size) {
 
 void * memory_realloc(memory_t * mem, void * ptr, size_t size) {
     if (!mem) {
-        KLOG_ERROR("Called memory_realloc with null memory struct");
+        KLOG_WARNING("Called memory_realloc with null memory struct");
         return 0;
     }
     if (!ptr) {
-        KLOG_ERROR("Called memory_realloc with null pointer");
+        KLOG_WARNING("Called memory_realloc with null pointer");
         return 0;
     }
     if (!size) {
-        KLOG_ERROR("Called memory_realloc with 0 size");
+        KLOG_WARNING("Called memory_realloc with 0 size");
         return 0;
     }
 
     // Will never be found
     if (NOT_ALIGNED(ptr)) {
-        KLOG_ERROR("Realloc was called with a misaligned pointer %p", ptr);
+        KLOG_WARNING("Realloc was called with a misaligned pointer %p", ptr);
         return 0;
     }
 
@@ -215,17 +215,17 @@ void * memory_realloc(memory_t * mem, void * ptr, size_t size) {
 
 int memory_free(memory_t * mem, void * ptr) {
     if (!mem) {
-        KLOG_ERROR("Called memory_realloc with null memory struct");
+        KLOG_WARNING("Called memory_realloc with null memory struct");
         return -1;
     }
     if (!ptr) {
-        KLOG_ERROR("Called memory_realloc with null pointer");
+        KLOG_WARNING("Called memory_realloc with null pointer");
         return -1;
     }
 
     // Will never be found
     if (NOT_ALIGNED(ptr)) {
-        KLOG_ERROR("Realloc was called with a misaligned pointer %p", ptr);
+        KLOG_WARNING("Realloc was called with a misaligned pointer %p", ptr);
         return -1;
     }
 

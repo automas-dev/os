@@ -139,7 +139,7 @@ size_t vga_putc(char c) {
 
 size_t vga_puts(const char * str) {
     if (!str) {
-        KLOG_ERROR("Tried to put null pointer string");
+        KLOG_WARNING("Tried to put null pointer string");
         return 0;
     }
 

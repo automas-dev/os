@@ -38,12 +38,12 @@ void kfree(void * ptr) {
 
 void * kernel_alloc_page(size_t count) {
     if (!count) {
-        KLOG_ERROR("Tried to allocate 0 pages");
+        KLOG_WARNING("Tried to allocate 0 pages");
         return 0;
     }
 
     if (__next_heap_page + count >= MMU_DIR_SIZE * MMU_TABLE_SIZE) {
-        KLOG_ERROR("Tried to allocate past 4 GB");
+        KLOG_WARNING("Tried to allocate past 4 GB");
         return 0;
     }
 

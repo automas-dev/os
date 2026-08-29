@@ -20,7 +20,7 @@ static uint32_t next_handle_id();
 
 int process_create(process_t * proc) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return -1;
     }
 
@@ -128,7 +128,7 @@ int process_create(process_t * proc) {
 
 int process_free(process_t * proc) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return -1;
     }
 
@@ -191,15 +191,15 @@ int process_free(process_t * proc) {
 
 int process_set_entrypoint(process_t * proc, void * entrypoint) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return -1;
     }
     if (!entrypoint) {
-        KLOG_ERROR("Entrypoint is null pointer");
+        KLOG_WARNING("Entrypoint is null pointer");
         return -1;
     }
     if (proc->state >= PROCESS_STATE_SUSPENDED) {
-        KLOG_ERROR("Process already started");
+        KLOG_WARNING("Process already started");
         return -1;
     }
 
@@ -270,15 +270,15 @@ int process_set_entrypoint(process_t * proc, void * entrypoint) {
 
 int process_resume(process_t * proc, const ebus_event_t * event) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return -1;
     }
     if (proc->state < PROCESS_STATE_LOADED) {
-        KLOG_ERROR("Process not yet loaded");
+        KLOG_WARNING("Process not yet loaded");
         return -1;
     }
     if (proc->state >= PROCESS_STATE_DEAD) {
-        KLOG_ERROR("Process is dead");
+        KLOG_WARNING("Process is dead");
         return -1;
     }
 
@@ -311,7 +311,7 @@ int process_resume(process_t * proc, const ebus_event_t * event) {
 
 void * process_add_pages(process_t * proc, size_t count) {
     if (!proc) {
-        KLOG_ERROR("Tried to add page to null process");
+        KLOG_WARNING("Tried to add page to null process");
         return 0;
     }
     if (!count) {
@@ -320,7 +320,7 @@ void * process_add_pages(process_t * proc, size_t count) {
     }
 
     if (proc->next_heap_page + count >= MMU_DIR_SIZE * MMU_TABLE_SIZE) {
-        KLOG_ERROR("Cannot allocate %u pages after %u, will exceed max size of %d", count, proc->next_heap_page, MMU_DIR_SIZE * MMU_TABLE_SIZE);
+        KLOG_WARNING("Cannot allocate %u pages after %u, will exceed max size of %d", count, proc->next_heap_page, MMU_DIR_SIZE * MMU_TABLE_SIZE);
         return 0;
     }
 
@@ -350,7 +350,7 @@ void * process_add_pages(process_t * proc, size_t count) {
 
 int process_grow_stack(process_t * proc) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return -1;
     }
 
@@ -381,15 +381,15 @@ int process_grow_stack(process_t * proc) {
 
 int process_load_heap(process_t * proc, const char * buff, size_t size) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return -1;
     }
     if (!buff) {
-        KLOG_ERROR("Trying to load heap from null buffer");
+        KLOG_WARNING("Trying to load heap from null buffer");
         return -1;
     }
     if (!size) {
-        KLOG_ERROR("Trying to load empty buffer");
+        KLOG_WARNING("Trying to load empty buffer");
         return -1;
     }
 
@@ -479,11 +479,11 @@ int process_load_heap(process_t * proc, const char * buff, size_t size) {
 
 handle_t * process_get_handle(process_t * proc, int id) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return 0;
     }
     if (id < 0) {
-        KLOG_ERROR("id must be >= 0, got %d", id);
+        KLOG_WARNING("id must be >= 0, got %d", id);
         return 0;
     }
 
@@ -495,18 +495,18 @@ handle_t * process_get_handle(process_t * proc, int id) {
         }
     }
 
-    KLOG_ERROR("Failed to find handle %d for process pid %u", id, proc->pid);
+    KLOG_WARNING("Failed to find handle %d for process pid %u", id, proc->pid);
 
     return 0;
 }
 
 int process_add_handle(process_t * proc, int id, int flags, io_device_t * device) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return -1;
     }
     if (!device) {
-        KLOG_ERROR("Devices is a null pointer");
+        KLOG_WARNING("Devices is a null pointer");
         return -1;
     }
 
@@ -530,7 +530,7 @@ int process_add_handle(process_t * proc, int id, int flags, io_device_t * device
 
 static int open_stdio_handles(process_t * proc) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return -1;
     }
 
@@ -558,11 +558,11 @@ static int open_stdio_handles(process_t * proc) {
 
 int process_link(process_t * proc, process_t * next) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return -1;
     }
     if (!next) {
-        KLOG_ERROR("Next process struct is null pointer");
+        KLOG_WARNING("Next process struct is null pointer");
         return -1;
     }
     if (proc->next && proc->next->prev != proc) {
@@ -581,11 +581,11 @@ int process_link(process_t * proc, process_t * next) {
 
 int process_unlink(process_t * proc) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return -1;
     }
     if (!proc->prev || !proc->next) {
-        KLOG_ERROR("Process struct is not linked");
+        KLOG_WARNING("Process struct is not linked");
         return -1;
     }
 

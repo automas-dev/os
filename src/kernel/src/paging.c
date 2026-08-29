@@ -25,11 +25,11 @@ int paging_init() {
 
 void * paging_temp_map(uint32_t paddr) {
     if (!paddr) {
-        KLOG_ERROR("Trying to map physical address 0");
+        KLOG_WARNING("Trying to map physical address 0");
         return 0;
     }
     if (paddr & MASK_FLAGS) {
-        KLOG_ERROR("Trying to map misaligned physical address %p", paddr);
+        KLOG_WARNING("Trying to map misaligned physical address %p", paddr);
         return 0;
     }
 
@@ -71,11 +71,11 @@ void * paging_temp_map(uint32_t paddr) {
 
 int paging_temp_free(uint32_t paddr) {
     if (!paddr) {
-        KLOG_ERROR("Trying to free physical address 0");
+        KLOG_WARNING("Trying to free physical address 0");
         return -1;
     }
     if (paddr & MASK_FLAGS) {
-        KLOG_ERROR("Trying to free misaligned physical address %p", paddr);
+        KLOG_WARNING("Trying to free misaligned physical address %p", paddr);
         return -1;
     }
 
@@ -84,7 +84,7 @@ int paging_temp_free(uint32_t paddr) {
     for (size_t i = 0; i < VADDR_TMP_PAGE_COUNT; i++) {
         if (__temp_pages[i].addr == paddr) {
             if (!__temp_pages[i].count) {
-                KLOG_ERROR("Trying to free temp page %u which has count 0", i);
+                KLOG_WARNING("Trying to free temp page %u which has count 0", i);
                 return -1;
             }
 
@@ -97,7 +97,7 @@ int paging_temp_free(uint32_t paddr) {
         }
     }
 
-    KLOG_ERROR("Failed to find mapping for physical address %u", paddr);
+    KLOG_WARNING("Failed to find mapping for physical address %u", paddr);
 
     return -1;
 }
@@ -132,7 +132,7 @@ int paging_id_map_range(size_t start, size_t end) {
 
 int paging_id_map_page(size_t page) {
     if (page >= MMU_TABLE_SIZE) {
-        KLOG_ERROR("Failed to identity map page %u", page);
+        KLOG_WARNING("Failed to identity map page %u", page);
         return -1;
     }
 
@@ -144,7 +144,7 @@ int paging_id_map_page(size_t page) {
 
 int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end) {
     if (!dir) {
-        KLOG_ERROR("Trying to add page to null directory");
+        KLOG_WARNING("Trying to add page to null directory");
         return -1;
     }
     if (start > end) {
@@ -217,7 +217,7 @@ int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end) {
 
 int paging_remove_pages(mmu_dir_t * dir, size_t start, size_t end) {
     if (!dir) {
-        KLOG_ERROR("Trying to remove page from null directory");
+        KLOG_WARNING("Trying to remove page from null directory");
         return -1;
     }
     if (start > end) {
@@ -279,11 +279,11 @@ int paging_remove_pages(mmu_dir_t * dir, size_t start, size_t end) {
 
 int paging_add_table(mmu_dir_t * dir, size_t dir_i) {
     if (!dir) {
-        KLOG_ERROR("Trying to add table to null directory");
+        KLOG_WARNING("Trying to add table to null directory");
         return -1;
     }
     if (dir_i >= MMU_DIR_SIZE) {
-        KLOG_ERROR("Directory index %u is past directory end %p", dir_i, MMU_DIR_SIZE);
+        KLOG_WARNING("Directory index %u is past directory end %p", dir_i, MMU_DIR_SIZE);
         return -1;
     }
 
@@ -320,11 +320,11 @@ int paging_add_table(mmu_dir_t * dir, size_t dir_i) {
 
 int paging_remove_table(mmu_dir_t * dir, size_t dir_i) {
     if (!dir) {
-        KLOG_ERROR("Trying to remove table from null directory");
+        KLOG_WARNING("Trying to remove table from null directory");
         return -1;
     }
     if (dir_i >= MMU_DIR_SIZE) {
-        KLOG_ERROR("Directory index %u is past directory end %p", dir_i, MMU_DIR_SIZE);
+        KLOG_WARNING("Directory index %u is past directory end %p", dir_i, MMU_DIR_SIZE);
         return -1;
     }
 

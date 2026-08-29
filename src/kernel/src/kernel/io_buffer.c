@@ -6,7 +6,7 @@
 
 io_buffer_t * io_buffer_create(size_t size) {
     if (!size) {
-        KLOG_ERROR("io_buffer_create received a size of 0");
+        KLOG_WARNING("io_buffer_create received a size of 0");
         return 0;
     }
 
@@ -25,7 +25,7 @@ io_buffer_t * io_buffer_create(size_t size) {
 
 void io_buffer_free(io_buffer_t * buff) {
     if (!buff) {
-        KLOG_ERROR("io_buffer_free received a null pointer for the buffer struct");
+        KLOG_WARNING("io_buffer_free received a null pointer for the buffer struct");
         return;
     }
 
@@ -35,7 +35,7 @@ void io_buffer_free(io_buffer_t * buff) {
 
 int io_buffer_push(io_buffer_t * buff, char c) {
     if (!buff) {
-        KLOG_ERROR("io_buffer_push received a null pointer for the buffer struct");
+        KLOG_WARNING("io_buffer_push received a null pointer for the buffer struct");
         return -1;
     }
 
@@ -58,7 +58,7 @@ int io_buffer_push(io_buffer_t * buff, char c) {
 
 int io_buffer_pop(io_buffer_t * buff, char * c_out) {
     if (!buff) {
-        KLOG_ERROR("io_buffer_pop received a null pointer for the buffer struct");
+        KLOG_WARNING("io_buffer_pop received a null pointer for the buffer struct");
         return -1;
     }
     // c_out can be null
@@ -66,7 +66,7 @@ int io_buffer_pop(io_buffer_t * buff, char * c_out) {
     cb_t * cb = &buff->buff;
 
     if (cb_len(cb) == 0) {
-        KLOG_ERROR("Tried to pop char from empty to circular buffer %p of io buffer %p", cb, buff);
+        KLOG_WARNING("Tried to pop char from empty to circular buffer %p of io buffer %p", cb, buff);
         return -1;
     }
 
@@ -75,7 +75,7 @@ int io_buffer_pop(io_buffer_t * buff, char * c_out) {
 
 size_t io_buffer_size(const io_buffer_t * buff) {
     if (!buff) {
-        KLOG_ERROR("io_buffer_size received a null pointer for the buffer struct");
+        KLOG_WARNING("io_buffer_size received a null pointer for the buffer struct");
         return 0;
     }
 
@@ -84,7 +84,7 @@ size_t io_buffer_size(const io_buffer_t * buff) {
 
 size_t io_buffer_length(const io_buffer_t * buff) {
     if (!buff) {
-        KLOG_ERROR("io_buffer_length received a null pointer for the buffer struct");
+        KLOG_WARNING("io_buffer_length received a null pointer for the buffer struct");
         return 0;
     }
 
