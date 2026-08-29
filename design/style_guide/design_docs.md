@@ -33,11 +33,11 @@ frequently updated for well established documents.
 > [!NOTE]
 > I'm feeling conflicted after writing this section. A the time of writing I was
 > using dark mode. Light mode has better contrast, reducing the issue to a level
-> where inline code is acceptable. I will have to put more thought int it's use
+> where inline code is acceptable. I will have to put more thought into it's use
 > before concluding this section.
 >
-> _2026-07-01_ I had another revelation. Inline code is fo that, code. It can be
-> used for names and text. Most of the examples I posed relate to numbers and
+> _2026-07-01_ I had another revelation. Inline code is for that, code. It can
+> be used for names and text. Most of the examples I posed relate to numbers and
 > values. **0x00** is very different from `name`.
 
 <!-- Why it's good -->
