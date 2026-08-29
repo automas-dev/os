@@ -17,13 +17,13 @@ typedef int (*io_device_close_t)(void * device_data);
 typedef struct _io_device {
     int flags;
 
+    // Required
+    io_device_close_t close_fn;
+
     // Optional (availability based on flags)
     io_device_read_t  read_fn;
     io_device_write_t write_fn;
     io_device_size_t  size_fn;
-
-    // Required
-    io_device_close_t close_fn;
 
     void * device_data;
 } io_device_t;
