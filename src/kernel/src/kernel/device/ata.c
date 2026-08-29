@@ -12,6 +12,7 @@ typedef struct _ata_device {
     char    buffer[ATA_SECTOR_BYTES];
 } ata_device_t;
 
+static int    _ata_close(void * device_data);
 static size_t _ata_read(void * device_data, char * buff, size_t size, size_t pos);
 static size_t _ata_write(void * device_data, const char * buff, size_t size, size_t pos);
 static size_t _ata_size(void * device_data);
@@ -43,18 +44,14 @@ io_device_t * io_device_ata_open(uint8_t id) {
     return dev;
 }
 
-void io_device_ata_close(io_device_t * device) {
-    if (!device) {
-        KLOG_WARNING("Tried to free null ata device");
-        return;
-    }
-    if (!device->device_data) {
+static int _ata_close(void * device_data) {
+    if (!device_data) {
         KLOG_WARNING("Tried to free ata device with null device data");
-        return;
+        return 1;
     }
 
-    ata_close(device->device_data);
-    kfree(device);
+    ata_close(device_data);
+    return 0;
 }
 
 static size_t _ata_read(void * device_data, char * buff, size_t size, size_t pos) {

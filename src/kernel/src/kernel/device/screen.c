@@ -3,7 +3,8 @@
 #include "kernel/memory.h"
 #include "libc/string.h"
 
-static size_t _vga_write(void * ptr, const char * buff, size_t size, size_t pos);
+static int    _vga_close(void * device_data);
+static size_t _vga_write(void * device_data, const char * buff, size_t size, size_t pos);
 
 io_device_t * io_device_screen_open() {
     io_device_t * dev = kmalloc(sizeof(io_device_t));
@@ -12,18 +13,19 @@ io_device_t * io_device_screen_open() {
 
         dev->flags = IO_DEVICE_FLAG_WRITE;
 
+        dev->close_fn = _vga_close;
+
         dev->write_fn = _vga_write;
     }
     return dev;
 }
 
-void device_screen_close(io_device_t * device) {
-    if (device) {
-        kfree(device);
-    }
+static int _vga_close(void * device_data) {
+    // Nothing to free
+    return 0;
 }
 
-// ptr and pos not used
+// device_data and pos not used
 static size_t _vga_write(void * device_data, const char * buff, size_t size, size_t pos) {
     return vga_write(buff, size);
 }
