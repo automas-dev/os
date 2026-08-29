@@ -44,6 +44,7 @@ typedef struct _io_fs {
 
     // TODO fs close
 
+    // Required
     io_fs_file_open_t file_open_fn;
     io_fs_file_stat_t file_stat_fn;
 
@@ -56,12 +57,16 @@ typedef struct _io_fs_file {
     int          flags;
     const char * path;
 
+    // Required
     io_fs_file_close_t file_close_fn;
 
+    // Optional (availability based on flags)
     io_fs_file_read_t  file_read_fn;
     io_fs_file_write_t file_write_fn;
-    io_fs_file_seek_t  file_seek_fn;
-    io_fs_file_tell_t  file_tell_fn;
+
+    // Required
+    io_fs_file_seek_t file_seek_fn;
+    io_fs_file_tell_t file_tell_fn;
 
     void * fs_data;
     void * file_data;
