@@ -89,12 +89,15 @@ void __start() {
     mmu_dir_clear(pdir);
 
     // This needs to be disabled here because something around enable paging blocks if it's enabled
-    kernel_logs_enable_serial_newlines = 0;
+    // kernel_logs_enable_serial_newlines = 0;
 
     KLOG_DEBUG("page dir created");
 
     // 4.2 Create first page table
     uint32_t first_table_addr = ram_page_palloc();
+    if (!first_table_addr) {
+        KPANIC("Failed to allocate first page table");
+    }
     mmu_dir_set(pdir, 0, first_table_addr, MMU_DIR_RW);
 
     KLOG_DEBUG("page table created");
