@@ -116,7 +116,7 @@ int sys_call_io_cb(uint32_t call_id, void * args_data, registers_t * regs) {
 
                     for (size_t i = 0; i < available; i++) {
                         if (io_buffer_pop(proc->io_buffer, &args->buff[written++])) {
-                            KLOG_WARNING("Failed to pop from io buffer for process %u", proc->pid);
+                            KLOG_DEBUG("Failed to pop from io buffer for process %u", proc->pid);
                             // TODO should this be -1?
                             return written;
                         }
@@ -142,7 +142,7 @@ int sys_call_io_cb(uint32_t call_id, void * args_data, registers_t * regs) {
             else {
                 handle_t * h = process_get_handle(proc, args->handle);
                 if (!h) {
-                    KLOG_WARNING("Process %u trying to read from unsupported handle %d", proc->pid, args->handle);
+                    KLOG_DEBUG("Process %u trying to read from unsupported handle %d", proc->pid, args->handle);
                     return 0;
                 }
 
