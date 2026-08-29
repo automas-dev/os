@@ -45,7 +45,7 @@ void pit_init() {
 int pit_write_channel(uint8_t channel, uint8_t access_mode, uint8_t channel_mode, uint16_t reload_value) {
     KLOG_TRACE("Write channel %u access_mode=0x%02X channel_mode=0x%02X reload_value=0x%04X", channel, access_mode, channel_mode, reload_value);
     if (channel > 2) {
-        KLOG_ERROR("Attempt write to invalid channel %u, must be < 3", channel);
+        KLOG_WARNING("Attempt write to invalid channel %u, must be < 3", channel);
         return -1;
     }
 

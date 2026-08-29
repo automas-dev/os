@@ -12,7 +12,8 @@ set(CMAKE_C_STANDARD 17)
 
 # Set the global FFF_GCC_FUNCTION_ATTRIBUTES for config.h
 set(FFF_GCC_FUNCTION_ATTRIBUTES "__attribute__((weak))")
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/config.h.in ${CMAKE_BINARY_DIR}/config.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/config.h.in ${CMAKE_BINARY_DIR}/include/config.h)
+include_directories(PRIVATE ${CMAKE_BINARY_DIR}/include)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 if(OS_TEST_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)

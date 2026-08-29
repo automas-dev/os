@@ -54,8 +54,16 @@ DEFINE_FAKE_VALUE_FUNC(size_t, kstrlen, const char *);
 DEFINE_FAKE_VALUE_FUNC(size_t, knstrlen, const char *, int);
 DEFINE_FAKE_VALUE_FUNC(int, kstrcmp, const char *, const char *);
 DEFINE_FAKE_VALUE_FUNC(char *, kstrfind, const char *, int);
-DEFINE_FAKE_VALUE_FUNC(char *, kstrtok, char *, const char *);
 DEFINE_FAKE_VALUE_FUNC(int, katoi, const char *);
+DEFINE_FAKE_VALUE_FUNC(size_t, itoa, int32_t, char *);
+DEFINE_FAKE_VALUE_FUNC(size_t, itoa_base, size_t, int32_t, char *, uint8_t, bool);
+DEFINE_FAKE_VALUE_FUNC(size_t, ltoa, int64_t, char *);
+DEFINE_FAKE_VALUE_FUNC(size_t, ltoa_base, size_t, int64_t, char *, uint8_t, bool);
+DEFINE_FAKE_VALUE_FUNC(size_t, utoa, uint32_t, char *);
+DEFINE_FAKE_VALUE_FUNC(size_t, utoa_base, size_t, uint32_t, char *, uint8_t, bool);
+DEFINE_FAKE_VALUE_FUNC(size_t, ultoa, uint64_t, char *);
+DEFINE_FAKE_VALUE_FUNC(size_t, ultoa_base, size_t, uint64_t, char *, uint8_t, bool);
+DEFINE_FAKE_VALUE_FUNC(char *, str_copy, const char *);
 
 size_t knstrlen_custom(const char * str, int max) {
     if (!str || max < 0) {
@@ -77,8 +85,16 @@ void reset_libc_string_mock() {
     RESET_FAKE(knstrlen);
     RESET_FAKE(kstrcmp);
     RESET_FAKE(kstrfind);
-    RESET_FAKE(kstrtok);
     RESET_FAKE(katoi);
+    RESET_FAKE(itoa);
+    RESET_FAKE(itoa_base);
+    RESET_FAKE(ltoa);
+    RESET_FAKE(ltoa_base);
+    RESET_FAKE(utoa);
+    RESET_FAKE(utoa_base);
+    RESET_FAKE(ultoa);
+    RESET_FAKE(ultoa_base);
+    RESET_FAKE(str_copy);
 
     kmemcmp_fake.custom_fake  = memcmp;
     kmemcpy_fake.custom_fake  = memcpy;
@@ -88,6 +104,5 @@ void reset_libc_string_mock() {
     knstrlen_fake.custom_fake = knstrlen_custom;
     kstrcmp_fake.custom_fake  = strcmp;
     kstrfind_fake.custom_fake = strchr;
-    kstrtok_fake.custom_fake  = strtok;
     katoi_fake.custom_fake    = atoi;
 }

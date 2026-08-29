@@ -27,11 +27,11 @@ static int add_memory_at(size_t start, uint64_t base, uint64_t length);
 
 int ram_init(ram_table_t * ram_table, void * bitmasks) {
     if (!ram_table) {
-        KLOG_ERROR("Tried to initialize with null table");
+        KLOG_WARNING("Tried to initialize with null table");
         return -1;
     }
     if (!bitmasks) {
-        KLOG_ERROR("Tried to initialize with null bitmasks");
+        KLOG_WARNING("Tried to initialize with null bitmasks");
         return -1;
     }
 
@@ -44,27 +44,27 @@ int ram_init(ram_table_t * ram_table, void * bitmasks) {
         return -1;
     }
 
-    KLOG_DEBUG("Initialized driver");
+    KLOG_INFO("Initialized driver");
 
     return 0;
 }
 
 int ram_region_add_memory(uint64_t base, uint64_t length) {
     if (!base) {
-        KLOG_ERROR("Tried to add region with 0 base");
+        KLOG_WARNING("Tried to add region with 0 base");
         return -1;
     }
     if (!length) {
-        KLOG_ERROR("Tried to add region with 0 length");
+        KLOG_WARNING("Tried to add region with 0 length");
         return -1;
     }
     if (base & 0xfff) {
-        KLOG_ERROR("Tried to add region with misaligned base");
+        KLOG_WARNING("Tried to add region with misaligned base");
         return -1;
     }
 
     if (mmu_paging_enabled()) {
-        KLOG_ERROR("Tried to add region with paging enabled");
+        KLOG_WARNING("Tried to add region with paging enabled");
         return -1;
     }
     KLOG_DEBUG("Adding ram region base=0x%lX length=0x%lX", base, length);
@@ -72,12 +72,12 @@ int ram_region_add_memory(uint64_t base, uint64_t length) {
     size_t split_count = length / REGION_MAX_SIZE;
 
     if (__region_table_count + split_count >= REGION_TABLE_SIZE) {
-        KLOG_ERROR("Split count %u with region table count %u will exceed region table size %u", split_count, __region_table_count, REGION_TABLE_SIZE);
+        KLOG_WARNING("Split count %u with region table count %u will exceed region table size %u", split_count, __region_table_count, REGION_TABLE_SIZE);
         return -1;
     }
 
     if (length < PAGE_SIZE * 2) {
-        KLOG_ERROR("Region length %lu is less than 2 pages", length);
+        KLOG_WARNING("Region length %lu is less than 2 pages", length);
         return -1;
     }
 
@@ -193,7 +193,7 @@ uint32_t ram_page_palloc() {
 int ram_page_free(uint32_t addr) {
     // TODO added this later but didn't check if this case is valid
     if (!addr) {
-        KLOG_ERROR("Tried to free address 0");
+        KLOG_WARNING("Tried to free address 0");
         return -1;
     }
 
@@ -201,7 +201,7 @@ int ram_page_free(uint32_t addr) {
     int    region_i = find_addr_entry(addr, &bit_i);
 
     if (region_i < 0) {
-        KLOG_ERROR("Failed to find region for address 0x%X to free", addr);
+        KLOG_WARNING("Failed to find region for address 0x%X to free", addr);
         return -1;
     }
 
@@ -210,7 +210,7 @@ int ram_page_free(uint32_t addr) {
     void * bitmask = __bitmask + PAGE_SIZE * region_i;
 
     if (is_bit_free(bitmask, bit_i)) {
-        KLOG_ERROR("Page %u in region %d for address 0x%X is already free", bit_i, region_i, addr);
+        KLOG_WARNING("Page %u in region %d for address 0x%X is already free", bit_i, region_i, addr);
         return -1;
     }
 
@@ -224,11 +224,11 @@ int ram_page_free(uint32_t addr) {
 
 static int find_addr_entry(uint32_t addr, size_t * out_bit_i) {
     if (!addr) {
-        KLOG_ERROR("Searching for null address");
+        KLOG_WARNING("Searching for null address");
         return -1;
     }
     if (!out_bit_i) {
-        KLOG_ERROR("Output pointer is null");
+        KLOG_WARNING("Output pointer is null");
         return -1;
     }
     for (size_t i = 0; i < __region_table_count; i++) {
@@ -251,7 +251,7 @@ static int find_addr_entry(uint32_t addr, size_t * out_bit_i) {
 
 static int find_free_bit(const void * bitmask, size_t page_count) {
     if (!bitmask) {
-        KLOG_ERROR("Tried to find bitmask of null pointer");
+        KLOG_WARNING("Tried to find bitmask of null pointer");
         return -1;
     }
     if (!page_count) {
@@ -290,7 +290,7 @@ static int find_free_region() {
 
 static int set_bit_used(void * bitmask, size_t bit) {
     if (!bitmask) {
-        KLOG_ERROR("Tried to set used bit of null bitmask");
+        KLOG_WARNING("Tried to set used bit of null bitmask");
         return -1;
     }
 
@@ -306,7 +306,7 @@ static int set_bit_used(void * bitmask, size_t bit) {
 
 static int set_bit_free(void * bitmask, size_t bit) {
     if (!bitmask) {
-        KLOG_ERROR("Tried to set free bit of null bitmask");
+        KLOG_WARNING("Tried to set free bit of null bitmask");
         return -1;
     }
 
@@ -322,7 +322,7 @@ static int set_bit_free(void * bitmask, size_t bit) {
 
 static int is_bit_free(void * bitmask, size_t bit) {
     if (!bitmask) {
-        KLOG_ERROR("Tried to check if bit is used of null bitmask");
+        KLOG_WARNING("Tried to check if bit is used of null bitmask");
         return 0;
     }
 
@@ -344,7 +344,7 @@ static int is_bit_free(void * bitmask, size_t bit) {
  */
 static int fill_bitmask(void * bitmask, size_t page_count) {
     if (!bitmask) {
-        KLOG_ERROR("Trying to fill bitmask of null pointer");
+        KLOG_WARNING("Trying to fill bitmask of null pointer");
         return -1;
     }
     if (!page_count) {

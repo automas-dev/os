@@ -4,7 +4,7 @@
 
 #include "drivers/vga.h"
 #include "kernel.h"
-#include "kernel/device/fs_file.h"
+#include "kernel/io.h"
 #include "kernel/logs.h"
 #include "libc/datastruct/array.h"
 #include "libk/defs.h"
@@ -44,10 +44,8 @@ int sys_call_io_cb(uint32_t call_id, void * args_data, registers_t * regs) {
                 return 0;
             }
 
-            io_device_t * d = device_fs_file_open(args->path, args->mode);
+            io_device_t * d = io_fs_file_open(kernel_get_fs(), args->path, args->mode);
             if (!d) {
-                // already logged as warning in device_fs_file_open
-                // TODO should this be debug or info or nothing?
                 KLOG_DEBUG("Failed to open fs file for %s in mode %s", args->path, args->mode);
                 return 0;
             }
@@ -116,7 +114,7 @@ int sys_call_io_cb(uint32_t call_id, void * args_data, registers_t * regs) {
 
                     for (size_t i = 0; i < available; i++) {
                         if (io_buffer_pop(proc->io_buffer, &args->buff[written++])) {
-                            KLOG_WARNING("Failed to pop from io buffer for process %u", proc->pid);
+                            KLOG_DEBUG("Failed to pop from io buffer for process %u", proc->pid);
                             // TODO should this be -1?
                             return written;
                         }
@@ -140,8 +138,13 @@ int sys_call_io_cb(uint32_t call_id, void * args_data, registers_t * regs) {
                 return written;
             }
             else {
-                KLOG_WARNING("Process %u trying to read from unsupported handle %d", proc->pid, args->handle);
-                return 0;
+                handle_t * h = process_get_handle(proc, args->handle);
+                if (!h) {
+                    KLOG_DEBUG("Process %u trying to read from unsupported handle %d", proc->pid, args->handle);
+                    return 0;
+                }
+
+                return io_device_read(h->device, args->buff, args->count, args->pos);
             }
         } break;
 
@@ -163,9 +166,7 @@ int sys_call_io_cb(uint32_t call_id, void * args_data, registers_t * regs) {
                 return 0;
             }
 
-            io_device_t * d = h->device;
-
-            return d->write_fn(d->device_data, args->buff, args->count, args->pos);
+            return io_device_write(h->device, args->buff, args->count, args->pos);
         } break;
 
         case SYS_CALL_IO_SIZE: {
@@ -186,9 +187,7 @@ int sys_call_io_cb(uint32_t call_id, void * args_data, registers_t * regs) {
                 return 0;
             }
 
-            io_device_t * d = h->device;
-
-            return d->size_fn(d->device_data);
+            return io_device_size(h->device);
         } break;
     }
 

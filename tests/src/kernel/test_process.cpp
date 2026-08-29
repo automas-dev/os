@@ -13,6 +13,8 @@ mmu_dir_t   dir;
 mmu_table_t table;
 process_t   proc;
 process_t   alt_proc;
+io_buffer_t io_buffer;
+io_device_t io_device;
 
 int custom_mmu_dir_set(mmu_dir_t * dir, size_t i, uint32_t addr, uint32_t flags) {
     if (!dir || i >= MMU_DIR_SIZE) {
@@ -51,6 +53,8 @@ protected:
         memset(&table, 0, sizeof(table));
         memset(&proc, 0, sizeof(proc));
         memset(&alt_proc, 0, sizeof(alt_proc));
+        memset(&io_buffer, 0, sizeof(io_buffer));
+        memset(&io_device, 0, sizeof(io_device));
 
         temp_page.fill(0);
 
@@ -60,10 +64,14 @@ protected:
 
         proc.next_heap_page = 2;
 
-        mmu_dir_set_fake.custom_fake   = custom_mmu_dir_set;
-        mmu_table_set_fake.custom_fake = custom_mmu_table_set;
+        mmu_dir_set_fake.custom_fake       = custom_mmu_dir_set;
+        mmu_table_set_fake.custom_fake     = custom_mmu_table_set;
+        mmu_dir_get_addr_fake.return_val   = 0x5000;
+        mmu_table_get_addr_fake.return_val = 0x6000;
 
-        paging_temp_map_fake.return_val = temp_page.data();
+        paging_temp_map_fake.return_val       = temp_page.data();
+        io_buffer_create_fake.return_val      = &io_buffer;
+        io_device_screen_open_fake.return_val = &io_device;
     }
 };
 
@@ -89,14 +97,12 @@ TEST_F(Process, process_create_FailCreateArray) {
     ASSERT_RAM_ALLOC_BALANCED();
 }
 
-TEST_F(Process, process_create_FailCreateEbus) {
+TEST_F(Process, process_create_EbusIsUnused) {
     ram_page_alloc_fake.return_val = 0x2000;
     ebus_create_fake.return_val    = -1;
 
-    EXPECT_NE(0, process_create(&proc));
-    EXPECT_EQ(1, ram_page_free_fake.call_count);
-    EXPECT_EQ(1, arr_free_fake.call_count);
-    ASSERT_RAM_ALLOC_BALANCED();
+    EXPECT_EQ(0, process_create(&proc));
+    EXPECT_EQ(0, ebus_create_fake.call_count);
 }
 
 TEST_F(Process, process_create_FailMemoryInit) {
@@ -106,7 +112,6 @@ TEST_F(Process, process_create_FailMemoryInit) {
     EXPECT_NE(0, process_create(&proc));
     EXPECT_EQ(1, ram_page_free_fake.call_count);
     EXPECT_EQ(1, arr_free_fake.call_count);
-    EXPECT_EQ(1, ebus_free_fake.call_count);
     ASSERT_RAM_ALLOC_BALANCED();
 }
 
@@ -118,8 +123,6 @@ TEST_F(Process, process_create_FailDirTempMap) {
 
     EXPECT_NE(0, process_create(&proc));
     EXPECT_EQ(1, ram_page_free_fake.call_count);
-    EXPECT_EQ(1, arr_free_fake.call_count);
-    EXPECT_EQ(1, ebus_free_fake.call_count);
     ASSERT_TEMP_MAP_BALANCE_OFFSET(1);
     ASSERT_RAM_ALLOC_BALANCED();
 }

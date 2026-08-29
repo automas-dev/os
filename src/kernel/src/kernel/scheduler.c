@@ -9,11 +9,11 @@
 
 int scheduler_init(scheduler_t * scheduler, proc_man_t * pm) {
     if (!scheduler) {
-        KLOG_ERROR("scheduler_init received a null pointer for the scheduler struct");
+        KLOG_WARNING("scheduler_init received a null pointer for the scheduler struct");
         return -1;
     }
     if (!pm) {
-        KLOG_ERROR("scheduler_init received a null pointer for the process manager struct");
+        KLOG_WARNING("scheduler_init received a null pointer for the process manager struct");
         return -1;
     }
 
@@ -30,7 +30,7 @@ int scheduler_init(scheduler_t * scheduler, proc_man_t * pm) {
 
 int scheduler_run(scheduler_t * scheduler) {
     if (!scheduler) {
-        KLOG_ERROR("scheduler_run received a null pointer");
+        KLOG_WARNING("scheduler_run received a null pointer");
         return -1;
     }
 

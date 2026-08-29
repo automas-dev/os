@@ -1,5 +1,12 @@
 # Filesystem
 
+<!-- Table of Contents only links to level 2 headers -->
+\[ [Block Address (BA)](#block-address-ba) \]
+\[ [Superblock](#superblock) \]
+\[ [Directory Node (dnode)](#directory-node-dnode) \]
+\[ [File Node (inode)](#file-node-inode) \]
+\[ [Block Group](#block-group) \]
+
 - Blocks are 64 bytes each
 - Block groups have 256 blocks (max addressable with 8 bits)
 

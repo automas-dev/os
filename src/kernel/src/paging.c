@@ -25,11 +25,11 @@ int paging_init() {
 
 void * paging_temp_map(uint32_t paddr) {
     if (!paddr) {
-        KLOG_ERROR("Trying to map physical address 0");
+        KLOG_WARNING("Trying to map physical address 0");
         return 0;
     }
     if (paddr & MASK_FLAGS) {
-        KLOG_ERROR("Trying to map misaligned physical address %p", paddr);
+        KLOG_WARNING("Trying to map misaligned physical address %p", paddr);
         return 0;
     }
 
@@ -71,11 +71,11 @@ void * paging_temp_map(uint32_t paddr) {
 
 int paging_temp_free(uint32_t paddr) {
     if (!paddr) {
-        KLOG_ERROR("Trying to free physical address 0");
+        KLOG_WARNING("Trying to free physical address 0");
         return -1;
     }
     if (paddr & MASK_FLAGS) {
-        KLOG_ERROR("Trying to free misaligned physical address %p", paddr);
+        KLOG_WARNING("Trying to free misaligned physical address %p", paddr);
         return -1;
     }
 
@@ -84,7 +84,7 @@ int paging_temp_free(uint32_t paddr) {
     for (size_t i = 0; i < VADDR_TMP_PAGE_COUNT; i++) {
         if (__temp_pages[i].addr == paddr) {
             if (!__temp_pages[i].count) {
-                KLOG_ERROR("Trying to free temp page %u which has count 0", i);
+                KLOG_WARNING("Trying to free temp page %u which has count 0", i);
                 return -1;
             }
 
@@ -97,7 +97,7 @@ int paging_temp_free(uint32_t paddr) {
         }
     }
 
-    KLOG_ERROR("Failed to find mapping for physical address %u", paddr);
+    KLOG_WARNING("Failed to find mapping for physical address %u", paddr);
 
     return -1;
 }
@@ -132,7 +132,7 @@ int paging_id_map_range(size_t start, size_t end) {
 
 int paging_id_map_page(size_t page) {
     if (page >= MMU_TABLE_SIZE) {
-        KLOG_ERROR("Failed to identity map page %u", page);
+        KLOG_WARNING("Failed to identity map page %u", page);
         return -1;
     }
 
@@ -144,7 +144,7 @@ int paging_id_map_page(size_t page) {
 
 int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end) {
     if (!dir) {
-        KLOG_ERROR("Trying to add page to null directory");
+        KLOG_WARNING("Trying to add page to null directory");
         return -1;
     }
     if (start > end) {
@@ -165,7 +165,7 @@ int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end) {
 
         if (!addr) {
             if (paging_remove_pages(dir, start, page_i - 1)) {
-                KLOG_ERROR("Failed to remove page from directory");
+                KLOG_DEBUG("Failed to remove page from directory");
             }
             return -1;
         }
@@ -177,10 +177,10 @@ int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end) {
         if (!(mmu_dir_get_flags(dir, dir_i) & MMU_DIR_FLAG_PRESENT)) {
             if (paging_add_table(dir, dir_i)) {
                 if (paging_remove_pages(dir, start, page_i - 1)) {
-                    KLOG_ERROR("Failed to remove page from directory %p", dir);
+                    KLOG_DEBUG("Failed to remove page from directory %p", dir);
                 }
                 if (ram_page_free(addr)) {
-                    KLOG_ERROR("Failed to free ram page");
+                    KLOG_DEBUG("Failed to free ram page");
                 }
                 return -1;
             }
@@ -193,10 +193,10 @@ int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end) {
         if (!table) {
             KLOG_ERROR("Failed to create temporary map for %p", table_addr);
             if (paging_remove_pages(dir, start, page_i - 1)) {
-                KLOG_ERROR("Failed to remove page from directory %p", dir);
+                KLOG_DEBUG("Failed to remove page from directory %p while unwinding failed temp map", dir);
             }
             if (ram_page_free(addr)) {
-                KLOG_ERROR("Failed to free ram page");
+                KLOG_DEBUG("Failed to free ram page while unwinding failed temp map");
             }
             return -1;
         }
@@ -207,7 +207,7 @@ int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end) {
             return -1;
         }
         if (paging_temp_free(table_addr)) {
-            KLOG_ERROR("Failed to free temporary page");
+            KLOG_DEBUG("Failed to free temporary page after setting page table");
             return -1;
         }
     }
@@ -217,7 +217,7 @@ int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end) {
 
 int paging_remove_pages(mmu_dir_t * dir, size_t start, size_t end) {
     if (!dir) {
-        KLOG_ERROR("Trying to remove page from null directory");
+        KLOG_WARNING("Trying to remove page from null directory");
         return -1;
     }
     if (start > end) {
@@ -265,11 +265,11 @@ int paging_remove_pages(mmu_dir_t * dir, size_t start, size_t end) {
         }
         mmu_flush_tlb(PAGE2ADDR(page_i));
         if (ram_page_free(page_addr)) {
-            KLOG_ERROR("Failed to free ram page");
+            KLOG_DEBUG("Failed to free ram page while removing pages");
             return -1;
         }
         if (paging_temp_free(table_addr)) {
-            KLOG_ERROR("Failed to free temporary mapping for table %p", table_addr);
+            KLOG_DEBUG("Failed to free temporary mapping for table %p while removing pages", table_addr);
             return -1;
         }
     }
@@ -279,11 +279,11 @@ int paging_remove_pages(mmu_dir_t * dir, size_t start, size_t end) {
 
 int paging_add_table(mmu_dir_t * dir, size_t dir_i) {
     if (!dir) {
-        KLOG_ERROR("Trying to add table to null directory");
+        KLOG_WARNING("Trying to add table to null directory");
         return -1;
     }
     if (dir_i >= MMU_DIR_SIZE) {
-        KLOG_ERROR("Directory index %u is past directory end %p", dir_i, MMU_DIR_SIZE);
+        KLOG_WARNING("Directory index %u is past directory end %p", dir_i, MMU_DIR_SIZE);
         return -1;
     }
 
@@ -298,7 +298,7 @@ int paging_add_table(mmu_dir_t * dir, size_t dir_i) {
 
         if (!table) {
             if (ram_page_free(addr)) {
-                KLOG_ERROR("Failed to free ram page");
+                KLOG_DEBUG("Failed to free ram page");
             }
             return -1;
         }
@@ -307,7 +307,7 @@ int paging_add_table(mmu_dir_t * dir, size_t dir_i) {
         if (mmu_dir_set(dir, dir_i, addr, MMU_DIR_RW)) {
             KLOG_ERROR("Failed to set page directory %p index %u to physical address %p", dir, dir_i, addr);
             if (paging_temp_free(addr)) {
-                KLOG_ERROR("Failed to free temporary page");
+                KLOG_DEBUG("Failed to free temporary page");
             }
             return -1;
         }
@@ -320,11 +320,11 @@ int paging_add_table(mmu_dir_t * dir, size_t dir_i) {
 
 int paging_remove_table(mmu_dir_t * dir, size_t dir_i) {
     if (!dir) {
-        KLOG_ERROR("Trying to remove table from null directory");
+        KLOG_WARNING("Trying to remove table from null directory");
         return -1;
     }
     if (dir_i >= MMU_DIR_SIZE) {
-        KLOG_ERROR("Directory index %u is past directory end %p", dir_i, MMU_DIR_SIZE);
+        KLOG_WARNING("Directory index %u is past directory end %p", dir_i, MMU_DIR_SIZE);
         return -1;
     }
 
@@ -339,7 +339,7 @@ int paging_remove_table(mmu_dir_t * dir, size_t dir_i) {
             return -1;
         }
         if (ram_page_free(addr)) {
-            KLOG_ERROR("Failed to free ram page");
+            KLOG_DEBUG("Failed to free ram page while removing table");
         }
     }
 

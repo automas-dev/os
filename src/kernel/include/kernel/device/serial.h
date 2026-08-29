@@ -3,11 +3,10 @@
 
 #include <stddef.h>
 
-#include "kernel/device/io.h"
+#include "kernel/io/device.h"
 
-io_device_t * device_serial_open();
-void          device_serial_close(io_device_t * device);
+io_device_t * io_device_serial_open();
 
-int device_serial_write_raw(int handle, const char * buff, size_t size, size_t pos);
+int io_device_serial_write_raw(int handle, const char * buff, size_t size, size_t pos);
 
 #endif // KERNEL_DEVICE_SERIAL_H

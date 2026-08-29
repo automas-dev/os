@@ -270,6 +270,17 @@ TEST_F(Array, array_insert_grow_fails) {
     EXPECT_NE(0, arr_insert(&arr, 0, &c));
 }
 
+TEST_F(Array, array_insert_grow_minimum) {
+    arr_free(&arr);
+    ASSERT_EQ(0, arr_create(&arr, 1, 1));
+
+    char first  = 'a';
+    char second = 'b';
+    ASSERT_EQ(0, arr_insert(&arr, 0, &first));
+    ASSERT_EQ(0, arr_insert(&arr, 1, &second));
+    EXPECT_EQ(2, arr_size(&arr));
+}
+
 TEST_F(Array, arr_remove_start_only) {
     char c = 'a';
     arr_insert(&arr, 0, &c);

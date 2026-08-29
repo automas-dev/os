@@ -3,5 +3,8 @@
         ".clang-format": "yaml"
     },
     "coverage-gutters.coverageReportFileName": "tests/build/os_test_coverage/index.html",
-    "coverage-gutters.coverageBaseDir": "tests/build"
+    "coverage-gutters.coverageBaseDir": "tests/build",
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/tests/build/_deps/googletest-src/googletest/include"
+    ]
 }

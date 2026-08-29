@@ -35,9 +35,9 @@ typedef struct {
 } tar_file_t;
 
 struct tar_fs {
-    disk_t *     disk;
-    size_t       file_count;
-    tar_file_t * files;
+    io_device_t * disk_device;
+    size_t        file_count;
+    tar_file_t *  files;
 } __attribute__((packed));
 
 struct tar_fs_file {
@@ -52,9 +52,14 @@ static size_t       count_files(tar_fs_t * tar);
 static bool         load_headers(tar_fs_t * tar);
 static tar_file_t * find_filename(tar_fs_t * tar, const char * filename);
 
-tar_fs_t * tar_open(disk_t * disk) {
-    if (!disk) {
-        KLOG_ERROR("Tried to open a null ptr");
+tar_fs_t * tar_open(io_device_t * disk_device) {
+    if (!disk_device) {
+        KLOG_WARNING("Tried to open a null ptr");
+        return 0;
+    }
+
+    if (!(disk_device->flags & IO_DEVICE_FLAG_READ)) {
+        KLOG_WARNING("Device is not readable");
         return 0;
     }
 
@@ -64,9 +69,9 @@ tar_fs_t * tar_open(disk_t * disk) {
         return 0;
     }
 
-    tar->disk       = disk;
-    tar->file_count = count_files(tar);
-    tar->files      = 0;
+    tar->disk_device = disk_device;
+    tar->file_count  = count_files(tar);
+    tar->files       = 0;
 
     if (tar->file_count) {
         tar->files = kmalloc(sizeof(tar_file_t) * tar->file_count);
@@ -78,18 +83,18 @@ tar_fs_t * tar_open(disk_t * disk) {
     }
 
     load_headers(tar);
-    KLOG_DEBUG("Opened tar filesystem with %u files", tar->file_count);
+    KLOG_INFO("Opened tar filesystem with %u files", tar->file_count);
 
     return tar;
 }
 
 void tar_close(tar_fs_t * tar) {
     if (!tar) {
-        KLOG_ERROR("Tried to free a null pointer");
+        KLOG_WARNING("Tried to free a null pointer");
         return;
     }
     // TODO print fs identity
-    KLOG_DEBUG("Closing tar filesystem");
+    KLOG_INFO("Closing tar filesystem");
     if (tar->file_count) {
         if (tar->files) {
             kfree(tar->files);
@@ -103,7 +108,7 @@ void tar_close(tar_fs_t * tar) {
 
 size_t tar_file_count(tar_fs_t * tar) {
     if (!tar) {
-        KLOG_ERROR("Tried to get file count of null pointer");
+        KLOG_WARNING("Tried to get file count of null pointer");
         return 0;
     }
 
@@ -112,7 +117,7 @@ size_t tar_file_count(tar_fs_t * tar) {
 
 const char * tar_file_name(tar_fs_t * tar, size_t i) {
     if (!tar) {
-        KLOG_ERROR("Tried to get file name of null pointer");
+        KLOG_WARNING("Tried to get file name of null pointer");
         return 0;
     }
     if (i > tar->file_count) {
@@ -125,11 +130,11 @@ const char * tar_file_name(tar_fs_t * tar, size_t i) {
 
 tar_stat_t * tar_stat_file_i(tar_fs_t * tar, size_t i, tar_stat_t * stat) {
     if (!tar) {
-        KLOG_ERROR("Tried to stat file of null pointer");
+        KLOG_WARNING("Tried to stat file of null pointer");
         return 0;
     }
     if (!stat) {
-        KLOG_ERROR("Tried to stat file into a null pointer");
+        KLOG_WARNING("Tried to stat file into a null pointer");
         return 0;
     }
     if (i > tar->file_count) {
@@ -158,15 +163,15 @@ tar_stat_t * tar_stat_file_i(tar_fs_t * tar, size_t i, tar_stat_t * stat) {
 
 tar_stat_t * tar_stat_file(tar_fs_t * tar, const char * filename, tar_stat_t * stat) {
     if (!tar) {
-        KLOG_ERROR("Tried to stat file of null pointer");
+        KLOG_WARNING("Tried to stat file of null pointer");
         return 0;
     }
     if (!filename) {
-        KLOG_ERROR("Tried to stat null pointer filename");
+        KLOG_WARNING("Tried to stat null pointer filename");
         return 0;
     }
     if (!stat) {
-        KLOG_ERROR("Tried to stat file into a null pointer");
+        KLOG_WARNING("Tried to stat file into a null pointer");
         return 0;
     }
 
@@ -198,11 +203,11 @@ tar_stat_t * tar_stat_file(tar_fs_t * tar, const char * filename, tar_stat_t * s
 
 tar_fs_file_t * tar_file_open(tar_fs_t * tar, const char * filename) {
     if (!tar) {
-        KLOG_ERROR("Tried to open file of null pointer");
+        KLOG_WARNING("Tried to open file of null pointer");
         return 0;
     }
     if (!filename) {
-        KLOG_ERROR("Tried to open null pointer filename");
+        KLOG_WARNING("Tried to open null pointer filename");
         return 0;
     }
 
@@ -232,7 +237,7 @@ tar_fs_file_t * tar_file_open(tar_fs_t * tar, const char * filename) {
 
 void tar_file_close(tar_fs_file_t * file) {
     if (!file) {
-        KLOG_ERROR("Tried to close null pointer");
+        KLOG_WARNING("Tried to close null pointer");
         return;
     }
     kfree(file);
@@ -240,7 +245,7 @@ void tar_file_close(tar_fs_file_t * file) {
 
 size_t tar_file_size(tar_fs_file_t * file) {
     if (!file) {
-        KLOG_ERROR("Tried to get size of null pointer");
+        KLOG_WARNING("Tried to get size of null pointer");
         return 0;
     }
     return file->size;
@@ -248,7 +253,7 @@ size_t tar_file_size(tar_fs_file_t * file) {
 
 bool tar_file_seek(tar_fs_file_t * file, int offset, enum TAR_SEEK_ORIGIN origin) {
     if (!file) {
-        KLOG_ERROR("Tried to seek in null pointer");
+        KLOG_WARNING("Tried to seek in null pointer");
         return false;
     }
 
@@ -299,7 +304,7 @@ bool tar_file_seek(tar_fs_file_t * file, int offset, enum TAR_SEEK_ORIGIN origin
 
 int tar_file_tell(tar_fs_file_t * file) {
     if (!file) {
-        KLOG_ERROR("Tried to tell from a null pointer");
+        KLOG_WARNING("Tried to tell from a null pointer");
         return -1;
     }
     return file->pos;
@@ -307,12 +312,12 @@ int tar_file_tell(tar_fs_file_t * file) {
 
 size_t tar_file_read(tar_fs_file_t * file, char * buff, size_t count) {
     if (!file) {
-        KLOG_ERROR("Tried to read from a null pointer");
+        KLOG_WARNING("Tried to read from a null pointer");
         return 0;
     }
     KLOG_TRACE("Read file %s buff=%p count=%u pos = %u", file->file->filename, buff, count, file->pos);
     if (!buff) {
-        KLOG_ERROR("Tried to read into a null buffer from file %s", file->file->filename);
+        KLOG_WARNING("Tried to read into a null buffer from file %s", file->file->filename);
         return 0;
     }
 
@@ -321,12 +326,12 @@ size_t tar_file_read(tar_fs_file_t * file, char * buff, size_t count) {
         count = file->size - file->pos;
     }
 
-    return disk_read(file->tar->disk, buff, count, file->file->disk_pos + file->pos);
+    return io_device_read(file->tar->disk_device, buff, count, file->file->disk_pos + file->pos);
 }
 
 static size_t parse_octal(const char * str) {
     if (!str) {
-        KLOG_ERROR("Tried to parse octal from a null pointer");
+        KLOG_WARNING("Tried to parse octal from a null pointer");
         return 0;
     }
 
@@ -342,7 +347,7 @@ static size_t parse_octal(const char * str) {
 
 static size_t count_files(tar_fs_t * tar) {
     if (!tar) {
-        KLOG_ERROR("Tried to count files from a null pointer");
+        KLOG_WARNING("Tried to count files from a null pointer");
         return 0;
     }
 
@@ -351,8 +356,7 @@ static size_t count_files(tar_fs_t * tar) {
     size_t disk_pos = 0;
     size_t count    = 0;
     for (;;) {
-        size_t n_read = disk_read(tar->disk, (uint8_t *)&header, sizeof(raw_header_t), disk_pos);
-
+        size_t n_read = io_device_read(tar->disk_device, (char *)&header, sizeof(raw_header_t), disk_pos);
         if (!n_read) {
             break;
         }
@@ -381,7 +385,7 @@ static size_t count_files(tar_fs_t * tar) {
 
 static bool load_headers(tar_fs_t * tar) {
     if (!tar) {
-        KLOG_ERROR("Tried to load header from a null pointer");
+        KLOG_WARNING("Tried to load header from a null pointer");
         return false;
     }
 
@@ -390,7 +394,7 @@ static bool load_headers(tar_fs_t * tar) {
     for (size_t i = 0; i < tar->file_count; i++) {
         tar_file_t * file = &tar->files[i];
 
-        size_t n_read = disk_read(tar->disk, (uint8_t *)&file->header, sizeof(raw_header_t), disk_pos);
+        size_t n_read = io_device_read(tar->disk_device, (char *)&file->header, sizeof(raw_header_t), disk_pos);
 
         if (!n_read) {
             break;
@@ -425,15 +429,15 @@ static bool load_headers(tar_fs_t * tar) {
 
 static tar_file_t * find_filename(tar_fs_t * tar, const char * filename) {
     if (!tar) {
-        KLOG_ERROR("Tried to find file by name of null pointer");
+        KLOG_WARNING("Tried to find file by name of null pointer");
         return 0;
     }
     if (!filename) {
-        KLOG_ERROR("Tried to find file by null pointer filename");
+        KLOG_WARNING("Tried to find file by null pointer filename");
         return 0;
     }
     if (!kstrlen(filename)) {
-        KLOG_ERROR("Tried to find file by 0 length filename");
+        KLOG_WARNING("Tried to find file by 0 length filename");
         return 0;
     }
 

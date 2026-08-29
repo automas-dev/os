@@ -18,7 +18,7 @@ void init_gdt() {
     gdt_set(GDT_ENTRY_INDEX_KERNEL_TSS, 0, 0xfffff, GDT_PRESET_KERNEL_TSS_ACCESS, GDT_PRESET_KERNEL_TSS_FLAGS);
     gdt_set(GDT_ENTRY_INDEX_USER_TSS, 0, 0xfffff, GDT_PRESET_USER_TSS_ACCESS, GDT_PRESET_USER_TSS_FLAGS);
 
-    load_gdt(GDT_N * 64 - 1, PTR2UINT(__gdt));
+    load_gdt(GDT_N * sizeof(gdt_entry_t) - 1, PTR2UINT(__gdt));
 }
 
 size_t gdt_entry_count() {

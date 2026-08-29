@@ -97,3 +97,7 @@ size_t _sys_event_time() {
 void _sys_event_sleep(size_t ms, size_t us) {
     send_call(SYS_CALL_EVENT_SLEEP, ms, us);
 }
+
+const char * _sys_kernel_describe() {
+    return (char *)send_call(SYS_CALL_KERNEL_DESCRIBE);
+}

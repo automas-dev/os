@@ -7,8 +7,8 @@
 #include <stdint.h>
 
 #include "ebus.h"
-#include "kernel/device/io.h"
-#include "kernel/io_buffer.h"
+#include "kernel/io.h"
+#include "kernel/io/buffer.h"
 #include "libc/datastruct/array.h"
 #include "libc/file.h"
 #include "memory_alloc.h"
@@ -51,12 +51,17 @@ enum PROCESS_STATE {
 };
 
 typedef struct _process {
+    // IMPORTANT These needs to be kept in the same order for assembly code
+    // see switch_task and set_active_task
+
     /// Page directory physical address
     uint32_t cr3;
     /// Process stack pointer
     uint32_t esp;
     /// Kernel stack pointer?
     uint32_t esp0;
+
+    // Everything after here can be in any order
 
     /// Process id
     uint32_t pid;
@@ -95,8 +100,7 @@ typedef struct _process {
     /// Current state of process (eg. loading, running, waiting, dead, etc.)
     enum PROCESS_STATE state;
 
-    /// Array of circular buffers used to store data being sent to each handle.
-    /// If a buffee is filled it ... (tbd, drops input or pops oldest?)
+    /// Character buffer for stdin
     io_buffer_t * io_buffer;
 
     struct _process * next;

@@ -20,7 +20,7 @@ static uint32_t next_handle_id();
 
 int process_create(process_t * proc) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return -1;
     }
 
@@ -42,7 +42,7 @@ int process_create(process_t * proc) {
     if (!dir) {
         KLOG_ERROR("Failed to create temporary mapping for physical address %p", proc->cr3);
         if (ram_page_free(proc->cr3)) {
-            KLOG_ERROR("Failed to free ram page %p for process page directory", proc->cr3);
+            KLOG_DEBUG("Failed to free ram page %p", proc->cr3);
         }
         return -1;
     }
@@ -65,8 +65,7 @@ int process_create(process_t * proc) {
 
     // Allocate pages for ISR stack + first page of user stack
     if (paging_add_pages(dir, ADDR2PAGE(proc->esp), ADDR2PAGE(proc->esp0))) {
-        KLOG_ERROR("Failed to create pages for isr and user stacks");
-        // Error logged in function, not logging here because we are already returning error
+        KLOG_DEBUG("Failed to create pages for isr and user stacks");
         paging_temp_free(proc->cr3);
         ram_page_free(proc->cr3);
         return -1;
@@ -79,7 +78,7 @@ int process_create(process_t * proc) {
     // TODO parent process pid
 
     if (paging_temp_free(proc->cr3)) {
-        KLOG_ERROR("Failed to free temporary page");
+        KLOG_DEBUG("Failed to free temporary page after adding stack pages");
         ram_page_free(proc->cr3);
         return -1;
     }
@@ -98,7 +97,7 @@ int process_create(process_t * proc) {
     // }
 
     if (memory_init(&proc->memory, kernel_alloc_page)) {
-        KLOG_ERROR("Failed to initialize malloc for process");
+        KLOG_DEBUG("Failed to initialize malloc for process");
         // ebus_free(&proc->event_queue);
         arr_free(&proc->io_handles);
         ram_page_free(proc->cr3);
@@ -115,7 +114,7 @@ int process_create(process_t * proc) {
     }
 
     if (open_stdio_handles(proc)) {
-        KLOG_ERROR("Failed to open stdio handles");
+        KLOG_DEBUG("Failed to open stdio handles");
         // ebus_free(&proc->event_queue);
         arr_free(&proc->io_handles);
         ram_page_free(proc->cr3);
@@ -123,12 +122,14 @@ int process_create(process_t * proc) {
         return -1;
     }
 
+    KLOG_INFO("Created process %u", proc->pid);
+
     return 0;
 }
 
 int process_free(process_t * proc) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return -1;
     }
 
@@ -167,39 +168,41 @@ int process_free(process_t * proc) {
         }
 
         if (paging_temp_free(table_addr)) {
-            KLOG_ERROR("Failed to free temporary map of process page table");
+            KLOG_DEBUG("Failed to free temporary map of process page table");
             return -1;
         }
         if (ram_page_free(table_addr)) {
-            KLOG_ERROR("Failed to free ram page for process page table");
+            KLOG_DEBUG("Failed to free ram page for process page table");
             return -1;
         }
     }
 
     // Free dir
     if (paging_temp_free(proc->cr3)) {
-        KLOG_ERROR("Failed to free temporary map of process page directory");
+        KLOG_DEBUG("Failed to free temporary map of process page directory");
         return -1;
     }
     if (ram_page_free(proc->cr3)) {
-        KLOG_ERROR("Failed to free ram page for process page directory");
+        KLOG_DEBUG("Failed to free ram page for process page directory");
         return -1;
     }
+
+    KLOG_INFO("Freed process %u", proc->pid);
 
     return 0;
 }
 
 int process_set_entrypoint(process_t * proc, void * entrypoint) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return -1;
     }
     if (!entrypoint) {
-        KLOG_ERROR("Entrypoint is null pointer");
+        KLOG_WARNING("Entrypoint is null pointer");
         return -1;
     }
     if (proc->state >= PROCESS_STATE_SUSPENDED) {
-        KLOG_ERROR("Process already started");
+        KLOG_WARNING("Process already started");
         return -1;
     }
 
@@ -251,15 +254,15 @@ int process_set_entrypoint(process_t * proc, void * entrypoint) {
     stack[ret_i] = PTR2UINT(entrypoint);
 
     if (paging_temp_free(page_addr)) {
-        KLOG_ERROR("Failed to free temporary map for process stack page");
+        KLOG_DEBUG("Failed to free temporary map for process stack page");
         return -1;
     }
     if (paging_temp_free(table_addr)) {
-        KLOG_ERROR("Failed to free temporary map for process page table");
+        KLOG_DEBUG("Failed to free temporary map for process page table");
         return -1;
     }
     if (paging_temp_free(proc->cr3)) {
-        KLOG_ERROR("Failed to free temporary map for process page directory");
+        KLOG_DEBUG("Failed to free temporary map for process page directory");
         return -1;
     }
 
@@ -270,15 +273,15 @@ int process_set_entrypoint(process_t * proc, void * entrypoint) {
 
 int process_resume(process_t * proc, const ebus_event_t * event) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return -1;
     }
     if (proc->state < PROCESS_STATE_LOADED) {
-        KLOG_ERROR("Process not yet loaded");
+        KLOG_WARNING("Process not yet loaded");
         return -1;
     }
     if (proc->state >= PROCESS_STATE_DEAD) {
-        KLOG_ERROR("Process is dead");
+        KLOG_WARNING("Process is dead");
         return -1;
     }
 
@@ -311,7 +314,7 @@ int process_resume(process_t * proc, const ebus_event_t * event) {
 
 void * process_add_pages(process_t * proc, size_t count) {
     if (!proc) {
-        KLOG_ERROR("Tried to add page to null process");
+        KLOG_WARNING("Tried to add page to null process");
         return 0;
     }
     if (!count) {
@@ -320,7 +323,7 @@ void * process_add_pages(process_t * proc, size_t count) {
     }
 
     if (proc->next_heap_page + count >= MMU_DIR_SIZE * MMU_TABLE_SIZE) {
-        KLOG_ERROR("Cannot allocate %u pages after %u, will exceed max size of %d", count, proc->next_heap_page, MMU_DIR_SIZE * MMU_TABLE_SIZE);
+        KLOG_WARNING("Cannot allocate %u pages after %u, will exceed max size of %d", count, proc->next_heap_page, MMU_DIR_SIZE * MMU_TABLE_SIZE);
         return 0;
     }
 
@@ -332,13 +335,13 @@ void * process_add_pages(process_t * proc, size_t count) {
     }
 
     if (paging_add_pages(dir, proc->next_heap_page, proc->next_heap_page + count)) {
-        KLOG_ERROR("Failed to add %u pages to pid %u", count, proc->pid);
+        KLOG_DEBUG("Failed to add %u pages to pid %u", count, proc->pid);
         paging_temp_free(proc->cr3);
         return 0;
     }
 
     if (paging_temp_free(proc->cr3)) {
-        KLOG_ERROR("Failed to free temporary page for process page directory");
+        KLOG_DEBUG("Failed to free temporary page for process page directory");
         return 0;
     }
 
@@ -350,7 +353,7 @@ void * process_add_pages(process_t * proc, size_t count) {
 
 int process_grow_stack(process_t * proc) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return -1;
     }
 
@@ -364,7 +367,7 @@ int process_grow_stack(process_t * proc) {
     size_t new_stack_page_i = MMU_DIR_SIZE * MMU_TABLE_SIZE - proc->stack_page_count - 1;
 
     if (paging_add_pages(dir, new_stack_page_i, new_stack_page_i)) {
-        KLOG_ERROR("Failed to add pages fo process stack");
+        KLOG_DEBUG("Failed to add pages for process stack");
         paging_temp_free(proc->cr3);
         return -1;
     }
@@ -372,7 +375,7 @@ int process_grow_stack(process_t * proc) {
     proc->stack_page_count++;
 
     if (paging_temp_free(proc->cr3)) {
-        KLOG_ERROR("Failed to free temporary map of process page dir");
+        KLOG_DEBUG("Failed to free temporary map of process page dir");
         return -1;
     }
 
@@ -381,15 +384,15 @@ int process_grow_stack(process_t * proc) {
 
 int process_load_heap(process_t * proc, const char * buff, size_t size) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return -1;
     }
     if (!buff) {
-        KLOG_ERROR("Trying to load heap from null buffer");
+        KLOG_WARNING("Trying to load heap from null buffer");
         return -1;
     }
     if (!size) {
-        KLOG_ERROR("Trying to load empty buffer");
+        KLOG_WARNING("Trying to load empty buffer");
         return -1;
     }
 
@@ -406,7 +409,7 @@ int process_load_heap(process_t * proc, const char * buff, size_t size) {
     void *   heap_alloc = process_add_pages(proc, page_count);
 
     if (!heap_alloc) {
-        KLOG_ERROR("Failed to allocate pages for process pid %u heap", proc->pid);
+        KLOG_DEBUG("Failed to allocate pages for process pid %u heap", proc->pid);
         return -1;
     }
 
@@ -457,17 +460,17 @@ int process_load_heap(process_t * proc, const char * buff, size_t size) {
         kmemcpy(tmp_page, &buff[i * PAGE_SIZE], to_copy);
 
         if (paging_temp_free(addr)) {
-            KLOG_ERROR("Failed to free temporary map of process pid %u page");
+            KLOG_DEBUG("Failed to free temporary map of process pid %u page", proc->pid);
             return -1;
         }
         if (paging_temp_free(table_addr)) {
-            KLOG_ERROR("Failed to free temporary map of process pid %u page table");
+            KLOG_DEBUG("Failed to free temporary map of process pid %u page table", proc->pid);
             return -1;
         }
     }
 
     if (paging_temp_free(proc->cr3)) {
-        KLOG_ERROR("Failed to free temporary map of process pid %u page directory");
+        KLOG_DEBUG("Failed to free temporary map of process pid %u page directory", proc->pid);
         return -1;
     }
 
@@ -479,11 +482,11 @@ int process_load_heap(process_t * proc, const char * buff, size_t size) {
 
 handle_t * process_get_handle(process_t * proc, int id) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return 0;
     }
     if (id < 0) {
-        KLOG_ERROR("id must be >= 0, got %d", id);
+        KLOG_WARNING("id must be >= 0, got %d", id);
         return 0;
     }
 
@@ -495,18 +498,18 @@ handle_t * process_get_handle(process_t * proc, int id) {
         }
     }
 
-    KLOG_ERROR("Failed to find handle %d for process pid %u", id, proc->pid);
+    KLOG_WARNING("Failed to find handle %d for process pid %u", id, proc->pid);
 
     return 0;
 }
 
 int process_add_handle(process_t * proc, int id, int flags, io_device_t * device) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return -1;
     }
     if (!device) {
-        KLOG_ERROR("Devices is a null pointer");
+        KLOG_WARNING("Devices is a null pointer");
         return -1;
     }
 
@@ -530,22 +533,22 @@ int process_add_handle(process_t * proc, int id, int flags, io_device_t * device
 
 static int open_stdio_handles(process_t * proc) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return -1;
     }
 
     // TODO make stdin
 
     // process_add_handle returns handle id
-    if (process_add_handle(proc, 1, DEVICE_IO_FLAG_WRITE, device_screen_open()) < 0) {
-        KLOG_ERROR("Failed to create stdout handle");
+    if (process_add_handle(proc, 1, IO_DEVICE_FLAG_WRITE, io_device_screen_open()) < 0) {
+        KLOG_DEBUG("Failed to create stdout handle");
         return -1;
     }
 
     handle_t * h = arr_at(&proc->io_handles, 0);
 
-    if (process_add_handle(proc, 2, DEVICE_IO_FLAG_WRITE, device_screen_open()) < 0) {
-        KLOG_ERROR("Failed to create stderr handle");
+    if (process_add_handle(proc, 2, IO_DEVICE_FLAG_WRITE, io_device_screen_open()) < 0) {
+        KLOG_DEBUG("Failed to create stderr handle");
         return -1;
     }
 
@@ -558,11 +561,11 @@ static int open_stdio_handles(process_t * proc) {
 
 int process_link(process_t * proc, process_t * next) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return -1;
     }
     if (!next) {
-        KLOG_ERROR("Next process struct is null pointer");
+        KLOG_WARNING("Next process struct is null pointer");
         return -1;
     }
     if (proc->next && proc->next->prev != proc) {
@@ -581,11 +584,11 @@ int process_link(process_t * proc, process_t * next) {
 
 int process_unlink(process_t * proc) {
     if (!proc) {
-        KLOG_ERROR("Process struct is null pointer");
+        KLOG_WARNING("Process struct is null pointer");
         return -1;
     }
     if (!proc->prev || !proc->next) {
-        KLOG_ERROR("Process struct is not linked");
+        KLOG_WARNING("Process struct is not linked");
         return -1;
     }
 

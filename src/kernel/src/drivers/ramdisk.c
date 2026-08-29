@@ -19,7 +19,7 @@ static int       __drive_count = 0;
 
 int ramdisk_create(size_t size) {
     if (__drive_count == RAMDISK_MAX) {
-        KLOG_ERROR("Tried to create drive after reaching max count %u", RAMDISK_MAX);
+        KLOG_WARNING("Tried to create drive after reaching max count %u", RAMDISK_MAX);
         return -1;
     }
 
@@ -40,7 +40,7 @@ int ramdisk_create(size_t size) {
 
 ramdisk_t * ramdisk_open(int id) {
     if (id < 0 || id >= __drive_count) {
-        KLOG_ERROR("Failed to open invalid drive id %d", id);
+        KLOG_WARNING("Failed to open invalid drive id %d", id);
         return 0;
     }
     return &__drives[id];
@@ -48,7 +48,7 @@ ramdisk_t * ramdisk_open(int id) {
 
 void ramdisk_close(ramdisk_t * drive) {
     if (!drive) {
-        KLOG_ERROR("Tried to close null drive");
+        KLOG_WARNING("Tried to close null drive");
         return;
     }
     KLOG_WARNING("Close does not yet free the drive for future use");
@@ -56,7 +56,7 @@ void ramdisk_close(ramdisk_t * drive) {
 
 size_t ramdisk_size(ramdisk_t * drive) {
     if (!drive) {
-        KLOG_ERROR("Tried to get size of null drive");
+        KLOG_WARNING("Tried to get size of null drive");
         return 0;
     }
     return drive->size;
@@ -64,11 +64,11 @@ size_t ramdisk_size(ramdisk_t * drive) {
 
 size_t ramdisk_read(ramdisk_t * drive, uint8_t * buff, size_t count, size_t pos) {
     if (!drive) {
-        KLOG_ERROR("Tried to get size of null pointer");
+        KLOG_WARNING("Tried to get size of null pointer");
         return 0;
     }
     if (!buff) {
-        KLOG_ERROR("Tried to read into a null buffer from drive %u", drive->id);
+        KLOG_WARNING("Tried to read into a null buffer from drive %u", drive->id);
         return 0;
     }
     if (!count) {

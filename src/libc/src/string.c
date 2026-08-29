@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "libc/memory.h"
+
 #define BASE_DEFAULT_UPPER true
 
 static char * kstrtok_curr = 0;
@@ -346,4 +348,17 @@ size_t ultoa_base(size_t max_length, uint64_t n, char * str, uint8_t base, bool 
     *str = 0;
 
     return len;
+}
+
+char * str_copy(const char * str) {
+    if (!str) {
+        return 0;
+    }
+
+    size_t len = kstrlen(str);
+    char * new = pmalloc(len + 1);
+    if (new) {
+        kmemcpy(new, str, len + 1);
+    }
+    return new;
 }

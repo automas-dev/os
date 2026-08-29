@@ -10,7 +10,7 @@ while IFS= read -r file; do
         echo "[WARNING] Using <> to import kernel/logs.h in $file"
         failure=1
     elif ! grep -e '#include "kernel/logs.h"' "$file" >/dev/null; then
-        echo "Skipping file $file"
+        echo "Skipping log service name check in file $file"
     elif ! head -1 "$file" | grep "#define KLOG_SERVICE \"${service_name}\"" >/dev/null; then
         echo "$file failed service name check"
         failures=1

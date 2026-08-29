@@ -6,6 +6,8 @@
 
 #include "drivers/tar.h"
 #include "ebus.h"
+#include "kernel/io/device.h"
+#include "kernel/io/fs.h"
 #include "kernel/memory.h"
 #include "kernel/panic.h"
 #include "kernel/scheduler.h"
@@ -23,13 +25,13 @@ typedef struct _kernel {
     /// Kernel event bus (is this used?)
     ebus_t event_queue;
     /// Disk driver for boot drive (this is temporary and should be replaced with a proper driver / device manager)
-    disk_t * disk;
+    io_device_t * disk;
     /// Filesystem driver for boot drive (this is temporary and should be replaced with a proper drier / filesystem manager)
-    tar_fs_t * tar;
+    io_fs_t * fs;
 } kernel_t;
 
-disk_t *   kernel_get_disk();
-tar_fs_t * kernel_get_tar();
+io_device_t * kernel_get_disk();
+io_fs_t *     kernel_get_fs();
 
 kernel_t * get_kernel();
 

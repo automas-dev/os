@@ -16,5 +16,5 @@ target_include_directories(${TARGET}
     ${TEST_TARGET_ROOT}/src/util/include
 )
 
-target_precompile_headers(${TARGET} PUBLIC ${CMAKE_BINARY_DIR}/config.h)
+target_precompile_headers(${TARGET} PUBLIC ${CMAKE_BINARY_DIR}/include/config.h)
 target_link_libraries(${TARGET} PUBLIC fff)

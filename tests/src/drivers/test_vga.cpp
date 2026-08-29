@@ -181,6 +181,15 @@ TEST_F(VGA, vga_puts) {
     EXPECT_EQ(7, buff[3]);
 }
 
+TEST_F(VGA, vga_write) {
+    const char data[] = "abc";
+
+    EXPECT_EQ(3, vga_write(data, 3));
+    EXPECT_EQ('a', buff[0]);
+    EXPECT_EQ('b', buff[2]);
+    EXPECT_EQ('c', buff[4]);
+}
+
 TEST_F(VGA, vga_puti) {
     vga_puti(10);
 

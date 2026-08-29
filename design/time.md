@@ -1,5 +1,10 @@
 # Programmable Interval Timer (PIT)
 
+<!-- Table of Contents only links to level 2 headers -->
+\[ [Mode / Command Register 0x43](#mode--command-register-0x43) \]
+\[ [Modes](#modes) \]
+\[ [Read Back Command](#read-back-command) \]
+
 PIT has 3 channels
 
 | Channel | Use       | Port |

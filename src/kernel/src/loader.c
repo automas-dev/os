@@ -9,12 +9,12 @@
 #include <stdint.h>
 
 #include "boot_params.h"
+#include "config.h"
 #include "cpu/gdt.h"
 #include "cpu/mmu.h"
 #include "defs.h"
 #include "drivers/ram.h"
 #include "drivers/serial.h"
-#include "drivers/tar.h"
 #include "drivers/vga.h"
 #include "kernel.h"
 #include "kernel/device/screen.h"
@@ -35,21 +35,18 @@ static void id_map_page(mmu_table_t * table, size_t page);
 
 static process_t * load_init();
 
-extern volatile int kernel_logs_enable_serial_newlines;
-
 void __start() {
-    // Enable newlines in serial output (must be disabled later for one stage)
-    kernel_logs_enable_serial_newlines = 1;
-
     // 1. Setup kernel logging (serial only)
     kernel_log_init();
     serial_init(SERIAL_PORT_COM1);
-    _libc_config_file_write_call(device_serial_write_raw);
+    _libc_config_file_write_call(io_device_serial_write_raw);
 
     // THIS WAS REPLACED WITH KLOG_LEVEL MACRO
     // kernel_log_set_level(KERNEL_LOG_LEVEL_DEBUG);
     // kernel_log_set_level(KERNEL_LOG_LEVEL_TRACE);
     KLOG_INFO("Loader Start");
+
+    KLOG_INFO(PROJECT_DESCRIPTION);
 
     // 2. Load VGA driver and clear screen
     vga_init(UINT2PTR(PADDR_VGA));
@@ -86,13 +83,13 @@ void __start() {
     mmu_dir_t * pdir = UINT2PTR(PADDR_KERNEL_DIR);
     mmu_dir_clear(pdir);
 
-    // This needs to be disabled here because something around enable paging blocks if it's enabled
-    kernel_logs_enable_serial_newlines = 0;
-
     KLOG_DEBUG("page dir created");
 
     // 4.2 Create first page table
     uint32_t first_table_addr = ram_page_palloc();
+    if (!first_table_addr) {
+        KPANIC("Failed to allocate first page table");
+    }
     mmu_dir_set(pdir, 0, first_table_addr, MMU_DIR_RW);
 
     KLOG_DEBUG("page table created");
@@ -117,8 +114,6 @@ void __start() {
 
     // 7. Enable paging
     mmu_enable_paging(PADDR_KERNEL_DIR);
-    // This needs to be enabled here because something around enable paging blocks if it's enabled
-    kernel_logs_enable_serial_newlines = 1;
     KLOG_DEBUG("paging enabled");
 
     // 8. Initialize kernel
@@ -188,7 +183,7 @@ static void id_map_page(mmu_table_t * table, size_t page) {
 
 static char * copy_string(const char * str) {
     if (!str) {
-        KLOG_ERROR("Tried to copy null string");
+        KLOG_WARNING("Tried to copy null string");
         return 0;
     }
     int    len     = kstrlen(str);
@@ -206,21 +201,21 @@ static char * copy_string(const char * str) {
 
 static int copy_args(process_t * proc, const char * filepath, int argc, char ** argv) {
     if (!proc) {
-        KLOG_ERROR("Tried to copy args for null process");
+        KLOG_WARNING("Tried to copy args for null process");
         return -1;
     }
     if (!filepath) {
-        KLOG_ERROR("Missing filepath");
+        KLOG_WARNING("Missing filepath");
         return -1;
     }
     if (argc && !argv) {
-        KLOG_ERROR("Missing argv");
+        KLOG_WARNING("Missing argv");
         return -1;
     }
 
     proc->filepath = copy_string(filepath);
     if (!proc->filepath) {
-        KLOG_ERROR("Failed to copy filepath");
+        KLOG_DEBUG("Failed to copy filepath");
         return -1;
     }
     proc->argc = argc + 1;
@@ -233,7 +228,7 @@ static int copy_args(process_t * proc, const char * filepath, int argc, char ** 
 
     proc->argv[0] = copy_string(filepath);
     if (!proc->argv[0]) {
-        KLOG_ERROR("Failed to copy filepath to argv");
+        KLOG_DEBUG("Failed to copy filepath to argv");
         kfree(proc->argv);
         kfree(proc->filepath);
         return -1;
@@ -242,7 +237,7 @@ static int copy_args(process_t * proc, const char * filepath, int argc, char ** 
     for (int i = 0; i < argc; i++) {
         proc->argv[i + 1] = copy_string(argv[i]);
         if (!proc->argv[i + 1]) {
-            KLOG_ERROR("Failed to copy arg %d", i);
+            KLOG_DEBUG("Failed to copy arg %d", i);
             for (int j = 0; j < i + 1; j++) {
                 kfree(proc->argv[i]);
             }
@@ -273,9 +268,9 @@ static process_t * load_init() {
     // TODO use exec code or replace this with exec version of copy args
     const char * filename = "init";
 
-    tar_stat_t stat;
-    if (!tar_stat_file(kernel_get_tar(), filename, &stat)) {
-        KLOG_ERROR("Failed to find file\n");
+    io_fs_stat_t stat;
+    if (io_fs_file_stat(kernel_get_fs(), filename, &stat)) {
+        KLOG_ERROR("Failed to find file");
         return 0;
     }
 
@@ -284,14 +279,14 @@ static process_t * load_init() {
         return 0;
     }
 
-    tar_fs_file_t * file = tar_file_open(kernel_get_tar(), filename);
+    io_fs_file_t * file = io_fs_file_open(kernel_get_fs(), filename, "r");
     if (!file) {
         kfree(buff);
         return 0;
     }
 
-    if (!tar_file_read(file, buff, stat.size)) {
-        tar_file_close(file);
+    if (!io_fs_file_read(file, buff, stat.size)) {
+        io_fs_file_close(file);
         kfree(buff);
         return 0;
     }
@@ -299,19 +294,19 @@ static process_t * load_init() {
     process_t * proc = kmalloc(sizeof(process_t));
 
     if (process_create(proc)) {
-        KLOG_ERROR("Failed to create process for %s", filename);
+        KLOG_DEBUG("Failed to create process for %s", filename);
         return 0;
     }
 
     if (process_load_heap(proc, buff, stat.size)) {
-        KLOG_ERROR("Failed to load %s", filename);
+        KLOG_DEBUG("Failed to load %s", filename);
         process_free(proc);
         return 0;
     }
 
     for (size_t i = 0; i < 1022; i++) {
         if (process_grow_stack(proc)) {
-            KLOG_ERROR("Failed to grow process stack");
+            KLOG_DEBUG("Failed to grow process stack");
             return 0;
         }
     }
@@ -323,7 +318,7 @@ static process_t * load_init() {
     pm_add_proc(&get_kernel()->pm, proc);
     pm_set_foreground_proc(&get_kernel()->pm, proc->pid);
 
-    tar_file_close(file);
+    io_fs_file_close(file);
     kfree(buff);
 
     return proc;

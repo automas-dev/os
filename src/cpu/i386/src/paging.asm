@@ -33,13 +33,9 @@ mmu_disable_paging:
 ; void mmu_paging_enabled();
 global mmu_paging_enabled
 mmu_paging_enabled:
-    push eax
-
     mov eax, cr0
     shr eax, 31
     and eax, 1
-
-    pop eax
 
     ret
 

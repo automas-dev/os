@@ -12,7 +12,7 @@ FAKE_VOID_FUNC(load_gdt, uint32_t, uint32_t);
 TEST(GDTStatic, init_gdt) {
     init_gdt();
     EXPECT_EQ(1, load_gdt_fake.call_count);
-    EXPECT_EQ(447, load_gdt_fake.arg0_val);
+    EXPECT_EQ(55, load_gdt_fake.arg0_val);
     EXPECT_NE(0, load_gdt_fake.arg1_val);
 }
 

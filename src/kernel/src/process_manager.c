@@ -12,7 +12,7 @@
 
 int pm_create(proc_man_t * pm) {
     if (!pm) {
-        KLOG_ERROR("Process manager struct is a null pointer");
+        KLOG_WARNING("Process manager struct is a null pointer");
         return -1;
     }
 
@@ -26,7 +26,7 @@ int pm_create(proc_man_t * pm) {
 
 process_t * pm_find_pid(proc_man_t * pm, int pid) {
     if (!pm) {
-        KLOG_ERROR("Process manager struct is a null pointer");
+        KLOG_WARNING("Process manager struct is a null pointer");
         return 0;
     }
     if (pid < 0) {
@@ -64,11 +64,11 @@ process_t * pm_find_pid(proc_man_t * pm, int pid) {
 
 int pm_add_proc(proc_man_t * pm, process_t * proc) {
     if (!pm) {
-        KLOG_ERROR("Process manager struct is a null pointer");
+        KLOG_WARNING("Process manager struct is a null pointer");
         return -1;
     }
     if (!proc) {
-        KLOG_ERROR("Process struct is a null pointer");
+        KLOG_WARNING("Process struct is a null pointer");
         return -1;
     }
 
@@ -108,7 +108,7 @@ int pm_add_proc(proc_man_t * pm, process_t * proc) {
 
 int pm_remove_proc(proc_man_t * pm, int pid) {
     if (!pm) {
-        KLOG_ERROR("Process manager struct is a null pointer");
+        KLOG_WARNING("Process manager struct is a null pointer");
         return -1;
     }
     if (pid < 0) {
@@ -117,28 +117,28 @@ int pm_remove_proc(proc_man_t * pm, int pid) {
     }
 
     if (pid == get_active_task()->pid) {
-        KLOG_ERROR("Trying to remove active task pid %d", pid);
+        KLOG_WARNING("Trying to remove active task pid %d", pid);
         return -1;
     }
 
     process_t * proc = pm_find_pid(pm, pid);
     if (!proc) {
-        KLOG_ERROR("Failed to find process for pid %u", pid);
+        KLOG_WARNING("Failed to find process for pid %u", pid);
         return -1;
     }
 
     if (proc == pm->first_task) {
-        KLOG_ERROR("Cannot remove first process");
+        KLOG_WARNING("Cannot remove first process");
         return -1;
     }
 
     if (proc == pm->current_task) {
-        KLOG_ERROR("Cannot remove current process");
+        KLOG_WARNING("Cannot remove current process");
         return -1;
     }
 
     if (proc == pm->foreground_task) {
-        KLOG_ERROR("Cannot remove foreground process");
+        KLOG_WARNING("Cannot remove foreground process");
         return -1;
     }
 
@@ -147,7 +147,7 @@ int pm_remove_proc(proc_man_t * pm, int pid) {
 
 int pm_set_foreground_proc(proc_man_t * pm, int pid) {
     if (!pm) {
-        KLOG_ERROR("Process manager struct is a null pointer");
+        KLOG_WARNING("Process manager struct is a null pointer");
         return -1;
     }
     if (pid < 0) {
@@ -157,7 +157,7 @@ int pm_set_foreground_proc(proc_man_t * pm, int pid) {
 
     process_t * proc = pm_find_pid(pm, pid);
     if (!proc) {
-        KLOG_ERROR("Failed to find process for pid %d", pid);
+        KLOG_WARNING("Failed to find process for pid %d", pid);
         return -1;
     }
 
@@ -168,7 +168,7 @@ int pm_set_foreground_proc(proc_man_t * pm, int pid) {
 
 int pm_resume_process(proc_man_t * pm, int pid) {
     if (!pm) {
-        KLOG_ERROR("Process manager struct is a null pointer");
+        KLOG_WARNING("Process manager struct is a null pointer");
         return -1;
     }
     if (pid < 0) {
@@ -179,7 +179,7 @@ int pm_resume_process(proc_man_t * pm, int pid) {
 
     process_t * proc = pm_find_pid(pm, pid);
     if (!proc) {
-        KLOG_ERROR("Failed to find process for pid %d", pid);
+        KLOG_WARNING("Failed to find process for pid %d", pid);
         return -1;
     }
 
@@ -197,7 +197,7 @@ int pm_resume_process(proc_man_t * pm, int pid) {
 
 process_t * pm_get_next(proc_man_t * pm) {
     if (!pm) {
-        KLOG_ERROR("Process manager struct is a null pointer");
+        KLOG_WARNING("Process manager struct is a null pointer");
         return 0;
     }
 
@@ -238,15 +238,15 @@ process_t * pm_get_next(proc_man_t * pm) {
 
 int pm_push_event(proc_man_t * pm, ebus_event_t * event) {
     if (!pm) {
-        KLOG_ERROR("Process manager struct is a null pointer");
+        KLOG_WARNING("Process manager struct is a null pointer");
         return -1;
     }
     if (!event) {
-        KLOG_ERROR("Event is a null pointer");
+        KLOG_WARNING("Event is a null pointer");
         return -1;
     }
     if (!event->event_id) {
-        KLOG_ERROR("Event id must be non-zero");
+        KLOG_WARNING("Event id must be non-zero");
         return -1;
     }
 

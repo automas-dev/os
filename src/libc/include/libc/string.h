@@ -28,4 +28,6 @@ size_t utoa_base(size_t max_length, uint32_t n, char * str, uint8_t base, bool u
 size_t ultoa(uint64_t n, char * str);
 size_t ultoa_base(size_t max_length, uint64_t n, char * str, uint8_t base, bool upper);
 
+char * str_copy(const char * str);
+
 #endif // LIBC_STRING_H
