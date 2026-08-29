@@ -137,7 +137,7 @@ void ata_close(ata_t * drive) {
         KLOG_WARNING("Tried to free of null pointer");
         return;
     }
-    KLOG_DEBUG("Closing drive %u", drive->id);
+    KLOG_INFO("Closing drive %u", drive->id);
     kfree(drive);
 }
 

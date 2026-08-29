@@ -23,7 +23,7 @@ io_fs_t * io_fs_tar_open(io_device_t * device) {
     tar_fs_t * tar = tar_open(device);
 
     if (!tar) {
-        KLOG_WARNING("Failed to open tar fs");
+        KLOG_DEBUG("Failed to open tar fs");
         return 0;
     }
 

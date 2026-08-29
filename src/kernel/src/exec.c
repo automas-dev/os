@@ -45,13 +45,13 @@ int command_exec(uint8_t * buff, const char * filepath, size_t size, size_t argc
     process_t * active = get_active_task();
 
     if (process_create(proc)) {
-        KLOG_ERROR("Failed to create process");
+        KLOG_DEBUG("Failed to create process");
         kfree(proc);
         return -1;
     }
 
     if (process_load_heap(proc, buff, size)) {
-        KLOG_ERROR("Failed to load heap");
+        KLOG_DEBUG("Failed to load heap");
         if (process_free(proc)) {
             KPANIC("Failed to free process while handling load heap error");
         }
@@ -62,7 +62,7 @@ int command_exec(uint8_t * buff, const char * filepath, size_t size, size_t argc
     KLOG_TRACE("Increasing stack by 1022 pages");
     for (size_t i = 0; i < 1022; i++) {
         if (process_grow_stack(proc)) {
-            KLOG_ERROR("Failed to add page %u", i);
+            KLOG_DEBUG("Failed to add page %u", i);
             if (process_free(proc)) {
                 KPANIC("Failed to free process while handling stack grow error");
             }
@@ -72,7 +72,7 @@ int command_exec(uint8_t * buff, const char * filepath, size_t size, size_t argc
     }
 
     if (copy_args(proc, filepath, argc, argv)) {
-        KLOG_ERROR("Failed to copy args");
+        KLOG_DEBUG("Failed to copy args");
         if (process_free(proc)) {
             KPANIC("Failed to free process while handling copy args error");
         }
@@ -83,7 +83,7 @@ int command_exec(uint8_t * buff, const char * filepath, size_t size, size_t argc
     KLOG_TRACE("Setting process entrypoint to %p", proc_entry);
 
     if (process_set_entrypoint(proc, proc_entry)) {
-        KLOG_ERROR("Failed to set entrypoint");
+        KLOG_DEBUG("Failed to set entrypoint");
         if (process_free(proc)) {
             KPANIC("Failed to free process while handling set entrypoint error");
         }
@@ -94,7 +94,7 @@ int command_exec(uint8_t * buff, const char * filepath, size_t size, size_t argc
     KLOG_TRACE("Adding 32 pages");
 
     if (!process_add_pages(proc, 32)) {
-        KLOG_ERROR("Failed to add 32 pages");
+        KLOG_DEBUG("Failed to add 32 pages");
         if (process_free(proc)) {
             KPANIC("Failed to free process while handling add 32 pages error");
         }
@@ -103,7 +103,7 @@ int command_exec(uint8_t * buff, const char * filepath, size_t size, size_t argc
     }
 
     if (pm_add_proc(kernel_get_proc_man(), proc)) {
-        KLOG_ERROR("Failed to add process to process manager");
+        KLOG_DEBUG("Failed to add process to process manager");
         if (process_free(proc)) {
             KPANIC("Failed to free process while handling add process to process manager error");
         }
@@ -112,7 +112,7 @@ int command_exec(uint8_t * buff, const char * filepath, size_t size, size_t argc
     }
 
     if (pm_resume_process(kernel_get_proc_man(), proc->pid)) {
-        KLOG_ERROR("Failed to resume process %u", proc->pid);
+        KLOG_DEBUG("Failed to resume process %u", proc->pid);
         if (process_free(proc)) {
             KPANIC("Failed to free process while handling resume error");
         }
@@ -176,7 +176,7 @@ static int copy_args(process_t * proc, const char * filepath, int argc, char ** 
 
     proc->filepath = copy_string(filepath);
     if (!proc->filepath) {
-        KLOG_ERROR("Failed to copy filepath");
+        KLOG_DEBUG("Failed to copy filepath");
         return -1;
     }
     proc->argc = argc + 1;
@@ -189,7 +189,7 @@ static int copy_args(process_t * proc, const char * filepath, int argc, char ** 
 
     proc->argv[0] = copy_string(filepath);
     if (!proc->argv[0]) {
-        KLOG_ERROR("Failed to copy filepath to argv");
+        KLOG_DEBUG("Failed to copy filepath to argv");
         kfree(proc->argv);
         kfree(proc->filepath);
         return -1;
@@ -198,7 +198,7 @@ static int copy_args(process_t * proc, const char * filepath, int argc, char ** 
     for (int i = 0; i < argc; i++) {
         proc->argv[i + 1] = copy_string(argv[i]);
         if (!proc->argv[i + 1]) {
-            KLOG_ERROR("Failed to copy arg %d", i);
+            KLOG_DEBUG("Failed to copy arg %d", i);
             for (int j = 0; j < i + 1; j++) {
                 kfree(proc->argv[i]);
             }

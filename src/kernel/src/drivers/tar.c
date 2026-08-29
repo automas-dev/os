@@ -78,7 +78,7 @@ tar_fs_t * tar_open(io_device_t * disk_device) {
     }
 
     load_headers(tar);
-    KLOG_DEBUG("Opened tar filesystem with %u files", tar->file_count);
+    KLOG_INFO("Opened tar filesystem with %u files", tar->file_count);
 
     return tar;
 }
@@ -89,7 +89,7 @@ void tar_close(tar_fs_t * tar) {
         return;
     }
     // TODO print fs identity
-    KLOG_DEBUG("Closing tar filesystem");
+    KLOG_INFO("Closing tar filesystem");
     if (tar->file_count) {
         if (tar->files) {
             kfree(tar->files);

@@ -215,7 +215,7 @@ static int copy_args(process_t * proc, const char * filepath, int argc, char ** 
 
     proc->filepath = copy_string(filepath);
     if (!proc->filepath) {
-        KLOG_ERROR("Failed to copy filepath");
+        KLOG_DEBUG("Failed to copy filepath");
         return -1;
     }
     proc->argc = argc + 1;
@@ -228,7 +228,7 @@ static int copy_args(process_t * proc, const char * filepath, int argc, char ** 
 
     proc->argv[0] = copy_string(filepath);
     if (!proc->argv[0]) {
-        KLOG_ERROR("Failed to copy filepath to argv");
+        KLOG_DEBUG("Failed to copy filepath to argv");
         kfree(proc->argv);
         kfree(proc->filepath);
         return -1;
@@ -237,7 +237,7 @@ static int copy_args(process_t * proc, const char * filepath, int argc, char ** 
     for (int i = 0; i < argc; i++) {
         proc->argv[i + 1] = copy_string(argv[i]);
         if (!proc->argv[i + 1]) {
-            KLOG_ERROR("Failed to copy arg %d", i);
+            KLOG_DEBUG("Failed to copy arg %d", i);
             for (int j = 0; j < i + 1; j++) {
                 kfree(proc->argv[i]);
             }
@@ -294,19 +294,19 @@ static process_t * load_init() {
     process_t * proc = kmalloc(sizeof(process_t));
 
     if (process_create(proc)) {
-        KLOG_ERROR("Failed to create process for %s", filename);
+        KLOG_DEBUG("Failed to create process for %s", filename);
         return 0;
     }
 
     if (process_load_heap(proc, buff, stat.size)) {
-        KLOG_ERROR("Failed to load %s", filename);
+        KLOG_DEBUG("Failed to load %s", filename);
         process_free(proc);
         return 0;
     }
 
     for (size_t i = 0; i < 1022; i++) {
         if (process_grow_stack(proc)) {
-            KLOG_ERROR("Failed to grow process stack");
+            KLOG_DEBUG("Failed to grow process stack");
             return 0;
         }
     }

@@ -19,7 +19,7 @@ static size_t _ata_size(void * device_data);
 io_device_t * io_device_ata_open(uint8_t id) {
     ata_t * ata_dev = ata_open(id);
     if (!ata_dev) {
-        KLOG_WARNING("Failed to open ata driver for device id %u", id);
+        KLOG_DEBUG("Failed to open ata driver for device id %u", id);
         return 0;
     }
 

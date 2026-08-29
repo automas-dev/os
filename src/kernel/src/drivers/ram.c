@@ -44,7 +44,7 @@ int ram_init(ram_table_t * ram_table, void * bitmasks) {
         return -1;
     }
 
-    KLOG_DEBUG("Initialized driver");
+    KLOG_INFO("Initialized driver");
 
     return 0;
 }

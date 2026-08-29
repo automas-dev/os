@@ -165,7 +165,7 @@ int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end) {
 
         if (!addr) {
             if (paging_remove_pages(dir, start, page_i - 1)) {
-                KLOG_ERROR("Failed to remove page from directory");
+                KLOG_DEBUG("Failed to remove page from directory");
             }
             return -1;
         }
@@ -177,10 +177,10 @@ int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end) {
         if (!(mmu_dir_get_flags(dir, dir_i) & MMU_DIR_FLAG_PRESENT)) {
             if (paging_add_table(dir, dir_i)) {
                 if (paging_remove_pages(dir, start, page_i - 1)) {
-                    KLOG_ERROR("Failed to remove page from directory %p", dir);
+                    KLOG_DEBUG("Failed to remove page from directory %p", dir);
                 }
                 if (ram_page_free(addr)) {
-                    KLOG_ERROR("Failed to free ram page");
+                    KLOG_DEBUG("Failed to free ram page");
                 }
                 return -1;
             }
@@ -193,10 +193,10 @@ int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end) {
         if (!table) {
             KLOG_ERROR("Failed to create temporary map for %p", table_addr);
             if (paging_remove_pages(dir, start, page_i - 1)) {
-                KLOG_ERROR("Failed to remove page from directory %p", dir);
+                KLOG_DEBUG("Failed to remove page from directory %p while unwinding failed temp map", dir);
             }
             if (ram_page_free(addr)) {
-                KLOG_ERROR("Failed to free ram page");
+                KLOG_DEBUG("Failed to free ram page while unwinding failed temp map");
             }
             return -1;
         }
@@ -207,7 +207,7 @@ int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end) {
             return -1;
         }
         if (paging_temp_free(table_addr)) {
-            KLOG_ERROR("Failed to free temporary page");
+            KLOG_DEBUG("Failed to free temporary page after setting page table");
             return -1;
         }
     }
@@ -265,11 +265,11 @@ int paging_remove_pages(mmu_dir_t * dir, size_t start, size_t end) {
         }
         mmu_flush_tlb(PAGE2ADDR(page_i));
         if (ram_page_free(page_addr)) {
-            KLOG_ERROR("Failed to free ram page");
+            KLOG_DEBUG("Failed to free ram page while removing pages");
             return -1;
         }
         if (paging_temp_free(table_addr)) {
-            KLOG_ERROR("Failed to free temporary mapping for table %p", table_addr);
+            KLOG_DEBUG("Failed to free temporary mapping for table %p while removing pages", table_addr);
             return -1;
         }
     }
@@ -298,7 +298,7 @@ int paging_add_table(mmu_dir_t * dir, size_t dir_i) {
 
         if (!table) {
             if (ram_page_free(addr)) {
-                KLOG_ERROR("Failed to free ram page");
+                KLOG_DEBUG("Failed to free ram page");
             }
             return -1;
         }
@@ -307,7 +307,7 @@ int paging_add_table(mmu_dir_t * dir, size_t dir_i) {
         if (mmu_dir_set(dir, dir_i, addr, MMU_DIR_RW)) {
             KLOG_ERROR("Failed to set page directory %p index %u to physical address %p", dir, dir_i, addr);
             if (paging_temp_free(addr)) {
-                KLOG_ERROR("Failed to free temporary page");
+                KLOG_DEBUG("Failed to free temporary page");
             }
             return -1;
         }
@@ -339,7 +339,7 @@ int paging_remove_table(mmu_dir_t * dir, size_t dir_i) {
             return -1;
         }
         if (ram_page_free(addr)) {
-            KLOG_ERROR("Failed to free ram page");
+            KLOG_DEBUG("Failed to free ram page while removing table");
         }
     }
 
