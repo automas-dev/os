@@ -29,6 +29,8 @@ typedef struct _io_fs_stat {
 struct _io_fs;
 struct _io_fs_file;
 
+typedef int (*io_fs_close_t)(void * fs_data);
+
 typedef struct _io_fs_file * (*io_fs_file_open_t)(void * fs_data, const char * path, const char * mode);
 typedef int (*io_fs_file_close_t)(void * fs_data, void * file_data);
 typedef int (*io_fs_file_stat_t)(void * fs_data, const char * path, io_fs_stat_t * stat_out);
@@ -42,7 +44,8 @@ typedef struct _io_fs {
     io_device_t * dev;
     int           flags;
 
-    // TODO fs close
+    // Required
+    io_fs_close_t close_fn;
 
     // Required
     io_fs_file_open_t file_open_fn;

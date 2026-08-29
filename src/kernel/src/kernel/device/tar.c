@@ -11,6 +11,7 @@ typedef struct _io_fs_tar {
     io_device_t * device;
 } io_fs_tar_t;
 
+static int            _tar_close(void * fs_data);
 static io_fs_file_t * _tar_file_open(void * fs_data, const char * path, const char * mode);
 static int            _tar_file_close(void * fs_data, void * file_data);
 static int            _tar_file_stat(void * fs_data, const char * path, io_fs_stat_t * stat_out);
@@ -38,6 +39,8 @@ io_fs_t * io_fs_tar_open(io_device_t * device) {
 
     fs->dev = device;
 
+    fs->close_fn = _tar_close;
+
     fs->file_open_fn = _tar_file_open;
     fs->file_stat_fn = _tar_file_stat;
 
@@ -46,20 +49,15 @@ io_fs_t * io_fs_tar_open(io_device_t * device) {
     return fs;
 }
 
-// void io_fs_tar_close(io_fs_t * fs) {
-//     if (!fs) {
-//         KLOG_WARNING("Tried to free null tar fs");
-//         return;
-//     }
-//     if (!fs->fs_data) {
-//         KLOG_WARNING("Tried to free tar fs with null fs data");
-//         return;
-//     }
+static int _tar_close(void * fs_data) {
+    if (!fs_data) {
+        KLOG_WARNING("Tried to free tar fs with null fs data");
+        return 1;
+    }
 
-//     tar_close(fs->fs_data);
-
-//     kfree(fs);
-// }
+    tar_close(fs_data);
+    return 0;
+}
 
 static io_fs_file_t * _tar_file_open(void * fs_data, const char * path, const char * mode) {
     if (!fs_data) {
