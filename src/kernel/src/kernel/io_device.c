@@ -9,10 +9,6 @@ size_t io_device_read(io_device_t * dev, char * buff, size_t count, size_t pos) 
         KLOG_ERROR("io_device_read received a null pointer for the device struct");
         return 0;
     }
-    if (!buff) {
-        KLOG_ERROR("io_device_read received a null pointer for the buffer");
-        return 0;
-    }
 
     return dev->read_fn(dev->device_data, buff, count, pos);
 }
@@ -20,10 +16,6 @@ size_t io_device_read(io_device_t * dev, char * buff, size_t count, size_t pos) 
 size_t io_device_write(io_device_t * dev, const char * buff, size_t count, size_t pos) {
     if (!dev) {
         KLOG_ERROR("io_device_write received a null pointer for the device struct");
-        return 0;
-    }
-    if (!buff) {
-        KLOG_ERROR("io_device_write received a null pointer for the buffer");
         return 0;
     }
 
