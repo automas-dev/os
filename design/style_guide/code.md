@@ -3,6 +3,7 @@
 <!-- Table of Contents only links to level 2 headers -->
 \[ [Header Guards](#header-guards) \]
 \[ [Function Names](#function-names) \]
+\[ [Global Variables](#global-variables) \]
 \[ [Memory Ownership](#memory-ownership) \]
 
 ## Header Guards

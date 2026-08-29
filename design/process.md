@@ -4,6 +4,8 @@
 \[ [Creating a Process](#creating-a-process) \]
 \[ [Switch Task](#switch-task) \]
 \[ [Ring Scheduler](#ring-scheduler) \]
+<!-- Ignoring because it's under # Old -->
+<!-- \[ [Memory](#memory) \] -->
 
 The process tracks and manages the following information.
 
