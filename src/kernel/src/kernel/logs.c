@@ -52,8 +52,6 @@ void kernel_log_set_level(int level) {
     __level = level;
 }
 
-volatile int kernel_logs_enable_serial_newlines = 0;
-
 void kernel_log(int level, const char * file, size_t lineno, const char * service, const char * fmt, ...) {
     if (!__enabled) {
         return;
@@ -91,10 +89,7 @@ void kernel_log(int level, const char * file, size_t lineno, const char * servic
     va_list params;
     va_start(params, fmt);
     vprintf(stdout, fmt, params);
-    // Printing a newline to serial during mmu / gdt / tss blocks the kernel, idk why
-    if (kernel_logs_enable_serial_newlines) {
-        putc('\n');
-    }
+    putc('\n');
 }
 
 static void put_time() {

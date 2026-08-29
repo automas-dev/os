@@ -35,12 +35,7 @@ static void id_map_page(mmu_table_t * table, size_t page);
 
 static process_t * load_init();
 
-extern volatile int kernel_logs_enable_serial_newlines;
-
 void __start() {
-    // Enable newlines in serial output (must be disabled later for one stage)
-    kernel_logs_enable_serial_newlines = 1;
-
     // 1. Setup kernel logging (serial only)
     kernel_log_init();
     serial_init(SERIAL_PORT_COM1);
@@ -88,9 +83,6 @@ void __start() {
     mmu_dir_t * pdir = UINT2PTR(PADDR_KERNEL_DIR);
     mmu_dir_clear(pdir);
 
-    // This needs to be disabled here because something around enable paging blocks if it's enabled
-    // kernel_logs_enable_serial_newlines = 0;
-
     KLOG_DEBUG("page dir created");
 
     // 4.2 Create first page table
@@ -122,8 +114,6 @@ void __start() {
 
     // 7. Enable paging
     mmu_enable_paging(PADDR_KERNEL_DIR);
-    // This needs to be enabled here because something around enable paging blocks if it's enabled
-    kernel_logs_enable_serial_newlines = 1;
     KLOG_DEBUG("paging enabled");
 
     // 8. Initialize kernel
