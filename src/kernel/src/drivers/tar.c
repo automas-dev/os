@@ -321,10 +321,7 @@ size_t tar_file_read(tar_fs_file_t * file, char * buff, size_t count) {
         count = file->size - file->pos;
     }
 
-    io_device_t * disk = file->tar->disk_device;
-
-    return disk->read_fn(disk->device_data, buff, count, file->file->disk_pos + file->pos);
-    // return disk_read(file->tar->disk, buff, count, file->file->disk_pos + file->pos);
+    return io_device_read(file->tar->disk_device, buff, count, file->file->disk_pos + file->pos);
 }
 
 static size_t parse_octal(const char * str) {
@@ -349,16 +346,12 @@ static size_t count_files(tar_fs_t * tar) {
         return 0;
     }
 
-    io_device_t * disk = tar->disk_device;
-
     raw_header_t header;
 
     size_t disk_pos = 0;
     size_t count    = 0;
     for (;;) {
-        // size_t n_read = disk_read(tar->disk, (uint8_t *)&header, sizeof(raw_header_t), disk_pos);
-        size_t n_read = disk->read_fn(disk->device_data, (char *)&header, sizeof(raw_header_t), disk_pos);
-
+        size_t n_read = io_device_read(tar->disk_device, (char *)&header, sizeof(raw_header_t), disk_pos);
         if (!n_read) {
             break;
         }
@@ -391,15 +384,12 @@ static bool load_headers(tar_fs_t * tar) {
         return false;
     }
 
-    io_device_t * disk = tar->disk_device;
-
     size_t disk_pos = 0;
 
     for (size_t i = 0; i < tar->file_count; i++) {
         tar_file_t * file = &tar->files[i];
 
-        // size_t n_read = disk_read(tar->disk, (uint8_t *)&file->header, sizeof(raw_header_t), disk_pos);
-        size_t n_read = disk->read_fn(disk->device_data, (char *)&file->header, sizeof(raw_header_t), disk_pos);
+        size_t n_read = io_device_read(tar->disk_device, (char *)&file->header, sizeof(raw_header_t), disk_pos);
 
         if (!n_read) {
             break;
