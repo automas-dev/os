@@ -284,7 +284,7 @@ static process_t * load_init() {
 
     KLOG_TRACE("Allocated buffer of size %u for file %s", stat.size, filename);
 
-    io_fs_file_t * file = io_fs_file_open(kernel_get_fs(), filename, "r");
+    io_device_t * file = io_fs_file_open(kernel_get_fs(), filename, "r");
     if (!file) {
         KLOG_DEBUG("Failed to open file %s", filename);
         kfree(buff);
@@ -293,8 +293,12 @@ static process_t * load_init() {
 
     KLOG_TRACE("Opened file device %p for %s", file, filename);
 
-    if (!io_fs_file_read(file, buff, stat.size)) {
-        io_fs_file_close(file);
+    if (!io_device_read(file, buff, stat.size, 0)) {
+        KLOG_DEBUG("Failed to read file device %p for file %s", file, filename);
+
+        io_device_close(file);
+        KLOG_TRACE("File device closed");
+
         kfree(buff);
         KLOG_TRACE("Buffer freed");
 
@@ -336,7 +340,7 @@ static process_t * load_init() {
 
     KLOG_TRACE("Process %u for file %s ready to execute", proc->pid, filename);
 
-    io_fs_file_close(file);
+    io_device_close(file);
     kfree(buff);
 
     KLOG_TRACE("File and buffer closed for %s", filename);

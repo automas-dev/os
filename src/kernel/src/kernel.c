@@ -134,18 +134,19 @@ int kernel_exec(const char * filename, size_t argc, char ** argv) {
 
     KLOG_TRACE("Allocated buffer of size %u for file %s", stat.size, filename);
 
-    io_fs_file_t * file = io_fs_file_open(kernel_get_fs(), filename, "r");
+    io_device_t * file = io_fs_file_open(kernel_get_fs(), filename, "r");
     if (!file) {
         KLOG_DEBUG("Failed to open file %s", filename);
         kfree(buff);
         return -1;
     }
 
-    KLOG_TRACE("Opened file device %p for %s", file, filename);
+    if (!io_device_read(file, buff, stat.size, 0)) {
+        KLOG_DEBUG("Failed to read file device %p for file %s", file, filename);
 
-    if (!io_fs_file_read(file, buff, stat.size)) {
-        KLOG_ERROR("Failed to read from file %s", filename);
-        io_fs_file_close(file);
+        io_device_close(file);
+        KLOG_TRACE("File device closed");
+
         kfree(buff);
         KLOG_TRACE("Buffer freed");
 
@@ -155,15 +156,22 @@ int kernel_exec(const char * filename, size_t argc, char ** argv) {
     int pid = command_exec(buff, filename, stat.size, argc, argv);
 
     if (pid < 0) {
-        KLOG_ERROR("Failed to execute file %s", filename);
-        io_fs_file_close(file);
+        KLOG_DEBUG("Failed to execute file %s", filename);
+
+        io_device_close(file);
+        KLOG_TRACE("File device closed");
+
         kfree(buff);
         KLOG_TRACE("Buffer freed");
 
         return -1;
     }
 
-    io_fs_file_close(file);
+    KLOG_DEBUG("Process for exec %d finished for filename %s", pid);
+
+    io_device_close(file);
+    KLOG_TRACE("File device closed");
+
     kfree(buff);
     KLOG_TRACE("Buffer freed");
 
