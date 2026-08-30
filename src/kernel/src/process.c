@@ -551,18 +551,14 @@ static int open_stdio_handles(process_t * proc) {
         return -1;
     }
 
-    handle_t * h = arr_at(&proc->io_handles, 0);
-
-    KLOG_DEBUG("Created stdout handle %d for process %u", h->id, proc->pid);
+    KLOG_DEBUG("Created stdout handle 1 for process %u", proc->pid);
 
     if (process_add_handle(proc, 2, IO_DEVICE_FLAG_WRITE, io_device_screen_open()) < 0) {
         KLOG_DEBUG("Failed to create stderr handle");
         return -1;
     }
 
-    handle_t * h2 = arr_at(&proc->io_handles, 1);
-
-    KLOG_DEBUG("Created stderr handle %d for process %u", h2->id, proc->pid);
+    KLOG_DEBUG("Created stderr handle 2 for process %u", proc->pid);
 
     set_next_handle_id(3);
 
