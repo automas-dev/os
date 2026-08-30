@@ -117,29 +117,38 @@ int kernel_exec(const char * filename, size_t argc, char ** argv) {
         KLOG_WARNING("Missing filename");
         return -1;
     }
+
     io_fs_stat_t stat;
     if (io_fs_file_stat(kernel_get_fs(), filename, &stat)) {
         KLOG_ERROR("Failed to find file %s to execute", filename);
         return -1;
     }
 
+    KLOG_TRACE("Stat file %s", filename);
+
     uint8_t * buff = kmalloc(stat.size);
     if (!buff) {
-        KLOG_ERROR("Failed to malloc buffer of size %u", stat.size);
+        KLOG_ERROR("Failed to malloc buffer of size %u for %s", stat.size, filename);
         return -1;
     }
 
+    KLOG_TRACE("Allocated buffer of size %u for file %s", stat.size, filename);
+
     io_fs_file_t * file = io_fs_file_open(kernel_get_fs(), filename, "r");
     if (!file) {
-        KLOG_ERROR("Failed to open file %s", filename);
+        KLOG_DEBUG("Failed to open file %s", filename);
         kfree(buff);
         return -1;
     }
+
+    KLOG_TRACE("Opened file device %p for %s", file, filename);
 
     if (!io_fs_file_read(file, buff, stat.size)) {
         KLOG_ERROR("Failed to read from file %s", filename);
         io_fs_file_close(file);
         kfree(buff);
+        KLOG_TRACE("Buffer freed");
+
         return -1;
     }
 
@@ -149,11 +158,14 @@ int kernel_exec(const char * filename, size_t argc, char ** argv) {
         KLOG_ERROR("Failed to execute file %s", filename);
         io_fs_file_close(file);
         kfree(buff);
+        KLOG_TRACE("Buffer freed");
+
         return -1;
     }
 
     io_fs_file_close(file);
     kfree(buff);
+    KLOG_TRACE("Buffer freed");
 
     return pid;
 }

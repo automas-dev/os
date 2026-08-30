@@ -28,6 +28,8 @@ io_fs_t * io_fs_tar_open(io_device_t * device) {
         return 0;
     }
 
+    KLOG_TRACE("Tar FS opened");
+
     io_fs_t * fs = kmalloc(sizeof(io_fs_t));
     if (!fs) {
         KLOG_ERROR("Failed to allocate memory for ata device");
