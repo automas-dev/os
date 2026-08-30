@@ -91,6 +91,9 @@ static io_device_t * _tar_file_open(void * fs_data, const char * path, const cha
 
     file->read_fn = _tar_file_read;
     file->size_fn = _tar_file_size;
+    file->close_fn = _tar_file_close;
+
+    file->device_data = tar_file;
 
     while (*mode) {
         switch (*mode) {
