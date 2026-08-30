@@ -117,43 +117,63 @@ int kernel_exec(const char * filename, size_t argc, char ** argv) {
         KLOG_WARNING("Missing filename");
         return -1;
     }
+
     io_fs_stat_t stat;
     if (io_fs_file_stat(kernel_get_fs(), filename, &stat)) {
         KLOG_ERROR("Failed to find file %s to execute", filename);
         return -1;
     }
 
+    KLOG_TRACE("Stat file %s", filename);
+
     uint8_t * buff = kmalloc(stat.size);
     if (!buff) {
-        KLOG_ERROR("Failed to malloc buffer of size %u", stat.size);
+        KLOG_ERROR("Failed to malloc buffer of size %u for %s", stat.size, filename);
         return -1;
     }
 
-    io_fs_file_t * file = io_fs_file_open(kernel_get_fs(), filename, "r");
+    KLOG_TRACE("Allocated buffer of size %u for file %s", stat.size, filename);
+
+    io_device_t * file = io_fs_file_open(kernel_get_fs(), filename, "r");
     if (!file) {
-        KLOG_ERROR("Failed to open file %s", filename);
+        KLOG_DEBUG("Failed to open file %s", filename);
         kfree(buff);
         return -1;
     }
 
-    if (!io_fs_file_read(file, buff, stat.size)) {
-        KLOG_ERROR("Failed to read from file %s", filename);
-        io_fs_file_close(file);
+    if (!io_device_read(file, buff, stat.size, 0)) {
+        KLOG_DEBUG("Failed to read file device %p for file %s", file, filename);
+
+        io_device_close(file);
+        KLOG_TRACE("File device closed");
+
         kfree(buff);
+        KLOG_TRACE("Buffer freed");
+
         return -1;
     }
 
     int pid = command_exec(buff, filename, stat.size, argc, argv);
 
     if (pid < 0) {
-        KLOG_ERROR("Failed to execute file %s", filename);
-        io_fs_file_close(file);
+        KLOG_DEBUG("Failed to execute file %s", filename);
+
+        io_device_close(file);
+        KLOG_TRACE("File device closed");
+
         kfree(buff);
+        KLOG_TRACE("Buffer freed");
+
         return -1;
     }
 
-    io_fs_file_close(file);
+    KLOG_DEBUG("Process for exec %d finished for filename %s", pid);
+
+    io_device_close(file);
+    KLOG_TRACE("File device closed");
+
     kfree(buff);
+    KLOG_TRACE("Buffer freed");
 
     return pid;
 }

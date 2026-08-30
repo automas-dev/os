@@ -515,6 +515,10 @@ int process_add_handle(process_t * proc, int id, int flags, io_device_t * device
 
     if (id < 0) {
         id = next_handle_id();
+        KLOG_DEBUG("Generated handle id %d", id);
+    }
+    else {
+        KLOG_DEBUG("Using provided handle id %d", id);
     }
 
     handle_t h = {
@@ -524,9 +528,11 @@ int process_add_handle(process_t * proc, int id, int flags, io_device_t * device
     };
 
     if (arr_insert(&proc->io_handles, arr_size(&proc->io_handles), &h)) {
-        KLOG_ERROR("Could not add new handle to process");
+        KLOG_ERROR("Could not add new handle to process %u", proc->pid);
         return -1;
     }
+
+    KLOG_DEBUG("Added handle %d to process %u with flags 0x%X", id, proc->pid, flags);
 
     return id;
 }
@@ -545,16 +551,19 @@ static int open_stdio_handles(process_t * proc) {
         return -1;
     }
 
-    handle_t * h = arr_at(&proc->io_handles, 0);
+    KLOG_DEBUG("Created stdout handle 1 for process %u", proc->pid);
 
     if (process_add_handle(proc, 2, IO_DEVICE_FLAG_WRITE, io_device_screen_open()) < 0) {
         KLOG_DEBUG("Failed to create stderr handle");
         return -1;
     }
 
-    handle_t * h2 = arr_at(&proc->io_handles, 1);
+    KLOG_DEBUG("Created stderr handle 2 for process %u", proc->pid);
 
     set_next_handle_id(3);
+
+    // TODO should this be debug or trace
+    KLOG_DEBUG("Next handle set to 3");
 
     return 0;
 }
