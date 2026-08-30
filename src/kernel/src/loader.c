@@ -327,7 +327,7 @@ static process_t * load_init() {
         }
     }
 
-    KLOG_TRACE("Stack allocated for process %u", proc->pid)
+    KLOG_TRACE("Stack allocated for process %u", proc->pid);
 
     copy_args(proc, filename, 0, 0);
 
