@@ -331,7 +331,7 @@ static process_t * load_init() {
 
     copy_args(proc, filename, 0, 0);
 
-    KLOG_TRACE("Copied filename %s to process %u", filename, pid);
+    KLOG_TRACE("Copied filename %s to process %u", filename, proc->pid);
 
     process_set_entrypoint(proc, proc_entry);
     process_add_pages(proc, 32);
