@@ -25,6 +25,11 @@ macro(add_app target)
 
     list(APPEND APPS_TARGETS ${target} ${target}_app)
     set(APPS_TARGETS ${APPS_TARGETS} PARENT_SCOPE)
+
+    # Real files (not phony targets) so apps.tar is correctly invalidated when a
+    # shared lib (e.g. libk/libc) changes and only relinks the final binary.
+    list(APPEND APPS_FILES ${DRIVE_BASE_DIR}/${target} ${DRIVE_BASE_DIR}/${target}.elf)
+    set(APPS_FILES ${APPS_FILES} PARENT_SCOPE)
 endmacro()
 
 # Code to run before calling app main (includes __start entrypoint)
@@ -63,7 +68,7 @@ set_property(
 
 add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/apps.tar
     COMMAND tar -cf ${CMAKE_BINARY_DIR}/apps.tar *
-    DEPENDS ${APPS_TARGETS} apps_data
+    DEPENDS ${APPS_TARGETS} ${APPS_FILES} apps_data ${DRIVE_BASE_DIR}/data/
     WORKING_DIRECTORY ${DRIVE_BASE_DIR})
 
 add_custom_target(apps_image ALL
