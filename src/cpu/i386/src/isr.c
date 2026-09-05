@@ -2,8 +2,13 @@
 
 #include "cpu/isr.h"
 
+#include <stdbool.h>
+
+#include "addr.h"
 #include "cpu/idt.h"
+#include "cpu/mmu.h"
 #include "cpu/ports.h"
+#include "defs.h"
 #include "kernel.h"
 #include "kernel/logs.h"
 #include "libc/proc.h"
@@ -124,7 +129,48 @@ char * exception_messages[] = {
     "Reserved",
 };
 
+/**
+ * @brief Try to handle a page fault by growing the faulting process' user
+ * stack by one page.
+ *
+ * Only handles the case where a user-mode access faults on a non-present
+ * page immediately below the process' current stack end (ie. the next page
+ * `process_grow_stack` would map) - anything else (protection faults,
+ * supervisor faults, or a fault further away, eg. from a wild pointer) is
+ * left for the caller to report and panic on.
+ *
+ * @param r page fault registers (int_no == 14)
+ * @return int 0 if the fault was handled by growing the stack, non-zero otherwise
+ */
+static int handle_stack_growth_fault(registers_t * r) {
+    bool user_mode    = (r->err_code & MMU_DIR_FLAG_USER_SUPERVISOR) != 0;
+    bool page_present = (r->err_code & MMU_DIR_FLAG_PRESENT) != 0;
+
+    if (!user_mode || page_present) {
+        return -1;
+    }
+
+    process_t * proc = get_current_process();
+    if (!proc) {
+        return -1;
+    }
+
+    size_t fault_page      = ADDR2PAGE(r->cr2);
+    size_t next_stack_page = ADDR2PAGE(VADDR_USER_STACK) - proc->stack_page_count;
+
+    if (fault_page != next_stack_page) {
+        return -1;
+    }
+
+    return process_grow_stack(proc);
+}
+
 void isr_handler(registers_t r) {
+    if (r.int_no == 14 && !handle_stack_growth_fault(&r)) {
+        // Stack grown by one page, retry the faulting instruction.
+        return;
+    }
+
     print_trace(&r);
     printf("ISR %u (err 0x%X)\n", r.int_no, r.err_code);
     printf("%s\n", exception_messages[r.int_no]);
