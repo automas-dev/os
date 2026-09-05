@@ -435,6 +435,22 @@ TEST_F(Process, process_add_pages) {
     ASSERT_TEMP_MAP_BALANCED();
 }
 
+TEST_F(Process, process_add_pages_CollidesWithStack) {
+    // Simulate a heap that has grown up to meet the process' current stack
+    // (stack_page_count == 1 matches the single stack page allocated by
+    // process_create, at ADDR2PAGE(VADDR_USER_STACK)). Growing the heap by
+    // even 1 more page must be rejected instead of overlapping the stack.
+    proc.next_heap_page             = (uint32_t)ADDR2PAGE(VADDR_USER_STACK);
+    proc.stack_page_count           = 1;
+    paging_temp_map_fake.return_val = &dir;
+
+    EXPECT_EQ(nullptr, process_add_pages(&proc, 1));
+    EXPECT_EQ(0, paging_temp_map_fake.call_count);
+    EXPECT_EQ(0, paging_add_pages_fake.call_count);
+    EXPECT_EQ((uint32_t)ADDR2PAGE(VADDR_USER_STACK), proc.next_heap_page);
+    ASSERT_TEMP_MAP_BALANCED();
+}
+
 // Process Grow Stack
 
 TEST_F(Process, process_grow_stack_InvalidParameters) {
@@ -482,6 +498,23 @@ TEST_F(Process, process_grow_stack_DoesNotCollideWithIsrStack) {
 
     EXPECT_EQ(0, process_grow_stack(&proc));
     EXPECT_LT(paging_add_pages_fake.arg1_val, (uint32_t)ADDR2PAGE(VADDR_USER_STACK));
+}
+
+TEST_F(Process, process_grow_stack_CollidesWithHeap) {
+    // Simulate a stack that has already grown down to meet the process'
+    // current heap top (next_heap_page defaults to 2 in SetUp). The next
+    // grown page would land exactly on next_heap_page, so it must be
+    // rejected instead of overlapping the heap.
+    proc.stack_page_count           = (uint32_t)ADDR2PAGE(VADDR_USER_STACK) - proc.next_heap_page;
+    paging_temp_map_fake.return_val = &dir;
+
+    uint32_t stack_page_count_before = proc.stack_page_count;
+
+    EXPECT_NE(0, process_grow_stack(&proc));
+    EXPECT_EQ(0, paging_temp_map_fake.call_count);
+    EXPECT_EQ(0, paging_add_pages_fake.call_count);
+    EXPECT_EQ(stack_page_count_before, proc.stack_page_count);
+    ASSERT_TEMP_MAP_BALANCED();
 }
 
 // Process Load Heap

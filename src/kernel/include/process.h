@@ -72,8 +72,6 @@ typedef struct _process {
     /// PID of parent process (0 is no parent)
     uint32_t parent_pid;
 
-    // TODO heap & stack limits
-
     /// String path to executable file on filesystem
     char * filepath;
     /// Number of arguments, at least 1 (for filename)
@@ -151,17 +149,25 @@ int process_resume(process_t * proc, const ebus_event_t * event);
 /**
  * @brief Add `count` pages to the process heap.
  *
+ * Fails without allocating anything if the new pages would collide with (or
+ * come within HEAP_STACK_GUARD_PAGES of) the process' own user stack, so the
+ * heap and stack can never overlap.
+ *
  * @param proc pointer to the process object
  * @param count number of pages to add
- * @return pointer to the first new page in virtual memory
+ * @return pointer to the first new page in virtual memory, or 0 for failure
  */
 void * process_add_pages(process_t * proc, size_t count);
 
 /**
  * @brief Add a single page to expand the process stack
  *
+ * Fails without allocating anything if the new page would collide with (or
+ * come within HEAP_STACK_GUARD_PAGES of) the process' own heap, so the stack
+ * and heap can never overlap.
+ *
  * @param proc pointer to the process object
- * @return int 0 for success
+ * @return int 0 for success, -1 if it would collide with the heap or on error
  */
 int process_grow_stack(process_t * proc);
 
