@@ -47,6 +47,16 @@ run-tty:
 run-debug:
 	$(QEMU) -s -S $(QEMUFLAGS)
 
+# Headless targets (no display/GTK window): safe for agents and CI, since
+# output only goes to the serial chardev/log files. Kill with `pkill -f
+# qemu-system-i386` (or the "Stop QEMU" task) once done, as -no-shutdown
+# keeps the process alive after the guest powers off.
+run-headless:
+	$(QEMU) -display none $(QEMUFLAGS)
+
+run-headless-debug:
+	$(QEMU) -display none -s -S $(QEMUFLAGS)
+
 debug:
 	$(QEMU) -s -S $(QEMUFLAGS) &
 	$(GDB) -ex "target remote localhost:1234" -ex "symbol-file build/src/kernel/kernel.elf" -ex "add-symbol-file build/src/apps/foo/foo.elf" -ex "b kernel_main" -ex "b isr_handler"
@@ -88,4 +98,4 @@ checks: lint build test_cov
 # clean:
 # 	rm -rf *.bin qemu_log.txt drive.img build/
 
-.PHONY: setup build clean run debug boot-debug dump dump-kernel test test_cov coverage lint format checks clean
+.PHONY: setup build clean run run-tty run-debug run-headless run-headless-debug debug boot-debug dump dump-kernel test test_cov coverage lint format checks clean
