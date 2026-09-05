@@ -7,9 +7,9 @@ DEFINE_FAKE_VALUE_FUNC(int, paging_temp_free, uint32_t);
 DEFINE_FAKE_VALUE_FUNC(size_t, paging_temp_available);
 DEFINE_FAKE_VALUE_FUNC(int, paging_id_map_range, size_t, size_t);
 DEFINE_FAKE_VALUE_FUNC(int, paging_id_map_page, size_t);
-DEFINE_FAKE_VALUE_FUNC(int, paging_add_pages, mmu_dir_t *, size_t, size_t);
+DEFINE_FAKE_VALUE_FUNC(int, paging_add_pages, mmu_dir_t *, size_t, size_t, uint32_t);
 DEFINE_FAKE_VALUE_FUNC(int, paging_remove_pages, mmu_dir_t *, size_t, size_t);
-DEFINE_FAKE_VALUE_FUNC(int, paging_add_table, mmu_dir_t *, size_t);
+DEFINE_FAKE_VALUE_FUNC(int, paging_add_table, mmu_dir_t *, size_t, uint32_t);
 DEFINE_FAKE_VALUE_FUNC(int, paging_remove_table, mmu_dir_t *, size_t);
 
 void reset_paging_mock() {

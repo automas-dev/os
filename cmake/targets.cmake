@@ -46,7 +46,7 @@ function(cross_target_binary target)
         -nostdlib
 	"-L${CROSS_PREFIX}/lib/gcc/${CROSS_ARCH}/${CROSS_GCC_VERSION}"
         -lgcc
-        DEPENDS ${target} ${TARGET_LINK_FILES})
+        DEPENDS ${target} ${TARGET_LINK_FILES} ${CMAKE_CURRENT_SOURCE_DIR}/link.ld)
 
     add_custom_target(${target}_image_debug ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${target}.elf)
 endfunction()

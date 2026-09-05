@@ -45,7 +45,6 @@ typedef struct _tss_entry {
 } __attribute__((packed)) tss_entry_t;
 
 extern void flush_tss();
-extern void jump_usermode(void * fn);
 
 void init_tss();
 

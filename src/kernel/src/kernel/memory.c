@@ -54,7 +54,7 @@ void * kernel_alloc_page(size_t count) {
         return 0;
     }
 
-    if (paging_add_pages(dir, __next_heap_page, __next_heap_page + count)) {
+    if (paging_add_pages(dir, __next_heap_page, __next_heap_page + count, MMU_TABLE_RW)) {
         KLOG_ERROR("Failed to add %u pages starting at %u", count, __next_heap_page);
         paging_temp_free(VADDR_KERNEL_DIR);
         return 0;

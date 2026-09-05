@@ -75,9 +75,10 @@ int paging_id_map_page(size_t page);
  * @param dir pointer to the page directory
  * @param start first page index
  * @param end last page index (inclusive)
+ * @param flags mmu table (and directory) flags, eg. MMU_TABLE_RW or MMU_TABLE_RW_USER
  * @return int 0 for success
  */
-int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end);
+int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end, uint32_t flags);
 
 /**
  * @brief Free physical memory for a range of pages.
@@ -96,11 +97,20 @@ int paging_remove_pages(mmu_dir_t * dir, size_t start, size_t end);
 /**
  * @brief Add a table to the current page directory.
  *
+ * If the table already exists, `flags` are OR'd into the existing directory
+ * entry instead of being ignored. This allows a table shared between a
+ * supervisor-only page and a user-accessible page (eg. the last table, which
+ * holds both a process' ISR stack and its first user stack page) to end up
+ * permissive at the directory level for both callers, regardless of call
+ * order. Individual page table entries still enforce the per-page
+ * restriction.
+ *
  * @param dir pointer to the page directory
  * @param dir_i table index in page directory
+ * @param flags mmu directory flags, eg. MMU_DIR_RW or MMU_DIR_RW_USER
  * @return int 0 for success
  */
-int paging_add_table(mmu_dir_t * dir, size_t dir_i);
+int paging_add_table(mmu_dir_t * dir, size_t dir_i, uint32_t flags);
 
 /**
  * @brief Remove a table from the current page directory.

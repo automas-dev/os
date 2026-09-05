@@ -1,4 +1,5 @@
 #define KLOG_SERVICE "SYSTEM_CALL"
+// #define KLOG_LEVEL   KERNEL_LOG_LEVEL_TRACE
 
 #include "system_call.h"
 
@@ -44,7 +45,7 @@ static void callback(registers_t * regs) {
     uint32_t call_id = regs->eax;
     uint16_t family  = (regs->eax >> 16);
 
-    KLOG_TRACE("Received system call 0x%X", call_id);
+    KLOG_TRACE("Received system call 0x%X from CS 0x%X (ring %u)", call_id, regs->cs, regs->cs & 0x3);
 
     // if (family != 0x01 && family != 0x10) {
     //     process_t * proc = get_current_process();

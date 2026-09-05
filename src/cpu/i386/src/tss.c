@@ -13,6 +13,9 @@ void init_tss() {
     gdt_set_base(GDT_ENTRY_INDEX_KERNEL_TSS, PTR2UINT(&__tss_stack[0]));
     gdt_set_base(GDT_ENTRY_INDEX_USER_TSS, PTR2UINT(&__tss_stack[1]));
 
+    // ss0 must be the kernel data selector so the CPU knows which stack
+    // segment to pair with esp0 when a ring 3 -> ring 0 transition occurs.
+    __tss_stack[0].ss0 = GDT_SELECTOR_KERNEL_DATA;
     tss_set_esp0(VADDR_ISR_STACK);
 
     flush_tss();

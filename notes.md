@@ -34,10 +34,10 @@ section once they are finished.
   - [ ] pretty much everything
 - [ ] Handle page faults
   - [ ] eg. add pages for user space stack
-- [ ] Ring 3
+- [x] Ring 3
   - [x] load code
-  - [ ] add gdt
-  - [ ] setup tss
+  - [x] add gdt
+  - [x] setup tss
   - [x] kernel interrupts
 - [ ] Document code
 - [ ] Test code

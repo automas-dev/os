@@ -3,6 +3,7 @@
 <!-- Table of Contents only links to level 2 headers -->
 \[ [Creating a Process](#creating-a-process) \]
 \[ [Switch Task](#switch-task) \]
+\[ [Ring 3 / User Space Execution](#ring-3--user-space-execution) \]
 \[ [Ring Scheduler](#ring-scheduler) \]
 <!-- Ignoring because it's under # Old -->
 <!-- \[ [Memory](#memory) \] -->
@@ -22,19 +23,40 @@ The process tracks and manages the following information.
 
 ## Creating a Process
 
-Each process needs a page directory, heap and stack.
+Each process needs a page directory, an ISR (kernel-mode) stack, a user (ring 3)
+stack and a heap.
 
 1. Create a page dir
 2. Load proc cr3 into temp page
 3. Clear dir
 4. Map first page to kernel page
-5. Setup Stack
-   1. Set proc field for stack address
-   2. Add page for stack
-6. Setup Heap
+5. Setup ISR stack
+   1. Set proc field for ISR stack address (`esp` / `esp0`, see [Switch Task](#switch-task))
+   2. Add pages for ISR stack, **supervisor-only** (`MMU_TABLE_RW`)
+6. Setup user stack
+   1. Add first page for the ring 3 user stack, **user-accessible** (`MMU_TABLE_RW_USER`)
+7. Setup Heap
    1. Set heap start
-   2. Add page for heap if needed
-7. Free from temp page
+   2. Add page for heap if needed, **user-accessible** (`MMU_TABLE_RW_USER`)
+8. Free from temp page
+
+> [!IMPORTANT]
+> Every page a process can allocate after creation (heap growth via
+> `process_add_pages`, additional user stack pages via `process_grow_stack`)
+> must be mapped `MMU_TABLE_RW_USER`, not `MMU_TABLE_RW`, or ring 3 code will
+> page fault trying to use it. The only pages that stay supervisor-only are the
+> shared kernel table (table 0) and each process' own ISR stack.
+>
+> A process' own heap allocator (`proc->memory`, used to service the process'
+> `malloc`/`realloc`/`free` system calls) cannot be initialized during
+> `process_create`, since the new process' `cr3` isn't loaded yet at that
+> point. It is lazily initialized on first use instead (`process_init_memory`),
+> once the process is genuinely running and its own address space is active.
+
+Any kernel-side data that must be handed back to a process (eg. a string
+returned by a system call) has to be copied into that process' own heap first
+(`process_copy_to_heap`) — pointers into kernel memory (string literals,
+`kmalloc`'d buffers, etc.) are not legal for ring 3 code to dereference.
 
 ## Switch Task
 
@@ -53,10 +75,83 @@ The TSS entry will need to be updated with the new process' esp0.
    3. Change cr3 if needed
    4. Pop any registers that were saved
 
+`proc->esp` always refers to the process' **kernel-mode / ISR stack** pointer
+(the one `switch_task` saves and restores), not its ring 3 user stack pointer.
+The user stack pointer only matters for the very first launch of a process
+(see [Ring 3 / User Space Execution](#ring-3--user-space-execution)); after
+that, it is saved and restored automatically as part of the normal interrupt
+return (`iret`) from every subsequent system call or interrupt, the same way
+`esp`/`eip`/`cs`/etc. always are.
+
 TODO : the ESP0 might be better stored in the kernel instead of the process if
 the process page dir does not include a stack for the kernel (eg. isr stack).
 
 TODO : parent pid
+
+## Ring 3 / User Space Execution
+
+Every process actually executes at CPL 3 (ring 3 / user space). The kernel
+(ring 0) is only entered through interrupts: hardware IRQs, CPU exceptions, and
+the system call interrupt (`int 0x30`, see [system calls](system_call.md)).
+This relies on infrastructure set up once at boot (`init_gdt`, `init_tss`,
+`isr_install`) plus a construct performed once per process (its first launch).
+
+### One-Time Setup
+
+- The GDT already defines ring 3 code/data segments
+  (`GDT_SELECTOR_USER_CODE`/`GDT_SELECTOR_USER_DATA` in `cpu/gdt.h`).
+- The TSS's `ss0` is set to the kernel data selector, and `esp0` is kept in
+  sync with the active process' own ISR stack on every `switch_task` (see
+  [Switch Task](#switch-task)). Together these tell the CPU exactly which
+  stack (segment + pointer) to switch to on any ring 3 → ring 0 transition.
+- Every IDT gate is DPL 0 (kernel-only) **except** the system call interrupt
+  (vector 48 / `int 0x30`), which is DPL 3 so ring 3 code can trap into the
+  kernel directly. Hardware IRQs and CPU exceptions can still reach a DPL 0
+  gate regardless of the current ring, so this is the only gate that needs
+  widening.
+
+### First Launch (`process_set_entrypoint`)
+
+There is no real "previous trap" to return to the first time a process runs,
+so a fake one is constructed:
+
+> [!IMPORTANT]
+> The loader/exec code always passes `VADDR_USER_MEM` (the very first byte of
+> the loaded flat binary) as the entrypoint — there is no ELF header parsing,
+> so whatever code lands at that address is what actually runs first. Every
+> app links `cinit`'s `entry.asm` (`__start`) ahead of its own code by placing
+> `__start` in a dedicated `.text.entry` section that each app's `link.ld`
+> pulls in before the generic `.text` section (`*(.text.entry)` then
+> `*(.text)`). `__start` reads `argc`/`argv` off the initial user stack (see
+> below) and forwards them via a normal cdecl `call` into `__cinit`, which
+> then calls the app's `main`. An app must not define its own competing entry
+> symbol or skip linking against `cinit` — doing so changes what the process'
+> code actually starts executing at, silently bypassing the `argc`/`argv`
+> setup.
+
+1. A real IRET stack frame (`EIP`, `CS`, `EFLAGS`, `ESP`, `SS`) is written to
+   the top of the process' ISR stack, targeting the process' entrypoint at
+   `CS = GDT_SELECTOR_USER_CODE` / `SS = GDT_SELECTOR_USER_DATA`, with `ESP`
+   pointing at the top of the process' ring 3 user stack (below the process'
+   `argc`/`argv`, written just below it — see
+   [system calls](system_call.md) / `process_copy_args`).
+2. Immediately below that frame, a fake "return address" is written pointing
+   at a small trampoline, `enter_usermode` (`kernel_entry.asm`).
+3. `proc->esp` (the process' ISR stack pointer) is set to point at the start
+   of this constructed frame.
+
+The very first time this process is resumed, `switch_task.resume`'s existing,
+unmodified `pop eax/esi/edi/ebp; ret` sequence "returns" into `enter_usermode`
+exactly as it would return into any real, previously-suspended kernel call
+chain. `enter_usermode` loads the ring 3 data selector into the segment
+registers (`ss` is restored by `iret` itself) and executes `iret`, which pops
+the constructed frame and drops the CPU to ring 3 at the process' entrypoint.
+
+Every *subsequent* suspend/resume of the process needs no special handling:
+a system call or interrupt from ring 3 lands on the process' ISR stack (via
+the already-current `esp0`), and the existing ISR/IRQ assembly stubs'
+own `iret` is what returns to ring 3 — the same mechanism used by every other
+interrupt return, kernel code included.
 
 ## Ring Scheduler
 

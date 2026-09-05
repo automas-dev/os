@@ -130,7 +130,21 @@ _Pages with a blank physical address are allocated form free physical memory._
 
 Applications / processes require access to less of the memory than the kernel.
 With the use of interrupts for system calls and page directories for each
-process,
+process, most of a process' address space is only reachable while that
+process' own page directory (`cr3`) is loaded.
+
+Table 0 (the kernel table, 0x00000000 - 0x003fffff) is shared and identical
+across every process' page directory, but is marked **supervisor-only**
+(`MMU_TABLE_RW`) — code running at ring 3 cannot read or write it. Everything
+a process itself can touch from ring 3 (its heap, starting at `VADDR_USER_MEM`,
+and its user stack, the single page ending at `VADDR_USER_STACK`) is marked
+**user-accessible** (`MMU_TABLE_RW_USER`) instead. Each process additionally
+gets its own private ISR stack (`ISR_STACK_PAGES` pages ending at
+`VADDR_ISR_STACK`), which — like the kernel table — stays supervisor-only,
+since it is only ever used while handling a trap into ring 0 on that process'
+behalf. See [process.md](process.md#ring-3--user-space-execution) for how a
+process is first launched into ring 3, and how it later traps back into ring 0
+through this ISR stack for system calls and interrupts.
 
 ## Physical Allocator (`ram.h`)
 
