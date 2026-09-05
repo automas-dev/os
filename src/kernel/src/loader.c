@@ -237,15 +237,6 @@ static process_t * load_init() {
         return 0;
     }
 
-    for (size_t i = 0; i < 1022; i++) {
-        if (process_grow_stack(proc)) {
-            KLOG_DEBUG("Failed to grow process stack");
-            return 0;
-        }
-    }
-
-    KLOG_TRACE("Stack allocated for process %u", proc->pid);
-
     process_copy_args(proc, filename, 0, 0);
 
     KLOG_TRACE("Copied filename %s to process %u", filename, proc->pid);
