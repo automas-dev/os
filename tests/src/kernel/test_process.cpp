@@ -327,9 +327,7 @@ TEST_F(Process, process_set_entrypoint) {
 
     EXPECT_EQ(0, process_set_entrypoint(&proc, (void *)0x400000));
 
-    // argc/argv written to the top of the (constant) ring 3 user stack, so
-    // entry.asm's __start can read them straight off the initial stack
-    uint32_t   user_esp   = VADDR_USER_STACK - 7; // 2 dwords, last byte inclusive
+    uint32_t   user_esp   = VADDR_USER_STACK - 8 + 1;
     uint32_t * args_stack = (uint32_t *)heap_data.data();
     uint32_t   args_first = (user_esp % PAGE_SIZE) / 4;
     EXPECT_EQ(3u, args_stack[args_first + 0]);        // argc

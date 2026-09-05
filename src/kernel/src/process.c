@@ -298,7 +298,7 @@ int process_set_entrypoint(process_t * proc, void * entrypoint) {
     // [esp+4]=argv (see process_copy_args for where argv itself is copied to
     // user-accessible memory).
     uint32_t args[2]  = {(uint32_t)proc->argc, PTR2UINT(proc->argv)};
-    uint32_t user_esp = VADDR_USER_STACK - (sizeof(args) - 1);
+    uint32_t user_esp = VADDR_USER_STACK - sizeof(args) + 1;
 
     if (write_process_dwords(proc, user_esp, args, sizeof(args) / sizeof(args[0]))) {
         KLOG_DEBUG("Failed to write argc/argv onto process pid %u user stack", proc->pid);
