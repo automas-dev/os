@@ -16,45 +16,12 @@
 
 static int open_stdio_handles(process_t * proc);
 
-static void * process_alloc_page(size_t count);
-
 static char * copy_string(const char * str);
 static int    copy_to_process_pages(process_t * proc, uint32_t page_start, size_t count, const char * buff, size_t size);
 static int    write_process_dwords(process_t * proc, uint32_t first_addr, const uint32_t * values, size_t count);
 
 static uint32_t next_pid();
 static uint32_t next_handle_id();
-
-/**
- * @brief Page allocator callback for a process' own malloc (proc->memory).
- *
- * Grows the calling process' own user-accessible heap (via process_add_pages)
- * rather than the kernel's own heap, so pointers returned by a process'
- * malloc() are actually usable from ring 3. Resolves the process via
- * get_active_task(), which is only valid while that same process' cr3 is
- * actually loaded (ie. while it is genuinely running) - see
- * process_init_memory.
- *
- * @param count number of pages to allocate
- * @return void* pointer to the first new page in virtual memory
- */
-static void * process_alloc_page(size_t count) {
-    process_t * proc = get_active_task();
-    if (!proc) {
-        KLOG_ERROR("Failed to find active process for heap page allocation");
-        return 0;
-    }
-    return process_add_pages(proc, count);
-}
-
-int process_init_memory(process_t * proc) {
-    if (!proc) {
-        KLOG_WARNING("Process struct is null pointer");
-        return -1;
-    }
-
-    return memory_init(&proc->memory, process_alloc_page);
-}
 
 int process_create(process_t * proc) {
     if (!proc) {
@@ -147,13 +114,6 @@ int process_create(process_t * proc) {
     //     ram_page_free(proc->cr3);
     //     return -1;
     // }
-
-    // proc->memory (this process' own malloc, used by SYS_CALL_MEM_MALLOC) is
-    // intentionally NOT initialized here: process_alloc_page resolves the
-    // process via its own cr3, which is not yet loaded while process_create
-    // runs (this process has not been switched to). It is lazily initialized
-    // on first use instead (see process_init_memory), by which point the
-    // process is genuinely running with its own cr3 loaded.
 
     proc->io_buffer = io_buffer_create(IO_BUFFER_SIZE);
     if (!proc->io_buffer) {

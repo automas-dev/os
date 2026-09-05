@@ -35,7 +35,6 @@ extern void * memset(void *, int, size_t);
 #include "libc/string.mock.h"
 #include "libk/sys_call.mock.h"
 #include "log.mock.h"
-#include "memory_alloc.mock.h"
 #include "paging.mock.h"
 #include "process.mock.h"
 #include "ram.mock.h"

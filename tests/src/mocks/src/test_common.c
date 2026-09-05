@@ -19,7 +19,6 @@ void init_mocks() {
     reset_kernel_panic_mock();
     reset_log_mock();
     reset_ebus_mock();
-    reset_memory_alloc_mock();
     reset_paging_mock();
     reset_process_mock();
     reset_ram_mock();

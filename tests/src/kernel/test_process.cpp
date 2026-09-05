@@ -106,19 +106,6 @@ TEST_F(Process, process_create_EbusIsUnused) {
     EXPECT_EQ(0, ebus_create_fake.call_count);
 }
 
-TEST_F(Process, process_create_MemoryIsUnused) {
-    // proc->memory (this process' own malloc) is intentionally NOT
-    // initialized by process_create - see process_init_memory. Only the
-    // kernel's own kmalloc pool (not exercised by process_create at all) is
-    // available while this process is being created; memory_init requires
-    // the process' own cr3 to be loaded, which it isn't yet.
-    ram_page_alloc_fake.return_val = 0x2000;
-    memory_init_fake.return_val    = -1;
-
-    EXPECT_EQ(0, process_create(&proc));
-    EXPECT_EQ(0, memory_init_fake.call_count);
-}
-
 TEST_F(Process, process_create_FailDirTempMap) {
     uint32_t page_ret_seq[2] = {0x400000, 0};
     SET_RETURN_SEQ(ram_page_alloc, page_ret_seq, 2);
@@ -604,18 +591,6 @@ TEST_F(Process, process_copy_to_heap) {
     EXPECT_EQ(UINT2PTR(PAGE2ADDR(next_heap)), result);
     EXPECT_EQ(1, kmemcpy_fake.call_count);
     ASSERT_TEMP_MAP_BALANCED();
-}
-
-// Process Init Memory
-
-TEST_F(Process, process_init_memory_InvalidParameters) {
-    EXPECT_NE(0, process_init_memory(0));
-}
-
-TEST_F(Process, process_init_memory) {
-    EXPECT_EQ(0, process_init_memory(&proc));
-    EXPECT_EQ(1, memory_init_fake.call_count);
-    EXPECT_EQ(&proc.memory, memory_init_fake.arg0_val);
 }
 
 // Process Copy Args

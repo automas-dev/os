@@ -11,7 +11,6 @@
 #include "kernel/io/buffer.h"
 #include "libc/datastruct/array.h"
 #include "libc/file.h"
-#include "memory_alloc.h"
 
 #define IO_BUFFER_SIZE 512
 
@@ -90,8 +89,6 @@ typedef struct _process {
     arr_t io_handles; // array<handle_t>
     /// event bus for this process
     // ebus_t event_queue;
-    /// Memory allocation from the kernel (for malloc in kernel instead of libc)
-    memory_t memory;
 
     /// Event type being waited on by process if state is PROCESS_STATE_WAITING
     ebus_event_t filter_event;
@@ -116,21 +113,6 @@ typedef struct _process {
  * @return int 0 for success
  */
 int process_create(process_t * proc);
-
-/**
- * @brief Lazily initialize a process' own memory allocator (proc->memory),
- * used by the SYS_CALL_MEM_MALLOC/REALLOC/FREE syscall handlers.
- *
- * This must be called with `proc` as the currently active task (ie. from
- * within one of that process' own syscall handlers), since it eagerly
- * allocates its first page from the process' own (currently loaded) address
- * space. Calling process_create does not initialize this, since the new
- * process' cr3 is not yet loaded at that point.
- *
- * @param proc pointer to the process object
- * @return int 0 for success
- */
-int process_init_memory(process_t * proc);
 
 /**
  * @brief Free pages used by `process` including it's page directory.
