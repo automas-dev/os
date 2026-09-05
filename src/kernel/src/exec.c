@@ -54,18 +54,6 @@ int command_exec(uint8_t * buff, const char * filepath, size_t size, size_t argc
         return -1;
     }
 
-    KLOG_TRACE("Increasing stack by 1022 pages");
-    for (size_t i = 0; i < 1022; i++) {
-        if (process_grow_stack(proc)) {
-            KLOG_DEBUG("Failed to add page %u", i);
-            if (process_free(proc)) {
-                KPANIC("Failed to free process while handling stack grow error");
-            }
-            kfree(proc);
-            return -1;
-        }
-    }
-
     if (process_copy_args(proc, filepath, argc, argv)) {
         KLOG_DEBUG("Failed to copy args");
         if (process_free(proc)) {
