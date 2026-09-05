@@ -118,6 +118,21 @@ typedef struct _process {
 int process_create(process_t * proc);
 
 /**
+ * @brief Lazily initialize a process' own memory allocator (proc->memory),
+ * used by the SYS_CALL_MEM_MALLOC/REALLOC/FREE syscall handlers.
+ *
+ * This must be called with `proc` as the currently active task (ie. from
+ * within one of that process' own syscall handlers), since it eagerly
+ * allocates its first page from the process' own (currently loaded) address
+ * space. Calling process_create does not initialize this, since the new
+ * process' cr3 is not yet loaded at that point.
+ *
+ * @param proc pointer to the process object
+ * @return int 0 for success
+ */
+int process_init_memory(process_t * proc);
+
+/**
  * @brief Free pages used by `process` including it's page directory.
  *
  * This does not free the first table which is the kernel's table.
@@ -189,6 +204,40 @@ int process_grow_stack(process_t * proc);
  */
 int process_load_heap(process_t * proc, const char * buff, size_t size);
 
+/**
+ * @brief Allocate pages in the process' heap and copy `size` bytes from
+ * `buff` (kernel memory) into them, returning a pointer valid in the
+ * process' own (user-accessible) address space.
+ *
+ * Use this whenever kernel-side data (eg. a string returned by a syscall
+ * handler) needs to be handed back to a process: the kernel's own pointers
+ * (string literals, kmalloc'd memory, etc.) are not accessible to ring 3
+ * code and must first be copied into the calling process' own heap.
+ *
+ * @param proc pointer to the process object
+ * @param buff pointer to the data (kernel memory)
+ * @param size number of bytes to copy from buff
+ * @return void* pointer valid in the process' address space, or 0 for failure
+ */
+void * process_copy_to_heap(process_t * proc, const void * buff, size_t size);
+
+/**
+ * @brief Set the process' filepath (argv[0]) and copy `argc`/`argv` into the
+ * process' own user-accessible heap memory.
+ *
+ * `proc->filepath` is kernel bookkeeping only (eg. for logging) and stays in
+ * kernel memory. `proc->argv` (the pointer array and the strings themselves)
+ * is the process' real argument list and is copied into its own heap (via
+ * process_add_pages) so ring 3 code can safely read its own arguments.
+ *
+ * @param proc pointer to the process object
+ * @param filepath path to the executable, becomes argv[0]
+ * @param argc number of additional arguments (not counting filepath)
+ * @param argv additional arguments (not including filepath)
+ * @return int 0 for success
+ */
+int process_copy_args(process_t * proc, const char * filepath, int argc, char ** argv);
+
 int process_add_handle(process_t * proc, int id, int flags, io_device_t * device);
 
 handle_t * process_get_handle(process_t * proc, int id);
@@ -212,5 +261,14 @@ extern void        set_active_task(process_t * active);
 extern process_t * get_active_task(void);
 extern void        switch_task(process_t * proc);
 extern void        start_first_task(process_t * proc);
+/**
+ * @brief Trampoline entered the first time a process is launched.
+ *
+ * process_set_entrypoint fakes a switch_task.resume "return address" pointing
+ * here, with a ready-made IRET frame already sitting on the stack just above.
+ * Loads the ring 3 data selector then executes `iret` to drop into ring 3.
+ * This function never returns; it is not meant to be called directly.
+ */
+extern void enter_usermode(void);
 
 #endif // PROCESS_H

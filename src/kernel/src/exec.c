@@ -14,11 +14,6 @@
 #include "paging.h"
 #include "process.h"
 
-typedef int (*ff_t)(size_t argc, char ** argv);
-
-static void proc_entry();
-static int  copy_args(process_t * proc, const char * filepath, int argc, char ** argv);
-
 int command_exec(uint8_t * buff, const char * filepath, size_t size, size_t argc, char ** argv) {
     if (!buff) {
         KLOG_WARNING("Tried to execute null buffer");
@@ -71,7 +66,7 @@ int command_exec(uint8_t * buff, const char * filepath, size_t size, size_t argc
         }
     }
 
-    if (copy_args(proc, filepath, argc, argv)) {
+    if (process_copy_args(proc, filepath, argc, argv)) {
         KLOG_DEBUG("Failed to copy args");
         if (process_free(proc)) {
             KPANIC("Failed to free process while handling copy args error");
@@ -80,9 +75,9 @@ int command_exec(uint8_t * buff, const char * filepath, size_t size, size_t argc
         return -1;
     }
 
-    KLOG_TRACE("Setting process entrypoint to %p", proc_entry);
+    KLOG_TRACE("Setting process entrypoint to %p", VADDR_USER_MEM);
 
-    if (process_set_entrypoint(proc, proc_entry)) {
+    if (process_set_entrypoint(proc, UINT2PTR(VADDR_USER_MEM))) {
         KLOG_DEBUG("Failed to set entrypoint");
         if (process_free(proc)) {
             KPANIC("Failed to free process while handling set entrypoint error");
@@ -124,89 +119,4 @@ int command_exec(uint8_t * buff, const char * filepath, size_t size, size_t argc
     // process_free(proc);
 
     return proc->pid;
-}
-
-static void proc_entry() {
-    process_t * proc = get_active_task();
-    ff_t        fn   = UINT2PTR(VADDR_USER_MEM);
-
-    // printf("Start task %s with %u args\n", proc->filepath, proc->argc);
-
-    // TODO get start function pointer from elf
-
-    KLOG_TRACE("Entering process pid %u", proc->pid);
-
-    int res           = fn(proc->argc, proc->argv);
-    proc->status_code = res;
-
-    KLOG_TRACE("Return from process pid %u with status %d", proc->pid, res);
-}
-
-static char * copy_string(const char * str) {
-    if (!str) {
-        KLOG_WARNING("Tried to copy null string");
-        return 0;
-    }
-    int    len     = kstrlen(str);
-    char * new_str = kmalloc(len + 1);
-    if (!new_str) {
-        KLOG_ERROR("Failed to malloc new string of length %d", len + 1);
-        return 0;
-    }
-    if (!kmemcpy(new_str, str, len + 1)) {
-        KLOG_ERROR("Failed to copy %u bytes in memory from %p to %p", len + 1, str, new_str);
-        return 0;
-    }
-    return new_str;
-}
-
-static int copy_args(process_t * proc, const char * filepath, int argc, char ** argv) {
-    if (!proc) {
-        KLOG_WARNING("Tried to copy args for null process");
-        return -1;
-    }
-    if (!filepath) {
-        KLOG_WARNING("Missing filepath");
-        return -1;
-    }
-    if (argc && !argv) {
-        KLOG_WARNING("Missing argv");
-        return -1;
-    }
-
-    proc->filepath = copy_string(filepath);
-    if (!proc->filepath) {
-        KLOG_DEBUG("Failed to copy filepath");
-        return -1;
-    }
-    proc->argc = argc + 1;
-    proc->argv = kmalloc(sizeof(char *) * (argc + 1));
-    if (!proc->argv) {
-        KLOG_ERROR("Failed to malloc process_t argv");
-        kfree(proc->filepath);
-        return -1;
-    }
-
-    proc->argv[0] = copy_string(filepath);
-    if (!proc->argv[0]) {
-        KLOG_DEBUG("Failed to copy filepath to argv");
-        kfree(proc->argv);
-        kfree(proc->filepath);
-        return -1;
-    }
-
-    for (int i = 0; i < argc; i++) {
-        proc->argv[i + 1] = copy_string(argv[i]);
-        if (!proc->argv[i + 1]) {
-            KLOG_DEBUG("Failed to copy arg %d", i);
-            for (int j = 0; j < i + 1; j++) {
-                kfree(proc->argv[i]);
-            }
-            kfree(proc->argv);
-            kfree(proc->filepath);
-            return -1;
-        }
-    }
-
-    return 0;
 }

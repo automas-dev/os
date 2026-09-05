@@ -2,6 +2,7 @@
 
 #include "process.h"
 
+#include "cpu/gdt.h"
 #include "cpu/mmu.h"
 #include "cpu/tss.h"
 #include "drivers/ram.h"
@@ -15,8 +16,45 @@
 
 static int open_stdio_handles(process_t * proc);
 
+static void * process_alloc_page(size_t count);
+
+static char * copy_string(const char * str);
+static int    copy_to_process_pages(process_t * proc, uint32_t page_start, size_t count, const char * buff, size_t size);
+static int    write_process_dwords(process_t * proc, uint32_t first_addr, const uint32_t * values, size_t count);
+
 static uint32_t next_pid();
 static uint32_t next_handle_id();
+
+/**
+ * @brief Page allocator callback for a process' own malloc (proc->memory).
+ *
+ * Grows the calling process' own user-accessible heap (via process_add_pages)
+ * rather than the kernel's own heap, so pointers returned by a process'
+ * malloc() are actually usable from ring 3. Resolves the process via
+ * get_active_task(), which is only valid while that same process' cr3 is
+ * actually loaded (ie. while it is genuinely running) - see
+ * process_init_memory.
+ *
+ * @param count number of pages to allocate
+ * @return void* pointer to the first new page in virtual memory
+ */
+static void * process_alloc_page(size_t count) {
+    process_t * proc = get_active_task();
+    if (!proc) {
+        KLOG_ERROR("Failed to find active process for heap page allocation");
+        return 0;
+    }
+    return process_add_pages(proc, count);
+}
+
+int process_init_memory(process_t * proc) {
+    if (!proc) {
+        KLOG_WARNING("Process struct is null pointer");
+        return -1;
+    }
+
+    return memory_init(&proc->memory, process_alloc_page);
+}
 
 int process_create(process_t * proc) {
     if (!proc) {
@@ -60,12 +98,26 @@ int process_create(process_t * proc) {
         return -1;
     }
 
-    proc->esp  = VADDR_USER_STACK;
+    proc->esp  = VADDR_ISR_STACK;
     proc->esp0 = VADDR_ISR_STACK;
 
-    // Allocate pages for ISR stack + first page of user stack
-    if (paging_add_pages(dir, ADDR2PAGE(proc->esp), ADDR2PAGE(proc->esp0))) {
-        KLOG_DEBUG("Failed to create pages for isr and user stacks");
+    // Allocate the process' private ISR/kernel stack. This is supervisor-only
+    // - ring 3 code must never read or write it directly. It is used both by
+    // switch_task to save/restore this process' kernel-mode stack pointer, and
+    // as the TSS esp0 target so a ring3->ring0 transition always starts fresh
+    // here.
+    uint32_t isr_stack_start = ADDR2PAGE(proc->esp0) - ISR_STACK_PAGES + 1;
+    if (paging_add_pages(dir, isr_stack_start, ADDR2PAGE(proc->esp0), MMU_TABLE_RW)) {
+        KLOG_DEBUG("Failed to create pages for isr stack");
+        paging_temp_free(proc->cr3);
+        ram_page_free(proc->cr3);
+        return -1;
+    }
+
+    // Allocate the first page of the user (ring 3) stack. This must be
+    // user-accessible so the process can use it once running in ring 3.
+    if (paging_add_pages(dir, ADDR2PAGE(VADDR_USER_STACK), ADDR2PAGE(VADDR_USER_STACK), MMU_TABLE_RW_USER)) {
+        KLOG_DEBUG("Failed to create page for user stack");
         paging_temp_free(proc->cr3);
         ram_page_free(proc->cr3);
         return -1;
@@ -96,13 +148,12 @@ int process_create(process_t * proc) {
     //     return -1;
     // }
 
-    if (memory_init(&proc->memory, kernel_alloc_page)) {
-        KLOG_DEBUG("Failed to initialize malloc for process");
-        // ebus_free(&proc->event_queue);
-        arr_free(&proc->io_handles);
-        ram_page_free(proc->cr3);
-        return -1;
-    }
+    // proc->memory (this process' own malloc, used by SYS_CALL_MEM_MALLOC) is
+    // intentionally NOT initialized here: process_alloc_page resolves the
+    // process via its own cr3, which is not yet loaded while process_create
+    // runs (this process has not been switched to). It is lazily initialized
+    // on first use instead (see process_init_memory), by which point the
+    // process is genuinely running with its own cr3 loaded.
 
     proc->io_buffer = io_buffer_create(IO_BUFFER_SIZE);
     if (!proc->io_buffer) {
@@ -192,24 +243,21 @@ int process_free(process_t * proc) {
     return 0;
 }
 
-int process_set_entrypoint(process_t * proc, void * entrypoint) {
-    if (!proc) {
-        KLOG_WARNING("Process struct is null pointer");
-        return -1;
-    }
-    if (!entrypoint) {
-        KLOG_WARNING("Entrypoint is null pointer");
-        return -1;
-    }
-    if (proc->state >= PROCESS_STATE_SUSPENDED) {
-        KLOG_WARNING("Process already started");
-        return -1;
-    }
-
-    uint32_t ret_addr = proc->esp;
-    uint32_t ret_page = ADDR2PAGE(ret_addr);
-    uint32_t dir_i    = ret_page / MMU_DIR_SIZE;
-    uint32_t table_i  = ret_page % MMU_TABLE_SIZE;
+/**
+ * @brief Write `count` dwords into the process' own address space, starting
+ * at `first_addr` (which must be dword-aligned) and going upward. `first_addr`
+ * and the last dword written must fall within the same page.
+ *
+ * @param proc pointer to the process object
+ * @param first_addr virtual address of the first dword to write
+ * @param values dwords to write, in order
+ * @param count number of dwords in values
+ * @return int 0 for success
+ */
+static int write_process_dwords(process_t * proc, uint32_t first_addr, const uint32_t * values, size_t count) {
+    uint32_t page_i  = ADDR2PAGE(first_addr);
+    uint32_t dir_i   = page_i / MMU_TABLE_SIZE;
+    uint32_t table_i = page_i % MMU_TABLE_SIZE;
 
     mmu_dir_t * dir = paging_temp_map(proc->cr3);
 
@@ -234,27 +282,29 @@ int process_set_entrypoint(process_t * proc, void * entrypoint) {
     }
 
     uint32_t page_addr = mmu_table_get_addr(table, table_i);
-    if (!table_addr) {
+    if (!page_addr) {
         KLOG_ERROR("Failed to get physical address of process page");
         paging_temp_free(table_addr);
         paging_temp_free(proc->cr3);
         return -1;
     }
 
-    uint32_t * stack = paging_temp_map(page_addr);
+    uint32_t * page = paging_temp_map(page_addr);
 
-    if (!stack) {
-        KLOG_ERROR("Failed to create temporary map for process stack page");
+    if (!page) {
+        KLOG_ERROR("Failed to create temporary map for process page");
         paging_temp_free(table_addr);
         paging_temp_free(proc->cr3);
         return -1;
     }
 
-    int ret_i    = (proc->esp % PAGE_SIZE) / 4;
-    stack[ret_i] = PTR2UINT(entrypoint);
+    uint32_t first_i = (first_addr % PAGE_SIZE) / 4;
+    for (size_t i = 0; i < count; i++) {
+        page[first_i + i] = values[i];
+    }
 
     if (paging_temp_free(page_addr)) {
-        KLOG_DEBUG("Failed to free temporary map for process stack page");
+        KLOG_DEBUG("Failed to free temporary map for process page");
         return -1;
     }
     if (paging_temp_free(table_addr)) {
@@ -266,7 +316,61 @@ int process_set_entrypoint(process_t * proc, void * entrypoint) {
         return -1;
     }
 
-    proc->esp -= (5 * 4) - 1;
+    return 0;
+}
+
+int process_set_entrypoint(process_t * proc, void * entrypoint) {
+    if (!proc) {
+        KLOG_WARNING("Process struct is null pointer");
+        return -1;
+    }
+    if (!entrypoint) {
+        KLOG_WARNING("Entrypoint is null pointer");
+        return -1;
+    }
+    if (proc->state >= PROCESS_STATE_SUSPENDED) {
+        KLOG_WARNING("Process already started");
+        return -1;
+    }
+
+    // Place argc/argv at the top of the ring 3 user stack so entry.asm's
+    // __start can read them straight off the initial stack: [esp+0]=argc,
+    // [esp+4]=argv (see process_copy_args for where argv itself is copied to
+    // user-accessible memory).
+    uint32_t args[2]  = {(uint32_t)proc->argc, PTR2UINT(proc->argv)};
+    uint32_t user_esp = VADDR_USER_STACK - (sizeof(args) - 1);
+
+    if (write_process_dwords(proc, user_esp, args, sizeof(args) / sizeof(args[0]))) {
+        KLOG_DEBUG("Failed to write argc/argv onto process pid %u user stack", proc->pid);
+        return -1;
+    }
+
+    // Frame written to the top of the process' private ISR/kernel stack so
+    // that the first switch_task.resume for this process "returns" into
+    // enter_usermode, which then `iret`s into ring 3 at `entrypoint`. The
+    // first 4 dwords are popped as dummy registers by switch_task.resume; the
+    // rest is the IRET frame the CPU expects (EIP, CS, EFLAGS, ESP, SS). See
+    // kernel_entry.asm for the switch_task/enter_usermode contract.
+    uint32_t frame[10] = {
+        0,                        // dummy eax (popped by switch_task.resume)
+        0,                        // dummy esi
+        0,                        // dummy edi
+        0,                        // dummy ebp
+        PTR2UINT(enter_usermode), // "return address" for switch_task.resume
+        PTR2UINT(entrypoint),     // iret: eip
+        GDT_SELECTOR_USER_CODE,   // iret: cs
+        0x202,                    // iret: eflags (IF set, reserved bit 1 set)
+        user_esp,                 // iret: esp (top of ring 3 stack, past argc/argv)
+        GDT_SELECTOR_USER_DATA,   // iret: ss
+    };
+    uint32_t frame_base = proc->esp0 - (sizeof(frame) - 1);
+
+    if (write_process_dwords(proc, frame_base, frame, sizeof(frame) / sizeof(frame[0]))) {
+        KLOG_DEBUG("Failed to write ring 3 launch frame for process pid %u", proc->pid);
+        return -1;
+    }
+
+    proc->esp = frame_base;
 
     return 0;
 }
@@ -334,7 +438,7 @@ void * process_add_pages(process_t * proc, size_t count) {
         return 0;
     }
 
-    if (paging_add_pages(dir, proc->next_heap_page, proc->next_heap_page + count)) {
+    if (paging_add_pages(dir, proc->next_heap_page, proc->next_heap_page + count, MMU_TABLE_RW_USER)) {
         KLOG_DEBUG("Failed to add %u pages to pid %u", count, proc->pid);
         paging_temp_free(proc->cr3);
         return 0;
@@ -364,9 +468,16 @@ int process_grow_stack(process_t * proc) {
         return -1;
     }
 
-    size_t new_stack_page_i = MMU_DIR_SIZE * MMU_TABLE_SIZE - proc->stack_page_count - 1;
+    // Stack pages grow down starting immediately below the first user stack
+    // page allocated by process_create (at ADDR2PAGE(VADDR_USER_STACK)).
+    // proc->stack_page_count starts at 1 (that first page), so the Nth call
+    // here (stack_page_count == N at this point) must land at
+    // ADDR2PAGE(VADDR_USER_STACK) - N, not count down from the absolute top
+    // of the address space - that would collide with (and silently convert
+    // to user-accessible) the supervisor-only ISR stack pages above it.
+    size_t new_stack_page_i = ADDR2PAGE(VADDR_USER_STACK) - proc->stack_page_count;
 
-    if (paging_add_pages(dir, new_stack_page_i, new_stack_page_i)) {
+    if (paging_add_pages(dir, new_stack_page_i, new_stack_page_i, MMU_TABLE_RW_USER)) {
         KLOG_DEBUG("Failed to add pages for process stack");
         paging_temp_free(proc->cr3);
         return -1;
@@ -382,37 +493,19 @@ int process_grow_stack(process_t * proc) {
     return 0;
 }
 
-int process_load_heap(process_t * proc, const char * buff, size_t size) {
-    if (!proc) {
-        KLOG_WARNING("Process struct is null pointer");
-        return -1;
-    }
-    if (!buff) {
-        KLOG_WARNING("Trying to load heap from null buffer");
-        return -1;
-    }
-    if (!size) {
-        KLOG_WARNING("Trying to load empty buffer");
-        return -1;
-    }
-
-    KLOG_TRACE("Setting process pid %u state to LOADING", proc->pid);
-    proc->state = PROCESS_STATE_LOADING;
-
-    size_t page_count = ADDR2PAGE(size);
-    if (size & MASK_FLAGS) {
-        KLOG_TRACE("Increasing page count by 1 to align with page boundary");
-        page_count++;
-    }
-
-    uint32_t heap_start = proc->next_heap_page;
-    void *   heap_alloc = process_add_pages(proc, page_count);
-
-    if (!heap_alloc) {
-        KLOG_DEBUG("Failed to allocate pages for process pid %u heap", proc->pid);
-        return -1;
-    }
-
+/**
+ * @brief Copy `size` bytes from `buff` (kernel memory) into `count` pages of
+ * the process' own address space, starting at page index `page_start`. The
+ * destination pages must already be allocated (eg. via process_add_pages).
+ *
+ * @param proc pointer to the process object
+ * @param page_start first destination page index
+ * @param count number of pages to copy into
+ * @param buff pointer to the source data (kernel memory)
+ * @param size number of bytes to copy from buff
+ * @return int 0 for success
+ */
+static int copy_to_process_pages(process_t * proc, uint32_t page_start, size_t count, const char * buff, size_t size) {
     mmu_dir_t * dir = paging_temp_map(proc->cr3);
 
     if (!dir) {
@@ -420,8 +513,8 @@ int process_load_heap(process_t * proc, const char * buff, size_t size) {
         return -1;
     }
 
-    for (size_t i = 0; i < page_count; i++) {
-        uint32_t table_addr = mmu_dir_get_addr(dir, (heap_start + i) / MMU_TABLE_SIZE);
+    for (size_t i = 0; i < count; i++) {
+        uint32_t table_addr = mmu_dir_get_addr(dir, (page_start + i) / MMU_TABLE_SIZE);
         if (!table_addr) {
             KLOG_ERROR("Failed to get physical address of process pid %u page table", proc->pid);
             paging_temp_free(proc->cr3);
@@ -435,9 +528,9 @@ int process_load_heap(process_t * proc, const char * buff, size_t size) {
             return -1;
         }
 
-        uint32_t addr = mmu_table_get_addr(table, (heap_start + i) % MMU_TABLE_SIZE);
-        if (!table_addr) {
-            KLOG_ERROR("Failed to get physical address of process pid %u page table", proc->pid);
+        uint32_t addr = mmu_table_get_addr(table, (page_start + i) % MMU_TABLE_SIZE);
+        if (!addr) {
+            KLOG_ERROR("Failed to get physical address of process pid %u page", proc->pid);
             paging_temp_free(table_addr);
             paging_temp_free(proc->cr3);
             return -1;
@@ -453,8 +546,11 @@ int process_load_heap(process_t * proc, const char * buff, size_t size) {
 
         size_t to_copy = PAGE_SIZE;
 
-        if (i == page_count - 1) {
-            to_copy = size % PAGE_SIZE;
+        if (i == count - 1) {
+            // Bytes remaining for the last page. Using size % PAGE_SIZE here
+            // would incorrectly copy 0 bytes (dropping the entire last page)
+            // whenever size is an exact, nonzero multiple of PAGE_SIZE.
+            to_copy = size - (i * PAGE_SIZE);
         }
 
         kmemcpy(tmp_page, &buff[i * PAGE_SIZE], to_copy);
@@ -474,8 +570,180 @@ int process_load_heap(process_t * proc, const char * buff, size_t size) {
         return -1;
     }
 
+    return 0;
+}
+
+void * process_copy_to_heap(process_t * proc, const void * buff, size_t size) {
+    if (!proc) {
+        KLOG_WARNING("Process struct is null pointer");
+        return 0;
+    }
+    if (!buff) {
+        KLOG_WARNING("Tried to copy null buffer to process heap");
+        return 0;
+    }
+    if (!size) {
+        KLOG_WARNING("Tried to copy 0 sized buffer to process heap");
+        return 0;
+    }
+
+    size_t page_count = ADDR2PAGE(size);
+    if (size & MASK_FLAGS) {
+        KLOG_TRACE("Increasing page count by 1 to align with page boundary");
+        page_count++;
+    }
+
+    uint32_t heap_start = proc->next_heap_page;
+    void *   heap_addr  = process_add_pages(proc, page_count);
+
+    if (!heap_addr) {
+        KLOG_DEBUG("Failed to allocate pages for process pid %u", proc->pid);
+        return 0;
+    }
+
+    if (copy_to_process_pages(proc, heap_start, page_count, buff, size)) {
+        return 0;
+    }
+
+    return heap_addr;
+}
+
+int process_load_heap(process_t * proc, const char * buff, size_t size) {
+    if (!proc) {
+        KLOG_WARNING("Process struct is null pointer");
+        return -1;
+    }
+    if (!buff) {
+        KLOG_WARNING("Trying to load heap from null buffer");
+        return -1;
+    }
+    if (!size) {
+        KLOG_WARNING("Trying to load empty buffer");
+        return -1;
+    }
+
+    KLOG_TRACE("Setting process pid %u state to LOADING", proc->pid);
+    proc->state = PROCESS_STATE_LOADING;
+
+    if (!process_copy_to_heap(proc, buff, size)) {
+        KLOG_DEBUG("Failed to copy buffer into process pid %u heap", proc->pid);
+        return -1;
+    }
+
     KLOG_TRACE("Setting process pid %u state to LOADED", proc->pid);
     proc->state = PROCESS_STATE_LOADED;
+
+    return 0;
+}
+
+static char * copy_string(const char * str) {
+    if (!str) {
+        KLOG_WARNING("Tried to copy null string");
+        return 0;
+    }
+    size_t len     = kstrlen(str);
+    char * new_str = kmalloc(len + 1);
+    if (!new_str) {
+        KLOG_ERROR("Failed to malloc new string of length %u", len + 1);
+        return 0;
+    }
+    if (!kmemcpy(new_str, str, len + 1)) {
+        KLOG_ERROR("Failed to copy %u bytes in memory from %p to %p", len + 1, str, new_str);
+        return 0;
+    }
+    return new_str;
+}
+
+int process_copy_args(process_t * proc, const char * filepath, int argc, char ** argv) {
+    if (!proc) {
+        KLOG_WARNING("Tried to copy args for null process");
+        return -1;
+    }
+    if (!filepath) {
+        KLOG_WARNING("Missing filepath");
+        return -1;
+    }
+    if (argc && !argv) {
+        KLOG_WARNING("Missing argv");
+        return -1;
+    }
+
+    // filepath is kernel bookkeeping only (eg. logging), never handed to ring
+    // 3 code, so it can stay in kernel memory.
+    proc->filepath = copy_string(filepath);
+    if (!proc->filepath) {
+        KLOG_DEBUG("Failed to copy filepath");
+        return -1;
+    }
+
+    // argv (the pointer array and the strings themselves) is the process'
+    // real argument list and must live in its own user-accessible memory, not
+    // kernel memory, so ring 3 code can safely read it. Build the whole thing
+    // (array + strings) in a kernel scratch buffer first, with pointer values
+    // already rewritten to where the data will land in the process' heap,
+    // then copy the scratch buffer in one go.
+    size_t ptr_bytes = (argc + 1) * sizeof(char *);
+    size_t str_bytes = kstrlen(filepath) + 1;
+
+    for (int i = 0; i < argc; i++) {
+        str_bytes += kstrlen(argv[i]) + 1;
+    }
+
+    size_t total_bytes = ptr_bytes + str_bytes;
+
+    char * scratch = kmalloc(total_bytes);
+    if (!scratch) {
+        KLOG_ERROR("Failed to malloc scratch buffer of size %u for process pid %u args", total_bytes, proc->pid);
+        kfree(proc->filepath);
+        return -1;
+    }
+
+    size_t page_count = ADDR2PAGE(total_bytes);
+    if (total_bytes & MASK_FLAGS) {
+        page_count++;
+    }
+
+    uint32_t heap_start = proc->next_heap_page;
+    void *   heap_addr  = process_add_pages(proc, page_count);
+
+    if (!heap_addr) {
+        KLOG_DEBUG("Failed to allocate pages for process pid %u args", proc->pid);
+        kfree(scratch);
+        kfree(proc->filepath);
+        return -1;
+    }
+
+    char **  argv_ptrs = (char **)scratch;
+    char *   str_dest  = scratch + ptr_bytes;
+    uint32_t str_addr  = PTR2UINT(heap_addr) + ptr_bytes;
+    size_t   len;
+
+    // argv[0] is always the program filename
+    len = kstrlen(filepath) + 1;
+    kmemcpy(str_dest, filepath, len);
+    argv_ptrs[0] = UINT2PTR(str_addr);
+    str_dest += len;
+    str_addr += len;
+
+    for (int i = 0; i < argc; i++) {
+        len = kstrlen(argv[i]) + 1;
+        kmemcpy(str_dest, argv[i], len);
+        argv_ptrs[i + 1] = UINT2PTR(str_addr);
+        str_dest += len;
+        str_addr += len;
+    }
+
+    if (copy_to_process_pages(proc, heap_start, page_count, scratch, total_bytes)) {
+        KLOG_DEBUG("Failed to copy args into process pid %u heap", proc->pid);
+        kfree(scratch);
+        kfree(proc->filepath);
+        return -1;
+    }
+
+    kfree(scratch);
+
+    proc->argc = argc + 1;
+    proc->argv = heap_addr;
 
     return 0;
 }

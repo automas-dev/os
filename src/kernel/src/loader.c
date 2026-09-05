@@ -181,89 +181,6 @@ static void id_map_page(mmu_table_t * table, size_t page) {
     mmu_table_set(table, page, page << 12, MMU_TABLE_RW);
 }
 
-static char * copy_string(const char * str) {
-    if (!str) {
-        KLOG_WARNING("Tried to copy null string");
-        return 0;
-    }
-    int    len     = kstrlen(str);
-    char * new_str = kmalloc(len + 1);
-    if (!new_str) {
-        KLOG_ERROR("Failed to malloc new string of length %d", len + 1);
-        return 0;
-    }
-    if (!kmemcpy(new_str, str, len + 1)) {
-        KLOG_ERROR("Failed to copy %u bytes in memory from %p to %p", len + 1, str, new_str);
-        return 0;
-    }
-    return new_str;
-}
-
-static int copy_args(process_t * proc, const char * filepath, int argc, char ** argv) {
-    if (!proc) {
-        KLOG_WARNING("Tried to copy args for null process");
-        return -1;
-    }
-    if (!filepath) {
-        KLOG_WARNING("Missing filepath");
-        return -1;
-    }
-    if (argc && !argv) {
-        KLOG_WARNING("Missing argv");
-        return -1;
-    }
-
-    proc->filepath = copy_string(filepath);
-    if (!proc->filepath) {
-        KLOG_DEBUG("Failed to copy filepath");
-        return -1;
-    }
-    proc->argc = argc + 1;
-    proc->argv = kmalloc(sizeof(char *) * (argc + 1));
-    if (!proc->argv) {
-        KLOG_ERROR("Failed to malloc process_t argv");
-        kfree(proc->filepath);
-        return -1;
-    }
-
-    proc->argv[0] = copy_string(filepath);
-    if (!proc->argv[0]) {
-        KLOG_DEBUG("Failed to copy filepath to argv");
-        kfree(proc->argv);
-        kfree(proc->filepath);
-        return -1;
-    }
-
-    for (int i = 0; i < argc; i++) {
-        proc->argv[i + 1] = copy_string(argv[i]);
-        if (!proc->argv[i + 1]) {
-            KLOG_DEBUG("Failed to copy arg %d", i);
-            for (int j = 0; j < i + 1; j++) {
-                kfree(proc->argv[i]);
-            }
-            kfree(proc->argv);
-            kfree(proc->filepath);
-            return -1;
-        }
-    }
-
-    return 0;
-}
-
-typedef int (*ff_t)(size_t argc, char ** argv);
-
-static void proc_entry() {
-    process_t * proc = get_active_task();
-    ff_t        fn   = UINT2PTR(VADDR_USER_MEM);
-
-    // KLOG_INFO("Start task %s with %u args", proc->filepath, proc->argc);
-
-    // TODO get start function pointer from elf
-
-    int res           = fn(proc->argc, proc->argv);
-    proc->status_code = res;
-}
-
 static process_t * load_init() {
     // TODO use exec code or replace this with exec version of copy args
     const char * filename = "init";
@@ -329,11 +246,11 @@ static process_t * load_init() {
 
     KLOG_TRACE("Stack allocated for process %u", proc->pid);
 
-    copy_args(proc, filename, 0, 0);
+    process_copy_args(proc, filename, 0, 0);
 
     KLOG_TRACE("Copied filename %s to process %u", filename, proc->pid);
 
-    process_set_entrypoint(proc, proc_entry);
+    process_set_entrypoint(proc, UINT2PTR(VADDR_USER_MEM));
     process_add_pages(proc, 32);
     pm_add_proc(&get_kernel()->pm, proc);
     pm_set_foreground_proc(&get_kernel()->pm, proc->pid);

@@ -4,7 +4,7 @@
 #include "libc/stdio.h"
 #include "libk/sys_call.h"
 
-void init() {
+int main(size_t argc, char ** argv) {
     const char * description = _sys_kernel_describe();
     printf("%s\n", description);
 
@@ -16,8 +16,6 @@ void init() {
 
     proc_wait_pid(shell_pid, 0);
     printf("Shell exited\n");
-}
 
-void __start() {
-    init();
+    return 0;
 }

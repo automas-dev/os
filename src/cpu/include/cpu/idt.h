@@ -20,6 +20,16 @@ typedef struct {
     uint16_t high_offset; /* Higher 16 bits of handler function address */
 } __attribute__((packed)) idt_gate_t;
 
+#define IDT_FLAG_PRESENT           0x80
+#define IDT_FLAG_GATE_32_INTERRUPT 0x0E
+#define IDT_FLAG_DPL(RING)         ((RING) << 5)
+
+/* Only ring 0 code may invoke this gate directly with `int` (hardware
+ * exceptions/IRQs can still reach it regardless of the current ring) */
+#define IDT_FLAG_KERNEL_INTERRUPT_GATE (IDT_FLAG_PRESENT | IDT_FLAG_GATE_32_INTERRUPT)
+/* Ring 3 code may also invoke this gate directly with `int` (eg. syscalls) */
+#define IDT_FLAG_USER_INTERRUPT_GATE (IDT_FLAG_PRESENT | IDT_FLAG_GATE_32_INTERRUPT | IDT_FLAG_DPL(3))
+
 /* A pointer to the array of interrupt handlers.
  * Assembly instruction 'lidt' will read it */
 typedef struct {
@@ -28,7 +38,7 @@ typedef struct {
 } __attribute__((packed)) idt_register_t;
 
 /* Functions implemented in idt.c */
-void set_idt_gate(int n, uint32_t handler);
+void set_idt_gate(int n, uint32_t handler, uint8_t flags);
 void set_idt();
 
 #endif // CPU_IDT_H

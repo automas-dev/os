@@ -69,6 +69,15 @@ enum GDT_ENTRY_INDEX {
     GDT_ENTRY_INDEX_USER_TSS    = 0x6,
 };
 
+// Segment selector: entry index shifted into place with the requested ring
+// (RPL) in the low 2 bits. See https://wiki.osdev.org/Segment_Selector
+#define GDT_SELECTOR(INDEX, RPL) (((INDEX) * 8) | (RPL))
+
+#define GDT_SELECTOR_KERNEL_CODE GDT_SELECTOR(GDT_ENTRY_INDEX_KERNEL_CODE, GDT_DPL_RING_KERNEL)
+#define GDT_SELECTOR_KERNEL_DATA GDT_SELECTOR(GDT_ENTRY_INDEX_KERNEL_DATA, GDT_DPL_RING_KERNEL)
+#define GDT_SELECTOR_USER_CODE   GDT_SELECTOR(GDT_ENTRY_INDEX_USER_CODE, GDT_DPL_RING_USER)
+#define GDT_SELECTOR_USER_DATA   GDT_SELECTOR(GDT_ENTRY_INDEX_USER_DATA, GDT_DPL_RING_USER)
+
 typedef struct {
     uint16_t limit_low  : 16;
     uint32_t base_low   : 24;

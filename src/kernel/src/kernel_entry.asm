@@ -108,29 +108,16 @@ start_first_task:
 
     jmp switch_task.resume
 
-; ; void * function
-; tmp_jump_target: dd  0
-
-; ; jump_usermode(proc_t * next)
-; global jump_usermode
-; extern test_user_function
-; jump_usermode:
-;     ; ebp = args
-;     push ebp
-;     mov  ebp, esp
-;     add  ebp, 8
-
-; 	mov ax, (4 * 8) | 3 ; ring 3 data with bottom 2 bits set for ring 3
-; 	mov ds, ax
-; 	mov es, ax 
-; 	mov fs, ax 
-; 	mov gs, ax ; SS is handled by iret
-
-; 	; set up the stack frame iret expects
-; 	mov eax, esp
-; 	push (4 * 8) | 3 ; data selector
-; 	push eax ; current esp
-; 	pushf ; eflags
-; 	push (3 * 8) | 3 ; code selector (ring 3 code with bottom 2 bits set for ring 3)
-; 	push [ebp] ; instruction address to return to
-; 	iret
+; Entered the first time a process is launched: process_set_entrypoint fakes a
+; switch_task.resume "return address" pointing here, with a ready-made IRET
+; frame (EIP, CS, EFLAGS, ESP, SS) already sitting on the stack just above.
+; Load the ring 3 data selector into the segment registers (SS is restored by
+; iret itself) then drop to ring 3 at the process' entrypoint.
+global enter_usermode
+enter_usermode:
+    mov ax, (4 * 8) | 3 ; user data selector (GDT_SELECTOR_USER_DATA), ring 3
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    iret

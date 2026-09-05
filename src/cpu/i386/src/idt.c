@@ -7,11 +7,11 @@
 static idt_gate_t     __idt[IDT_ENTRIES];
 static idt_register_t __idt_reg;
 
-void set_idt_gate(int n, uint32_t handler) {
+void set_idt_gate(int n, uint32_t handler, uint8_t flags) {
     __idt[n].low_offset  = low_16(handler);
     __idt[n].sel         = KERNEL_CS;
     __idt[n].always0     = 0;
-    __idt[n].flags       = 0x8E;
+    __idt[n].flags       = flags;
     __idt[n].high_offset = high_16(handler);
 }
 

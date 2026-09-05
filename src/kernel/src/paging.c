@@ -142,7 +142,7 @@ int paging_id_map_page(size_t page) {
     return 0;
 }
 
-int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end) {
+int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end, uint32_t flags) {
     if (!dir) {
         KLOG_WARNING("Trying to add page to null directory");
         return -1;
@@ -173,17 +173,17 @@ int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end) {
         uint32_t dir_i   = page_i / MMU_TABLE_SIZE;
         uint32_t table_i = page_i % MMU_TABLE_SIZE;
 
-        // Add table if needed
-        if (!(mmu_dir_get_flags(dir, dir_i) & MMU_DIR_FLAG_PRESENT)) {
-            if (paging_add_table(dir, dir_i)) {
-                if (paging_remove_pages(dir, start, page_i - 1)) {
-                    KLOG_DEBUG("Failed to remove page from directory %p", dir);
-                }
-                if (ram_page_free(addr)) {
-                    KLOG_DEBUG("Failed to free ram page");
-                }
-                return -1;
+        // Add table if needed, or OR in any newly requested flags (eg. a table
+        // already used for supervisor-only pages may also need to become
+        // accessible to user pages sharing the same table)
+        if (paging_add_table(dir, dir_i, flags)) {
+            if (paging_remove_pages(dir, start, page_i - 1)) {
+                KLOG_DEBUG("Failed to remove page from directory %p", dir);
             }
+            if (ram_page_free(addr)) {
+                KLOG_DEBUG("Failed to free ram page");
+            }
+            return -1;
         }
 
         // Table will be present after previous step
@@ -202,7 +202,7 @@ int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end) {
         }
 
         // TODO should either be panic or log error and return?
-        if (mmu_table_set(table, table_i, addr, MMU_TABLE_RW)) {
+        if (mmu_table_set(table, table_i, addr, flags)) {
             KLOG_ERROR("Failed to set page table %p index %u to physical address %p", table, table_i, addr);
             return -1;
         }
@@ -277,7 +277,7 @@ int paging_remove_pages(mmu_dir_t * dir, size_t start, size_t end) {
     return 0;
 }
 
-int paging_add_table(mmu_dir_t * dir, size_t dir_i) {
+int paging_add_table(mmu_dir_t * dir, size_t dir_i, uint32_t flags) {
     if (!dir) {
         KLOG_WARNING("Trying to add table to null directory");
         return -1;
@@ -304,7 +304,7 @@ int paging_add_table(mmu_dir_t * dir, size_t dir_i) {
         }
 
         mmu_table_clear(table);
-        if (mmu_dir_set(dir, dir_i, addr, MMU_DIR_RW)) {
+        if (mmu_dir_set(dir, dir_i, addr, flags)) {
             KLOG_ERROR("Failed to set page directory %p index %u to physical address %p", dir, dir_i, addr);
             if (paging_temp_free(addr)) {
                 KLOG_DEBUG("Failed to free temporary page");
@@ -313,6 +313,20 @@ int paging_add_table(mmu_dir_t * dir, size_t dir_i) {
         }
 
         paging_temp_free(addr);
+
+        return 0;
+    }
+
+    // Table already exists: OR in any newly requested flags (eg. a table
+    // created for supervisor-only pages that now also needs to host a
+    // user-accessible page must become permissive at the directory level;
+    // individual page table entries still enforce the per-page restriction).
+    uint32_t existing_flags = mmu_dir_get_flags(dir, dir_i);
+    if ((existing_flags | flags) != existing_flags) {
+        if (mmu_dir_set_flags(dir, dir_i, existing_flags | flags)) {
+            KLOG_ERROR("Failed to update flags for page directory %p index %u", dir, dir_i);
+            return -1;
+        }
     }
 
     return 0;

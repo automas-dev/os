@@ -5,6 +5,7 @@
 
 extern "C" {
 #include "addr.h"
+#include "cpu/gdt.h"
 #include "cpu/mmu.h"
 #include "libc/datastruct/array.h"
 #include "process.h"
@@ -105,14 +106,17 @@ TEST_F(Process, process_create_EbusIsUnused) {
     EXPECT_EQ(0, ebus_create_fake.call_count);
 }
 
-TEST_F(Process, process_create_FailMemoryInit) {
+TEST_F(Process, process_create_MemoryIsUnused) {
+    // proc->memory (this process' own malloc) is intentionally NOT
+    // initialized by process_create - see process_init_memory. Only the
+    // kernel's own kmalloc pool (not exercised by process_create at all) is
+    // available while this process is being created; memory_init requires
+    // the process' own cr3 to be loaded, which it isn't yet.
     ram_page_alloc_fake.return_val = 0x2000;
     memory_init_fake.return_val    = -1;
 
-    EXPECT_NE(0, process_create(&proc));
-    EXPECT_EQ(1, ram_page_free_fake.call_count);
-    EXPECT_EQ(1, arr_free_fake.call_count);
-    ASSERT_RAM_ALLOC_BALANCED();
+    EXPECT_EQ(0, process_create(&proc));
+    EXPECT_EQ(0, memory_init_fake.call_count);
 }
 
 TEST_F(Process, process_create_FailDirTempMap) {
@@ -133,6 +137,23 @@ TEST_F(Process, process_create_FailAddPages) {
     paging_add_pages_fake.return_val = -1;
 
     EXPECT_NE(0, process_create(&proc));
+    EXPECT_EQ(1, paging_add_pages_fake.call_count);
+    EXPECT_EQ(1, paging_temp_free_fake.call_count);
+    EXPECT_EQ(1, ram_page_free_fake.call_count);
+    ASSERT_TEMP_MAP_BALANCED();
+    ASSERT_RAM_ALLOC_BALANCED();
+}
+
+TEST_F(Process, process_create_FailAddUserStackPage) {
+    ram_page_alloc_fake.return_val  = 0x2000;
+    paging_temp_map_fake.return_val = &dir;
+
+    // ISR stack pages succeed, first user stack page fails
+    int add_pages_seq[2] = {0, -1};
+    SET_RETURN_SEQ(paging_add_pages, add_pages_seq, 2);
+
+    EXPECT_NE(0, process_create(&proc));
+    EXPECT_EQ(2, paging_add_pages_fake.call_count);
     EXPECT_EQ(1, paging_temp_free_fake.call_count);
     EXPECT_EQ(1, ram_page_free_fake.call_count);
     ASSERT_TEMP_MAP_BALANCED();
@@ -152,7 +173,7 @@ TEST_F(Process, process_create) {
     EXPECT_EQ(12, proc.pid);
     EXPECT_EQ(1024, proc.next_heap_page);
     EXPECT_EQ(1, proc.stack_page_count);
-    EXPECT_EQ(0xfffeffff, proc.esp);
+    EXPECT_EQ(0xffffffff, proc.esp);
     EXPECT_EQ(0xffffffff, proc.esp0);
 
     // Dir has correct contents
@@ -161,10 +182,19 @@ TEST_F(Process, process_create) {
         EXPECT_EQ(0, dir.entries[i]);
     }
 
-    EXPECT_EQ(1, paging_add_pages_fake.call_count);
-    EXPECT_EQ(&dir, paging_add_pages_fake.arg0_val);
-    EXPECT_EQ(0xfffef, paging_add_pages_fake.arg1_val);
-    EXPECT_EQ(0xfffff, paging_add_pages_fake.arg2_val);
+    EXPECT_EQ(2, paging_add_pages_fake.call_count);
+
+    // ISR / kernel stack: supervisor-only
+    EXPECT_EQ(&dir, paging_add_pages_fake.arg0_history[0]);
+    EXPECT_EQ(0xffff0, paging_add_pages_fake.arg1_history[0]);
+    EXPECT_EQ(0xfffff, paging_add_pages_fake.arg2_history[0]);
+    EXPECT_EQ((uint32_t)MMU_TABLE_RW, paging_add_pages_fake.arg3_history[0]);
+
+    // First user stack page: user-accessible
+    EXPECT_EQ(&dir, paging_add_pages_fake.arg0_history[1]);
+    EXPECT_EQ(0xfffef, paging_add_pages_fake.arg1_history[1]);
+    EXPECT_EQ(0xfffef, paging_add_pages_fake.arg2_history[1]);
+    EXPECT_EQ((uint32_t)MMU_TABLE_RW_USER, paging_add_pages_fake.arg3_history[1]);
 
     ASSERT_TEMP_MAP_BALANCED();
     ASSERT_RAM_ALLOC_BALANCE_OFFSET(1);
@@ -275,14 +305,66 @@ TEST_F(Process, process_set_entrypoint_FailMapStack) {
     ASSERT_TEMP_MAP_BALANCE_OFFSET(1);
 }
 
+TEST_F(Process, process_set_entrypoint_FailFrame) {
+    // argc/argv write succeeds (3 temp maps), ring 3 launch frame write fails
+    // on its last (page) temp map
+    void * paging_temp_map_seq[6] = {
+        heap_data.data(),
+        heap_data.data(),
+        heap_data.data(),
+        &dir,
+        &table,
+        0,
+    };
+    SET_RETURN_SEQ(paging_temp_map, paging_temp_map_seq, 6);
+
+    EXPECT_NE(0, process_set_entrypoint(&proc, (void *)1));
+    EXPECT_EQ(6, paging_temp_map_fake.call_count);
+    ASSERT_TEMP_MAP_BALANCE_OFFSET(1);
+}
+
 TEST_F(Process, process_set_entrypoint) {
-    paging_temp_map_fake.return_val = temp_page.data();
-    proc.esp                        = (int)temp_page.data() + temp_page.size() - 1;
-    EXPECT_EQ(0, process_set_entrypoint(&proc, (void *)3));
+    proc.argc = 3;
+    proc.argv = (char **)0x500000;
+    proc.esp0 = (uint32_t)temp_page.data() + temp_page.size() - 1;
 
-    // TODO eip on stack
+    void * paging_temp_map_seq[6] = {
+        heap_data.data(),
+        heap_data.data(),
+        heap_data.data(), // argc/argv write
+        temp_page.data(),
+        temp_page.data(),
+        temp_page.data(), // ring 3 launch frame write
+    };
+    SET_RETURN_SEQ(paging_temp_map, paging_temp_map_seq, 6);
 
-    EXPECT_EQ((int)temp_page.data() + temp_page.size() - (4 * 5), proc.esp);
+    EXPECT_EQ(0, process_set_entrypoint(&proc, (void *)0x400000));
+
+    // argc/argv written to the top of the (constant) ring 3 user stack, so
+    // entry.asm's __start can read them straight off the initial stack
+    uint32_t   user_esp   = VADDR_USER_STACK - 7; // 2 dwords, last byte inclusive
+    uint32_t * args_stack = (uint32_t *)heap_data.data();
+    uint32_t   args_first = (user_esp % PAGE_SIZE) / 4;
+    EXPECT_EQ(3u, args_stack[args_first + 0]);        // argc
+    EXPECT_EQ(0x500000u, args_stack[args_first + 1]); // argv
+
+    // 10 dwords (40 bytes), esp0 is "last byte inclusive" so subtract 39
+    uint32_t frame_base = proc.esp0 - 39;
+    EXPECT_EQ(frame_base, proc.esp);
+
+    uint32_t * stack   = (uint32_t *)temp_page.data();
+    uint32_t   first_i = (frame_base % PAGE_SIZE) / 4;
+
+    EXPECT_EQ(0u, stack[first_i + 0]); // dummy eax (popped by switch_task.resume)
+    EXPECT_EQ(0u, stack[first_i + 1]); // dummy esi
+    EXPECT_EQ(0u, stack[first_i + 2]); // dummy edi
+    EXPECT_EQ(0u, stack[first_i + 3]); // dummy ebp
+    EXPECT_EQ(PTR2UINT(enter_usermode), stack[first_i + 4]);
+    EXPECT_EQ(0x400000u, stack[first_i + 5]);                        // iret: eip
+    EXPECT_EQ((uint32_t)GDT_SELECTOR_USER_CODE, stack[first_i + 6]); // iret: cs
+    EXPECT_EQ(0x202u, stack[first_i + 7]);                           // iret: eflags
+    EXPECT_EQ(user_esp, stack[first_i + 8]);                         // iret: esp
+    EXPECT_EQ((uint32_t)GDT_SELECTOR_USER_DATA, stack[first_i + 9]); // iret: ss
 }
 
 // Process Resume
@@ -363,6 +445,7 @@ TEST_F(Process, process_add_pages) {
     EXPECT_EQ(1, paging_add_pages_fake.call_count);
     EXPECT_EQ(next_heap, paging_add_pages_fake.arg1_val);
     EXPECT_EQ(next_heap + 1, paging_add_pages_fake.arg2_val);
+    EXPECT_EQ((uint32_t)MMU_TABLE_RW_USER, paging_add_pages_fake.arg3_val);
     EXPECT_EQ(next_heap + 1, proc.next_heap_page);
     ASSERT_TEMP_MAP_BALANCED();
 }
@@ -394,7 +477,26 @@ TEST_F(Process, process_grow_stack) {
 
     EXPECT_EQ(0, process_grow_stack(&proc));
     EXPECT_EQ(1, paging_temp_free_fake.call_count);
+    EXPECT_EQ((uint32_t)MMU_TABLE_RW_USER, paging_add_pages_fake.arg3_val);
+    // Must count down from the user/ISR stack boundary, not from the
+    // absolute top of the address space - otherwise this collides with (and
+    // silently converts to user-accessible) the supervisor-only ISR stack.
+    EXPECT_EQ((uint32_t)ADDR2PAGE(VADDR_USER_STACK), paging_add_pages_fake.arg1_val);
+    EXPECT_EQ((uint32_t)ADDR2PAGE(VADDR_USER_STACK), paging_add_pages_fake.arg2_val);
     ASSERT_TEMP_MAP_BALANCED();
+}
+
+TEST_F(Process, process_grow_stack_DoesNotCollideWithIsrStack) {
+    // stack_page_count == 1 matches the real state right after
+    // process_create (which allocates exactly 1 initial user stack page at
+    // ADDR2PAGE(VADDR_USER_STACK)). The next grown page must land strictly
+    // below that, never inside the ISR stack range
+    // [ADDR2PAGE(VADDR_USER_STACK) + 1, ADDR2PAGE(VADDR_ISR_STACK)].
+    proc.stack_page_count           = 1;
+    paging_temp_map_fake.return_val = &dir;
+
+    EXPECT_EQ(0, process_grow_stack(&proc));
+    EXPECT_LT(paging_add_pages_fake.arg1_val, (uint32_t)ADDR2PAGE(VADDR_USER_STACK));
 }
 
 // Process Load Heap
@@ -465,4 +567,121 @@ TEST_F(Process, process_load_heap_MultipleCalls) {
     EXPECT_EQ(3, kmemcpy_fake.call_count);
     EXPECT_EQ(10, paging_temp_map_fake.call_count);
     ASSERT_TEMP_MAP_BALANCED();
+}
+
+// Process Copy To Heap
+
+TEST_F(Process, process_copy_to_heap_InvalidParameters) {
+    EXPECT_EQ(nullptr, process_copy_to_heap(0, 0, 0));
+    EXPECT_EQ(nullptr, process_copy_to_heap(&proc, 0, 0));
+    EXPECT_EQ(nullptr, process_copy_to_heap(0, heap_data.data(), 0));
+    EXPECT_EQ(nullptr, process_copy_to_heap(0, 0, 1));
+    EXPECT_EQ(nullptr, process_copy_to_heap(&proc, heap_data.data(), 0));
+    EXPECT_EQ(nullptr, process_copy_to_heap(&proc, 0, 1));
+    EXPECT_EQ(nullptr, process_copy_to_heap(0, heap_data.data(), 1));
+}
+
+TEST_F(Process, process_copy_to_heap_FailAddPages) {
+    paging_temp_map_fake.return_val = 0;
+
+    EXPECT_EQ(nullptr, process_copy_to_heap(&proc, heap_data.data(), PAGE_SIZE));
+    ASSERT_TEMP_MAP_BALANCE_OFFSET(1);
+}
+
+TEST_F(Process, process_copy_to_heap_FailCopy) {
+    void * paging_temp_map_seq[2] = {&dir, 0};
+    SET_RETURN_SEQ(paging_temp_map, paging_temp_map_seq, 2);
+
+    EXPECT_EQ(nullptr, process_copy_to_heap(&proc, heap_data.data(), PAGE_SIZE));
+    ASSERT_TEMP_MAP_BALANCE_OFFSET(1);
+}
+
+TEST_F(Process, process_copy_to_heap) {
+    int next_heap = proc.next_heap_page;
+
+    void * result = process_copy_to_heap(&proc, heap_data.data(), PAGE_SIZE);
+
+    EXPECT_EQ(UINT2PTR(PAGE2ADDR(next_heap)), result);
+    EXPECT_EQ(1, kmemcpy_fake.call_count);
+    ASSERT_TEMP_MAP_BALANCED();
+}
+
+// Process Init Memory
+
+TEST_F(Process, process_init_memory_InvalidParameters) {
+    EXPECT_NE(0, process_init_memory(0));
+}
+
+TEST_F(Process, process_init_memory) {
+    EXPECT_EQ(0, process_init_memory(&proc));
+    EXPECT_EQ(1, memory_init_fake.call_count);
+    EXPECT_EQ(&proc.memory, memory_init_fake.arg0_val);
+}
+
+// Process Copy Args
+
+TEST_F(Process, process_copy_args_InvalidParameters) {
+    EXPECT_NE(0, process_copy_args(0, 0, 0, 0));
+    EXPECT_NE(0, process_copy_args(&proc, 0, 0, 0));
+    EXPECT_NE(0, process_copy_args(0, "init", 0, 0));
+    EXPECT_NE(0, process_copy_args(&proc, "init", 1, 0));
+}
+
+TEST_F(Process, process_copy_args_FailCopyFilepath) {
+    kmalloc_fake.return_val = 0;
+
+    EXPECT_NE(0, process_copy_args(&proc, "init", 0, 0));
+}
+
+TEST_F(Process, process_copy_args_FailScratchAlloc) {
+    kmemcpy_fake.return_val = heap_data.data();
+
+    void * kmalloc_seq[2] = {heap_data.data(), 0};
+    SET_RETURN_SEQ(kmalloc, kmalloc_seq, 2);
+
+    EXPECT_NE(0, process_copy_args(&proc, "init", 0, 0));
+    EXPECT_EQ(1, kfree_fake.call_count); // frees proc->filepath
+}
+
+TEST_F(Process, process_copy_args_FailAddPages) {
+    // process_add_pages is a real call here (same file as the function under
+    // test), so its failure must be induced via the paging mocks it uses
+    kmalloc_fake.return_val         = heap_data.data();
+    kmemcpy_fake.return_val         = heap_data.data();
+    paging_temp_map_fake.return_val = 0;
+
+    EXPECT_NE(0, process_copy_args(&proc, "init", 0, 0));
+    EXPECT_EQ(2, kfree_fake.call_count); // frees scratch buffer + proc->filepath
+}
+
+TEST_F(Process, process_copy_args_FailCopyToProcessPages) {
+    kmalloc_fake.return_val = heap_data.data();
+    kmemcpy_fake.return_val = heap_data.data();
+
+    // First temp map (inside process_add_pages) succeeds, second (the first
+    // one inside copy_to_process_pages) fails
+    void * paging_temp_map_seq[2] = {&dir, 0};
+    SET_RETURN_SEQ(paging_temp_map, paging_temp_map_seq, 2);
+
+    EXPECT_NE(0, process_copy_args(&proc, "init", 0, 0));
+    EXPECT_EQ(2, kfree_fake.call_count); // frees scratch buffer + proc->filepath
+}
+
+TEST_F(Process, process_copy_args) {
+    kmalloc_fake.return_val         = heap_data.data();
+    kmemcpy_fake.return_val         = heap_data.data();
+    paging_temp_map_fake.return_val = &dir;
+
+    int next_heap = proc.next_heap_page;
+
+    char * argv[2] = {(char *)"foo", (char *)"bar"};
+
+    EXPECT_EQ(0, process_copy_args(&proc, "init", 2, argv));
+
+    // argv[0] (filepath) + 2 provided args
+    EXPECT_EQ(3, proc.argc);
+    // argv lives in the process' own heap (real process_add_pages, returning
+    // the previous next_heap_page as a virtual address), not kernel memory
+    EXPECT_EQ((char **)PAGE2ADDR(next_heap), proc.argv);
+    EXPECT_EQ(1, kfree_fake.call_count); // only the scratch buffer is freed
 }
