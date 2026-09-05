@@ -85,7 +85,7 @@ on the `call_id`.
 
 ```c
 // Define handler function
-int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
+int sys_call_mem_cb(uint32_t call_id, void * args_data, registers_t * regs) {
     // Get the caller process
     process_t * proc = get_current_process();
 
@@ -98,21 +98,13 @@ int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
         }
 
         // Logic for call id
-        case SYS_CALL_MEM_MALLOC: {
+        case SYS_CALL_MEM_ALLOC_PAGE: {
             // va args from send_call or send_call_noret
             struct _args {
-                size_t size;
+                size_t count;
             } * args = (struct _args *)args_data;
             // Return int to caller process
-            return PTR2UINT(memory_alloc(&proc->memory, args->size));
-        } break;
-
-        case SYS_CALL_MEM_FREE: {
-            struct _args {
-                void * ptr;
-            } * args = (struct _args *)args_data;
-            memory_free(&proc->memory, args->ptr);
-            // No value is returned so handler defaults to 0
+            return PTR2UINT(process_add_pages(proc, args->count));
         } break;
     }
 
@@ -120,3 +112,11 @@ int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
     return 0;
 }
 ```
+
+> [!TIP]
+> `SYS_CALL_MEM_ALLOC_PAGE` is the only memory system call: it just maps more
+> pages onto the calling process' heap. `malloc`/`realloc`/`free` themselves
+> run entirely in user space (see
+> [src/libc/src/memory_alloc.c](../src/libc/src/memory_alloc.c)), only
+> reaching for this call when they actually need more heap pages.
+

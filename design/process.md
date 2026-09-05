@@ -47,11 +47,15 @@ stack and a heap.
 > page fault trying to use it. The only pages that stay supervisor-only are the
 > shared kernel table (table 0) and each process' own ISR stack.
 >
-> A process' own heap allocator (`proc->memory`, used to service the process'
-> `malloc`/`realloc`/`free` system calls) cannot be initialized during
-> `process_create`, since the new process' `cr3` isn't loaded yet at that
-> point. It is lazily initialized on first use instead (`process_init_memory`),
-> once the process is genuinely running and its own address space is active.
+> A process' own heap (used for `malloc`/`realloc`/`free`) is entirely managed
+> in user space — see [src/libc/src/memory_alloc.c](../src/libc/src/memory_alloc.c)
+> and [src/libc/src/memory.c](../src/libc/src/memory.c) — since libc is
+> statically linked into every process' own binary, each process automatically
+> gets its own private heap allocator state simply by living in its own
+> address space. The kernel is only ever involved to grow that heap: a single
+> system call (`SYS_CALL_MEM_ALLOC_PAGE`) maps `count` more pages onto the end
+> of the process' heap (via `process_add_pages`) and returns a pointer to the
+> first of them.
 
 Any kernel-side data that must be handed back to a process (eg. a string
 returned by a system call) has to be copied into that process' own heap first

@@ -19,9 +19,7 @@ int _sys_io_read(int handle, char * buff, size_t count, size_t pos);
 int _sys_io_write(int handle, const char * buff, size_t count, size_t pos);
 int _sys_io_size(int handle);
 
-void * _sys_mem_malloc(size_t size);
-void * _sys_mem_realloc(void * ptr, size_t size);
-void   _sys_mem_free(void * ptr);
+void * _sys_mem_alloc_page(size_t count);
 
 NO_RETURN void _sys_proc_exit(int code);
 NO_RETURN void _sys_proc_abort(int code, const char * msg);
