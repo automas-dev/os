@@ -39,4 +39,6 @@ typedef void * v_ptr_t;
 #define VADDR_ISR_STACK    0xffffffff
 #define ISR_STACK_PAGES    0x10
 
+#define HEAP_STACK_GUARD_PAGES 1
+
 #endif // ADDR_H
