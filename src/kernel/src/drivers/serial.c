@@ -8,6 +8,9 @@
 
 // TODO might need to disable interrupts while interacting with ports?
 
+static int serial_received(uint16_t port);
+static int is_transmit_empty(uint16_t port);
+
 int serial_init(uint16_t port) {
     port_byte_out(port + 1, 0x00); // Disable all interrupts
     port_byte_out(port + 3, 0x80); // Enable DLAB (set baud rate divisor)
@@ -30,32 +33,36 @@ int serial_init(uint16_t port) {
     return 0;
 }
 
-static int serial_received(uint16_t port) {
-    return port_byte_in(port + 5) & 1;
-}
-
-char serial_read(uint16_t port) {
+char serial_read_char(uint16_t port) {
     while (serial_received(port) == 0);
 
     return port_byte_in(port);
 }
 
-static int is_transmit_empty(uint16_t port) {
-    return port_byte_in(port + 5) & 0x20;
+size_t serial_read(uint16_t port, char * buff, size_t count) {
+    if (!buff) {
+        return 0;
+    }
+
+    for (size_t i = 0; i < count; i++) {
+        buff[i] = serial_read_char(port);
+    }
+
+    return count;
 }
 
-void serial_write_str(uint16_t port, const char * str) {
+size_t serial_write_str(uint16_t port, const char * str) {
     if (!str) {
-        return;
+        return 0;
     }
 
     size_t count = kstrlen(str);
-    serial_write(port, str, count);
+    return serial_write(port, str, count);
 }
 
-void serial_write(uint16_t port, const char * str, size_t count) {
+size_t serial_write(uint16_t port, const char * str, size_t count) {
     if (!str) {
-        return;
+        return 0;
     }
 
     while (is_transmit_empty(port) == 0);
@@ -63,4 +70,14 @@ void serial_write(uint16_t port, const char * str, size_t count) {
     for (size_t i = 0; i < count; i++) {
         port_byte_out(port, *str++);
     }
+
+    return count;
+}
+
+static int serial_received(uint16_t port) {
+    return port_byte_in(port + 5) & 1;
+}
+
+static int is_transmit_empty(uint16_t port) {
+    return port_byte_in(port + 5) & 0x20;
 }
