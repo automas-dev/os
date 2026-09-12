@@ -152,28 +152,14 @@ static int handle_stack_growth_fault(registers_t * r) {
     size_t fault_page      = ADDR2PAGE(r->cr2);
     size_t next_stack_page = ADDR2PAGE(VADDR_USER_STACK) - proc->stack_page_count;
 
-    // The fault must be at or below the current stack end (ie. actually
-    // extending the stack, not touching already-mapped memory or memory
-    // above the stack region).
     if (fault_page > next_stack_page) {
         return -1;
     }
 
-    // The fault must be at or above the saved user stack pointer - a
-    // legitimate stack access can never be below esp, since the CPU only
-    // ever dereferences addresses within [esp, esp + frame size) for stack
-    // memory. A fault below esp is a wild/unrelated pointer, not stack
-    // growth.
     if (fault_page < ADDR2PAGE(r->useresp)) {
         return -1;
     }
 
-    // Grow every missing page from the current stack end down to (and
-    // including) the faulting page. process_grow_stack enforces the
-    // heap/stack collision guard and the max stack size limit on each
-    // individual page it adds, so this correctly stops and fails if
-    // growth would collide with the heap or exceed the limit partway
-    // through.
     while (next_stack_page >= fault_page) {
         if (process_grow_stack(proc)) {
             return -1;

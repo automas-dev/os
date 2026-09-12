@@ -10,11 +10,7 @@ set(CMAKE_TOOLCHAIN_FILE cmake/toolchain.cmake)
 # Extra checks in malloc
 set(KERNEL_MEMORY_INTEGRITY_CHECKS_ENABLED 1)
 
-# Default maximum size (in KB) a process' stack is allowed to grow to. Each
-# process stores its own copy of this limit as a page count
-# (process_t.max_stack_pages), seeded from this default (rounded up to a
-# whole number of pages) in process_create, so it can be changed per-process
-# at runtime via process_set_max_stack_size_kb.
+# Default maximum size (in KB) a process' stack
 set(KERNEL_MAX_STACK_SIZE_KB 8192)
 
 execute_process(

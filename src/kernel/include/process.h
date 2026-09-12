@@ -68,9 +68,7 @@ typedef struct _process {
     uint32_t next_heap_page;
     /// Number of pages allocated to the stack
     uint32_t stack_page_count;
-    /// Maximum number of pages the stack may grow to. Seeded from
-    /// KERNEL_MAX_STACK_SIZE_KB (rounded up to a whole page) at process
-    /// creation; change with process_set_max_stack_size_kb, not directly.
+    /// Maximum number of pages the stack may grow to
     uint32_t max_stack_pages;
 
     /// PID of parent process (0 is no parent)
@@ -168,8 +166,7 @@ void * process_add_pages(process_t * proc, size_t count);
  *
  * Fails without allocating anything if the new page would collide with (or
  * come within HEAP_STACK_GUARD_PAGES of) the process' own heap, so the stack
- * and heap can never overlap. Also fails without allocating anything if the
- * stack has already reached proc->max_stack_pages.
+ * and heap can never overlap.
  *
  * @param proc pointer to the process object
  * @return 0 for success, -1 if it would collide with the heap, would
@@ -178,15 +175,7 @@ void * process_add_pages(process_t * proc, size_t count);
 int process_grow_stack(process_t * proc);
 
 /**
- * @brief Change the maximum size (in KB) a process' stack may grow to.
- *
- * `max_stack_size_kb` is rounded up to the next whole page (proc->max_stack_pages
- * is always a page count) if it is not already page aligned.
- *
- * Fails without changing anything if, after rounding, the new limit is
- * smaller than the number of pages currently allocated to the stack
- * (proc->stack_page_count) - shrinking below what's already mapped is not
- * supported.
+ * @brief Change the maximum size (in KB) a process' stack may grow to rounding up be page size aligned.
  *
  * @todo This currently checks against *allocated* stack pages
  * (stack_page_count), not how much of the stack is actually *in use*. Once
