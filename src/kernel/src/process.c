@@ -74,7 +74,7 @@ int process_create(process_t * proc) {
     // as the TSS esp0 target so a ring3->ring0 transition always starts fresh
     // here.
     uint32_t isr_stack_start = ADDR2PAGE(proc->esp0) - ISR_STACK_PAGES + 1;
-    if (paging_add_pages(dir, isr_stack_start, ADDR2PAGE(proc->esp0), MMU_TABLE_RW)) {
+    if (paging_add_pages(dir, isr_stack_start, ADDR2PAGE(proc->esp0) + 1, MMU_TABLE_RW)) {
         KLOG_DEBUG("Failed to create pages for isr stack");
         paging_temp_free(proc->cr3);
         ram_page_free(proc->cr3);
@@ -83,7 +83,7 @@ int process_create(process_t * proc) {
 
     // Allocate the first page of the user (ring 3) stack. This must be
     // user-accessible so the process can use it once running in ring 3.
-    if (paging_add_pages(dir, ADDR2PAGE(VADDR_USER_STACK), ADDR2PAGE(VADDR_USER_STACK), MMU_TABLE_RW_USER)) {
+    if (paging_add_pages(dir, ADDR2PAGE(VADDR_USER_STACK), ADDR2PAGE(VADDR_USER_STACK) + 1, MMU_TABLE_RW_USER)) {
         KLOG_DEBUG("Failed to create page for user stack");
         paging_temp_free(proc->cr3);
         ram_page_free(proc->cr3);
@@ -403,7 +403,7 @@ void * process_add_pages(process_t * proc, size_t count) {
         return 0;
     }
 
-    if (paging_add_pages(dir, proc->next_heap_page, proc->next_heap_page + count - 1, MMU_TABLE_RW_USER)) {
+    if (paging_add_pages(dir, proc->next_heap_page, proc->next_heap_page + count, MMU_TABLE_RW_USER)) {
         KLOG_DEBUG("Failed to add %u pages to pid %u", count, proc->pid);
         paging_temp_free(proc->cr3);
         return 0;
@@ -447,7 +447,7 @@ int process_grow_stack(process_t * proc) {
         return -1;
     }
 
-    if (paging_add_pages(dir, new_stack_page_i, new_stack_page_i, MMU_TABLE_RW_USER)) {
+    if (paging_add_pages(dir, new_stack_page_i, new_stack_page_i + 1, MMU_TABLE_RW_USER)) {
         KLOG_DEBUG("Failed to add pages for process stack");
         paging_temp_free(proc->cr3);
         return -1;

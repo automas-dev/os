@@ -174,13 +174,13 @@ TEST_F(Process, process_create) {
     // ISR / kernel stack: supervisor-only
     EXPECT_EQ(&dir, paging_add_pages_fake.arg0_history[0]);
     EXPECT_EQ(0xffff0, paging_add_pages_fake.arg1_history[0]);
-    EXPECT_EQ(0xfffff, paging_add_pages_fake.arg2_history[0]);
+    EXPECT_EQ(0x100000, paging_add_pages_fake.arg2_history[0]);
     EXPECT_EQ((uint32_t)MMU_TABLE_RW, paging_add_pages_fake.arg3_history[0]);
 
     // First user stack page: user-accessible
     EXPECT_EQ(&dir, paging_add_pages_fake.arg0_history[1]);
     EXPECT_EQ(0xfffef, paging_add_pages_fake.arg1_history[1]);
-    EXPECT_EQ(0xfffef, paging_add_pages_fake.arg2_history[1]);
+    EXPECT_EQ(0xffff0, paging_add_pages_fake.arg2_history[1]);
     EXPECT_EQ((uint32_t)MMU_TABLE_RW_USER, paging_add_pages_fake.arg3_history[1]);
 
     ASSERT_TEMP_MAP_BALANCED();
@@ -429,7 +429,7 @@ TEST_F(Process, process_add_pages) {
     EXPECT_NE(nullptr, process_add_pages(&proc, 1));
     EXPECT_EQ(1, paging_add_pages_fake.call_count);
     EXPECT_EQ(next_heap, paging_add_pages_fake.arg1_val);
-    EXPECT_EQ(next_heap, paging_add_pages_fake.arg2_val);
+    EXPECT_EQ(next_heap + 1, paging_add_pages_fake.arg2_val);
     EXPECT_EQ((uint32_t)MMU_TABLE_RW_USER, paging_add_pages_fake.arg3_val);
     EXPECT_EQ(next_heap + 1, proc.next_heap_page);
     ASSERT_TEMP_MAP_BALANCED();
@@ -444,7 +444,7 @@ TEST_F(Process, process_add_pages_AllowsLastPageBeforeStackGuard) {
     EXPECT_EQ(UINT2PTR(PAGE2ADDR(next_heap)), process_add_pages(&proc, 1));
     EXPECT_EQ(1, paging_add_pages_fake.call_count);
     EXPECT_EQ(next_heap, paging_add_pages_fake.arg1_val);
-    EXPECT_EQ(next_heap, paging_add_pages_fake.arg2_val);
+    EXPECT_EQ(next_heap + 1, paging_add_pages_fake.arg2_val);
     EXPECT_EQ((uint32_t)ADDR2PAGE(VADDR_USER_STACK) - HEAP_STACK_GUARD_PAGES, proc.next_heap_page);
     ASSERT_TEMP_MAP_BALANCED();
 }
@@ -497,7 +497,7 @@ TEST_F(Process, process_grow_stack) {
     // absolute top of the address space - otherwise this collides with (and
     // silently converts to user-accessible) the supervisor-only ISR stack.
     EXPECT_EQ((uint32_t)ADDR2PAGE(VADDR_USER_STACK), paging_add_pages_fake.arg1_val);
-    EXPECT_EQ((uint32_t)ADDR2PAGE(VADDR_USER_STACK), paging_add_pages_fake.arg2_val);
+    EXPECT_EQ((uint32_t)ADDR2PAGE(VADDR_USER_STACK) + 1, paging_add_pages_fake.arg2_val);
     ASSERT_TEMP_MAP_BALANCED();
 }
 

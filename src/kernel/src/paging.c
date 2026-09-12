@@ -120,7 +120,7 @@ int paging_id_map_range(size_t start, size_t end) {
         return -1;
     }
 
-    while (start <= end) {
+    while (start < end) {
         if (paging_id_map_page(start++)) {
             // Error logged in paging_id_map_page
             return -1;
@@ -152,7 +152,12 @@ int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end, uint32_t flags) 
         return -1;
     }
 
-    uint32_t table_end = end / MMU_TABLE_SIZE;
+    // Empty range, nothing to do
+    if (start == end) {
+        return 0;
+    }
+
+    uint32_t table_end = (end - 1) / MMU_TABLE_SIZE;
 
     if (table_end >= MMU_DIR_SIZE) {
         KLOG_WARNING("End %u is after last table end %u", end, MMU_DIR_SIZE * MMU_TABLE_SIZE);
@@ -160,11 +165,11 @@ int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end, uint32_t flags) 
     }
 
     // Add pages to tables
-    for (size_t page_i = start; page_i <= end; page_i++) {
+    for (size_t page_i = start; page_i < end; page_i++) {
         uint32_t addr = ram_page_alloc();
 
         if (!addr) {
-            if (paging_remove_pages(dir, start, page_i - 1)) {
+            if (paging_remove_pages(dir, start, page_i)) {
                 KLOG_DEBUG("Failed to remove page from directory");
             }
             return -1;
@@ -177,7 +182,7 @@ int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end, uint32_t flags) 
         // already used for supervisor-only pages may also need to become
         // accessible to user pages sharing the same table)
         if (paging_add_table(dir, dir_i, flags)) {
-            if (paging_remove_pages(dir, start, page_i - 1)) {
+            if (paging_remove_pages(dir, start, page_i)) {
                 KLOG_DEBUG("Failed to remove page from directory %p", dir);
             }
             if (ram_page_free(addr)) {
@@ -192,7 +197,7 @@ int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end, uint32_t flags) 
 
         if (!table) {
             KLOG_ERROR("Failed to create temporary map for %p", table_addr);
-            if (paging_remove_pages(dir, start, page_i - 1)) {
+            if (paging_remove_pages(dir, start, page_i)) {
                 KLOG_DEBUG("Failed to remove page from directory %p while unwinding failed temp map", dir);
             }
             if (ram_page_free(addr)) {
@@ -225,7 +230,12 @@ int paging_remove_pages(mmu_dir_t * dir, size_t start, size_t end) {
         return -1;
     }
 
-    uint32_t table_end = end / MMU_TABLE_SIZE;
+    // Empty range, nothing to do
+    if (start == end) {
+        return 0;
+    }
+
+    uint32_t table_end = (end - 1) / MMU_TABLE_SIZE;
 
     if (table_end >= MMU_DIR_SIZE) {
         KLOG_WARNING("End %u is after last table end %u", end, MMU_TABLE_SIZE);
@@ -233,7 +243,7 @@ int paging_remove_pages(mmu_dir_t * dir, size_t start, size_t end) {
     }
 
     // Remove pages from tables
-    for (size_t page_i = start; page_i <= end; page_i++) {
+    for (size_t page_i = start; page_i < end; page_i++) {
         uint32_t dir_i   = page_i / MMU_TABLE_SIZE;
         uint32_t table_i = page_i % MMU_TABLE_SIZE;
 
