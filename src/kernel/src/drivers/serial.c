@@ -65,9 +65,9 @@ size_t serial_write(uint16_t port, const char * str, size_t count) {
         return 0;
     }
 
-    while (is_transmit_empty(port) == 0);
-
     for (size_t i = 0; i < count; i++) {
+        while (is_transmit_empty(port) == 0);
+
         port_byte_out(port, *str++);
     }
 
