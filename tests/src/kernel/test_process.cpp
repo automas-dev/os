@@ -174,13 +174,13 @@ TEST_F(Process, process_create) {
     // ISR / kernel stack: supervisor-only
     EXPECT_EQ(&dir, paging_add_pages_fake.arg0_history[0]);
     EXPECT_EQ(0xffff0, paging_add_pages_fake.arg1_history[0]);
-    EXPECT_EQ(0xfffff, paging_add_pages_fake.arg2_history[0]);
+    EXPECT_EQ(0x100000, paging_add_pages_fake.arg2_history[0]);
     EXPECT_EQ((uint32_t)MMU_TABLE_RW, paging_add_pages_fake.arg3_history[0]);
 
     // First user stack page: user-accessible
     EXPECT_EQ(&dir, paging_add_pages_fake.arg0_history[1]);
     EXPECT_EQ(0xfffef, paging_add_pages_fake.arg1_history[1]);
-    EXPECT_EQ(0xfffef, paging_add_pages_fake.arg2_history[1]);
+    EXPECT_EQ(0xffff0, paging_add_pages_fake.arg2_history[1]);
     EXPECT_EQ((uint32_t)MMU_TABLE_RW_USER, paging_add_pages_fake.arg3_history[1]);
 
     ASSERT_TEMP_MAP_BALANCED();
@@ -400,7 +400,7 @@ TEST_F(Process, process_add_pages_InvalidParameters) {
     EXPECT_EQ(0, process_add_pages(0, 1));
     EXPECT_EQ(0, process_add_pages(&proc, 0));
 
-    proc.next_heap_page = MMU_DIR_SIZE * MMU_TABLE_SIZE - 1;
+    proc.next_heap_page = MMU_DIR_SIZE * MMU_TABLE_SIZE;
 
     // Count will pass end of last table
     EXPECT_EQ(0, process_add_pages(&proc, 1));
@@ -432,6 +432,36 @@ TEST_F(Process, process_add_pages) {
     EXPECT_EQ(next_heap + 1, paging_add_pages_fake.arg2_val);
     EXPECT_EQ((uint32_t)MMU_TABLE_RW_USER, paging_add_pages_fake.arg3_val);
     EXPECT_EQ(next_heap + 1, proc.next_heap_page);
+    ASSERT_TEMP_MAP_BALANCED();
+}
+
+TEST_F(Process, process_add_pages_AllowsLastPageBeforeStackGuard) {
+    paging_temp_map_fake.return_val = &dir;
+    proc.next_heap_page             = (uint32_t)ADDR2PAGE(VADDR_USER_STACK) - HEAP_STACK_GUARD_PAGES - 1;
+    proc.stack_page_count           = 1;
+    uint32_t next_heap              = proc.next_heap_page;
+
+    EXPECT_EQ(UINT2PTR(PAGE2ADDR(next_heap)), process_add_pages(&proc, 1));
+    EXPECT_EQ(1, paging_add_pages_fake.call_count);
+    EXPECT_EQ(next_heap, paging_add_pages_fake.arg1_val);
+    EXPECT_EQ(next_heap + 1, paging_add_pages_fake.arg2_val);
+    EXPECT_EQ((uint32_t)ADDR2PAGE(VADDR_USER_STACK) - HEAP_STACK_GUARD_PAGES, proc.next_heap_page);
+    ASSERT_TEMP_MAP_BALANCED();
+}
+
+TEST_F(Process, process_add_pages_CollidesWithStack) {
+    // Simulate a heap that has grown up to meet the process' current stack
+    // (stack_page_count == 1 matches the single stack page allocated by
+    // process_create, at ADDR2PAGE(VADDR_USER_STACK)). Growing the heap by
+    // even 1 more page must be rejected instead of overlapping the stack.
+    proc.next_heap_page             = (uint32_t)ADDR2PAGE(VADDR_USER_STACK);
+    proc.stack_page_count           = 1;
+    paging_temp_map_fake.return_val = &dir;
+
+    EXPECT_EQ(nullptr, process_add_pages(&proc, 1));
+    EXPECT_EQ(0, paging_temp_map_fake.call_count);
+    EXPECT_EQ(0, paging_add_pages_fake.call_count);
+    EXPECT_EQ((uint32_t)ADDR2PAGE(VADDR_USER_STACK), proc.next_heap_page);
     ASSERT_TEMP_MAP_BALANCED();
 }
 
@@ -467,7 +497,7 @@ TEST_F(Process, process_grow_stack) {
     // absolute top of the address space - otherwise this collides with (and
     // silently converts to user-accessible) the supervisor-only ISR stack.
     EXPECT_EQ((uint32_t)ADDR2PAGE(VADDR_USER_STACK), paging_add_pages_fake.arg1_val);
-    EXPECT_EQ((uint32_t)ADDR2PAGE(VADDR_USER_STACK), paging_add_pages_fake.arg2_val);
+    EXPECT_EQ((uint32_t)ADDR2PAGE(VADDR_USER_STACK) + 1, paging_add_pages_fake.arg2_val);
     ASSERT_TEMP_MAP_BALANCED();
 }
 
@@ -482,6 +512,23 @@ TEST_F(Process, process_grow_stack_DoesNotCollideWithIsrStack) {
 
     EXPECT_EQ(0, process_grow_stack(&proc));
     EXPECT_LT(paging_add_pages_fake.arg1_val, (uint32_t)ADDR2PAGE(VADDR_USER_STACK));
+}
+
+TEST_F(Process, process_grow_stack_CollidesWithHeap) {
+    // Simulate a stack that has already grown down to meet the process'
+    // current heap top (next_heap_page defaults to 2 in SetUp). The next
+    // grown page would land exactly on next_heap_page, so it must be
+    // rejected instead of overlapping the heap.
+    proc.stack_page_count           = (uint32_t)ADDR2PAGE(VADDR_USER_STACK) - proc.next_heap_page;
+    paging_temp_map_fake.return_val = &dir;
+
+    uint32_t stack_page_count_before = proc.stack_page_count;
+
+    EXPECT_NE(0, process_grow_stack(&proc));
+    EXPECT_EQ(0, paging_temp_map_fake.call_count);
+    EXPECT_EQ(0, paging_add_pages_fake.call_count);
+    EXPECT_EQ(stack_page_count_before, proc.stack_page_count);
+    ASSERT_TEMP_MAP_BALANCED();
 }
 
 // Process Load Heap

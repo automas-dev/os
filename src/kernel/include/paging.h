@@ -45,13 +45,15 @@ size_t paging_temp_available();
 /**
  * @brief Identity map a range of pages.
  *
- * The range is end inclusive, ie a page will be added for end.
+ * The range is end exclusive, ie a page will be added for every index in
+ * [start, end) but not for end itself. A range where `start == end` is a
+ * valid empty range and is a no-op.
  *
- * start and end must be < MMU_TABLE_SIZE (ie. only the firs table can be
- * identity mapped).
+ * start must be < MMU_TABLE_SIZE and end must be <= MMU_TABLE_SIZE (ie. only
+ * the firs table can be identity mapped).
  *
- * @param start first page index
- * @param end last page index (inclusive)
+ * @param start first page index (inclusive)
+ * @param end one past the last page index (exclusive)
  * @return int 0 for success
  */
 int paging_id_map_range(size_t start, size_t end);
@@ -70,11 +72,13 @@ int paging_id_map_page(size_t page);
 /**
  * @brief Allocate physical memory and map it to a range of pages.
  *
- * The range is end inclusive, ie a page will be added for end.
+ * The range is end exclusive, ie a page will be added for every index in
+ * [start, end) but not for end itself. `end - start` pages are added in
+ * total. A range where `start == end` is a valid empty range and is a no-op.
  *
  * @param dir pointer to the page directory
- * @param start first page index
- * @param end last page index (inclusive)
+ * @param start first page index (inclusive)
+ * @param end one past the last page index (exclusive)
  * @param flags mmu table (and directory) flags, eg. MMU_TABLE_RW or MMU_TABLE_RW_USER
  * @return int 0 for success
  */
@@ -83,13 +87,15 @@ int paging_add_pages(mmu_dir_t * dir, size_t start, size_t end, uint32_t flags);
 /**
  * @brief Free physical memory for a range of pages.
  *
- * The range is end inclusive, ie a page will be freed for end.
+ * The range is end exclusive, ie a page will be freed for every index in
+ * [start, end) but not for end itself. `end - start` pages are freed in
+ * total. A range where `start == end` is a valid empty range and is a no-op.
  *
  * This function does not free the page tables, it only frees their pages.
  *
  * @param dir pointer to the page directory
- * @param start first page index
- * @param end last page index (inclusive)
+ * @param start first page index (inclusive)
+ * @param end one past the last page index (exclusive)
  * @return int 0 for success
  */
 int paging_remove_pages(mmu_dir_t * dir, size_t start, size_t end);

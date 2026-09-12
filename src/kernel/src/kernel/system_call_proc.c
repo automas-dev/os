@@ -80,17 +80,17 @@ int sys_call_proc_cb(uint32_t call_id, void * args_data, registers_t * regs) {
 
             // Default empty string if not provided by process
             const char * file = "";
-            if (!file) {
+            if (args->file) {
                 file = args->file;
             }
 
             // Default empty string if not provided by process
             const char * msg = "";
-            if (!msg) {
+            if (args->msg) {
                 msg = args->msg;
             }
 
-            KLOG_WARNING("Process %u panicked in %s at line %s: %s", proc->pid, file, args->line, msg);
+            KLOG_WARNING("Process %u panicked in %s at line %u: %s", proc->pid, file, args->line, msg);
 
             proc->state = PROCESS_STATE_DEAD;
 

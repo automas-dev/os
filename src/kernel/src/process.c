@@ -74,7 +74,7 @@ int process_create(process_t * proc) {
     // as the TSS esp0 target so a ring3->ring0 transition always starts fresh
     // here.
     uint32_t isr_stack_start = ADDR2PAGE(proc->esp0) - ISR_STACK_PAGES + 1;
-    if (paging_add_pages(dir, isr_stack_start, ADDR2PAGE(proc->esp0), MMU_TABLE_RW)) {
+    if (paging_add_pages(dir, isr_stack_start, ADDR2PAGE(proc->esp0) + 1, MMU_TABLE_RW)) {
         KLOG_DEBUG("Failed to create pages for isr stack");
         paging_temp_free(proc->cr3);
         ram_page_free(proc->cr3);
@@ -83,7 +83,7 @@ int process_create(process_t * proc) {
 
     // Allocate the first page of the user (ring 3) stack. This must be
     // user-accessible so the process can use it once running in ring 3.
-    if (paging_add_pages(dir, ADDR2PAGE(VADDR_USER_STACK), ADDR2PAGE(VADDR_USER_STACK), MMU_TABLE_RW_USER)) {
+    if (paging_add_pages(dir, ADDR2PAGE(VADDR_USER_STACK), ADDR2PAGE(VADDR_USER_STACK) + 1, MMU_TABLE_RW_USER)) {
         KLOG_DEBUG("Failed to create page for user stack");
         paging_temp_free(proc->cr3);
         ram_page_free(proc->cr3);
@@ -386,8 +386,13 @@ void * process_add_pages(process_t * proc, size_t count) {
         return 0;
     }
 
-    if (proc->next_heap_page + count >= MMU_DIR_SIZE * MMU_TABLE_SIZE) {
+    if (proc->next_heap_page + count > MMU_DIR_SIZE * MMU_TABLE_SIZE) {
         KLOG_WARNING("Cannot allocate %u pages after %u, will exceed max size of %d", count, proc->next_heap_page, MMU_DIR_SIZE * MMU_TABLE_SIZE);
+        return 0;
+    }
+
+    if (proc->next_heap_page + count + HEAP_STACK_GUARD_PAGES + proc->stack_page_count > (size_t)ADDR2PAGE(VADDR_USER_STACK) + 1) {
+        KLOG_WARNING("Cannot allocate %u pages after %u, would collide with process stack (%u pages)", count, proc->next_heap_page, proc->stack_page_count);
         return 0;
     }
 
@@ -421,13 +426,6 @@ int process_grow_stack(process_t * proc) {
         return -1;
     }
 
-    mmu_dir_t * dir = paging_temp_map(proc->cr3);
-
-    if (!dir) {
-        KLOG_ERROR("Failed to create temporary map of process page directory");
-        return -1;
-    }
-
     // Stack pages grow down starting immediately below the first user stack
     // page allocated by process_create (at ADDR2PAGE(VADDR_USER_STACK)).
     // proc->stack_page_count starts at 1 (that first page), so the Nth call
@@ -437,7 +435,19 @@ int process_grow_stack(process_t * proc) {
     // to user-accessible) the supervisor-only ISR stack pages above it.
     size_t new_stack_page_i = ADDR2PAGE(VADDR_USER_STACK) - proc->stack_page_count;
 
-    if (paging_add_pages(dir, new_stack_page_i, new_stack_page_i, MMU_TABLE_RW_USER)) {
+    if (new_stack_page_i < proc->next_heap_page + HEAP_STACK_GUARD_PAGES) {
+        KLOG_WARNING("Cannot grow stack to page %u, would collide with process heap (next heap page %u)", new_stack_page_i, proc->next_heap_page);
+        return -1;
+    }
+
+    mmu_dir_t * dir = paging_temp_map(proc->cr3);
+
+    if (!dir) {
+        KLOG_ERROR("Failed to create temporary map of process page directory");
+        return -1;
+    }
+
+    if (paging_add_pages(dir, new_stack_page_i, new_stack_page_i + 1, MMU_TABLE_RW_USER)) {
         KLOG_DEBUG("Failed to add pages for process stack");
         paging_temp_free(proc->cr3);
         return -1;

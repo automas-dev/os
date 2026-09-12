@@ -42,7 +42,7 @@ void * kernel_alloc_page(size_t count) {
         return 0;
     }
 
-    if (__next_heap_page + count >= MMU_DIR_SIZE * MMU_TABLE_SIZE) {
+    if (__next_heap_page + count > MMU_DIR_SIZE * MMU_TABLE_SIZE) {
         KLOG_WARNING("Tried to allocate past 4 GB");
         return 0;
     }
