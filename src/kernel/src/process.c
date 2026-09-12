@@ -17,12 +17,25 @@
 
 static int open_stdio_handles(process_t * proc);
 
-static char * copy_string(const char * str);
-static int    copy_to_process_pages(process_t * proc, uint32_t page_start, size_t count, const char * buff, size_t size);
-static int    write_process_dwords(process_t * proc, uint32_t first_addr, const uint32_t * values, size_t count);
+static char *   copy_string(const char * str);
+static int      copy_to_process_pages(process_t * proc, uint32_t page_start, size_t count, const char * buff, size_t size);
+static int      write_process_dwords(process_t * proc, uint32_t first_addr, const uint32_t * values, size_t count);
+static uint32_t stack_size_kb_to_pages(uint32_t size_kb);
 
 static uint32_t next_pid();
 static uint32_t next_handle_id();
+
+/**
+ * @brief Convert a stack size in KB to a whole number of pages, rounding up
+ * if `size_kb` is not already page aligned.
+ *
+ * @param size_kb stack size in KB
+ * @return number of pages
+ */
+static uint32_t stack_size_kb_to_pages(uint32_t size_kb) {
+    uint32_t size_bytes = size_kb * 1024;
+    return (size_bytes + PAGE_SIZE - 1) / PAGE_SIZE;
+}
 
 int process_create(process_t * proc) {
     if (!proc) {
@@ -94,7 +107,7 @@ int process_create(process_t * proc) {
     proc->pid              = next_pid();
     proc->next_heap_page   = ADDR2PAGE(VADDR_USER_MEM);
     proc->stack_page_count = 1;
-    proc->max_stack_pages  = KERNEL_MAX_STACK_PAGES;
+    proc->max_stack_pages  = stack_size_kb_to_pages(KERNEL_MAX_STACK_SIZE_KB);
 
     // TODO parent process pid
 
@@ -470,18 +483,20 @@ int process_grow_stack(process_t * proc) {
     return 0;
 }
 
-int process_set_max_stack_pages(process_t * proc, uint32_t max_stack_pages) {
+int process_set_max_stack_size_kb(process_t * proc, uint32_t max_stack_size_kb) {
     if (!proc) {
         KLOG_WARNING("Process struct is null pointer");
         return -1;
     }
+
+    uint32_t max_stack_pages = stack_size_kb_to_pages(max_stack_size_kb);
 
     // TODO this should check against actual stack usage rather than pages
     // allocated so far (proc->stack_page_count) - once usage is tracked,
     // shrinking below the current allocation should free the pages that
     // fall outside the new, smaller limit instead of being rejected outright.
     if (max_stack_pages < proc->stack_page_count) {
-        KLOG_WARNING("Cannot set max stack pages to %u, %u pages are already allocated", max_stack_pages, proc->stack_page_count);
+        KLOG_WARNING("Cannot set max stack size to %u KB (%u pages), %u pages are already allocated", max_stack_size_kb, max_stack_pages, proc->stack_page_count);
         return -1;
     }
 
