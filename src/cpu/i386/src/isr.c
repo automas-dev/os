@@ -130,27 +130,8 @@ char * exception_messages[] = {
 };
 
 /**
- * @brief Try to handle a page fault by growing the faulting process' user
- * stack down to (and including) the faulting page.
- *
- * Only handles the case where a user-mode access faults on a non-present
- * page at or below the process' current stack end, at or above the
- * process' current (already adjusted) ring 3 stack pointer. A single stack
- * frame can fault more than one page below the previous stack end if it
- * moves esp down by more than a page before its first access (eg. a large
- * local array) and the toolchain does not emit a stack probe for every
- * page in between - so every missing page down to the fault is grown, not
- * just one.
- *
- * The saved user esp check rejects wild/unrelated pointers that happen to
- * land on some other unmapped page below the stack region: any legitimate
- * access within a stack frame is always at or above esp, since the frame
- * occupies [esp, esp + frame size).
- *
- * Anything else (protection faults, supervisor faults, a fault above the
- * saved esp or below the current stack end, or a `process_grow_stack`
- * failure eg. from the heap collision guard or the max stack size limit)
- * is left for the caller to report and panic on.
+ * @brief Try to handle a page fault by growing the faulting process' stack to
+ * (and including) the faulting page.
  *
  * @param r page fault registers (int_no == 14)
  * @return 0 if the fault was handled by growing the stack, non-zero otherwise
