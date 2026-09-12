@@ -2,6 +2,7 @@
 
 #include "process.h"
 
+#include "config.h"
 #include "cpu/gdt.h"
 #include "cpu/mmu.h"
 #include "cpu/tss.h"
@@ -93,6 +94,7 @@ int process_create(process_t * proc) {
     proc->pid              = next_pid();
     proc->next_heap_page   = ADDR2PAGE(VADDR_USER_MEM);
     proc->stack_page_count = 1;
+    proc->max_stack_pages  = KERNEL_MAX_STACK_PAGES;
 
     // TODO parent process pid
 
@@ -426,6 +428,11 @@ int process_grow_stack(process_t * proc) {
         return -1;
     }
 
+    if (proc->stack_page_count >= proc->max_stack_pages) {
+        KLOG_WARNING("Cannot grow stack past %u pages (max_stack_pages)", proc->max_stack_pages);
+        return -1;
+    }
+
     // Stack pages grow down starting immediately below the first user stack
     // page allocated by process_create (at ADDR2PAGE(VADDR_USER_STACK)).
     // proc->stack_page_count starts at 1 (that first page), so the Nth call
@@ -459,6 +466,26 @@ int process_grow_stack(process_t * proc) {
         KLOG_DEBUG("Failed to free temporary map of process page dir");
         return -1;
     }
+
+    return 0;
+}
+
+int process_set_max_stack_pages(process_t * proc, uint32_t max_stack_pages) {
+    if (!proc) {
+        KLOG_WARNING("Process struct is null pointer");
+        return -1;
+    }
+
+    // TODO this should check against actual stack usage rather than pages
+    // allocated so far (proc->stack_page_count) - once usage is tracked,
+    // shrinking below the current allocation should free the pages that
+    // fall outside the new, smaller limit instead of being rejected outright.
+    if (max_stack_pages < proc->stack_page_count) {
+        KLOG_WARNING("Cannot set max stack pages to %u, %u pages are already allocated", max_stack_pages, proc->stack_page_count);
+        return -1;
+    }
+
+    proc->max_stack_pages = max_stack_pages;
 
     return 0;
 }

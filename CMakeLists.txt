@@ -10,6 +10,13 @@ set(CMAKE_TOOLCHAIN_FILE cmake/toolchain.cmake)
 # Extra checks in malloc
 set(KERNEL_MEMORY_INTEGRITY_CHECKS_ENABLED 1)
 
+# Default maximum number of pages a process' stack is allowed to grow to
+# (8192 KB / 8 MB, converted to pages since PAGE_SIZE is 4096 bytes). Each
+# process stores its own copy of this limit (process_t.max_stack_pages),
+# seeded from this default in process_create, so it can be changed
+# per-process at runtime via process_set_max_stack_pages.
+math(EXPR KERNEL_MAX_STACK_PAGES "8192 * 1024 / 4096")
+
 execute_process(
     COMMAND git describe --tags --abbrev=0
     OUTPUT_VARIABLE OS_VERSION

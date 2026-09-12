@@ -68,6 +68,10 @@ typedef struct _process {
     uint32_t next_heap_page;
     /// Number of pages allocated to the stack
     uint32_t stack_page_count;
+    /// Maximum number of pages the stack may grow to. Seeded from
+    /// KERNEL_MAX_STACK_PAGES at process creation; change with
+    /// process_set_max_stack_pages, not directly.
+    uint32_t max_stack_pages;
 
     /// PID of parent process (0 is no parent)
     uint32_t parent_pid;
@@ -164,12 +168,35 @@ void * process_add_pages(process_t * proc, size_t count);
  *
  * Fails without allocating anything if the new page would collide with (or
  * come within HEAP_STACK_GUARD_PAGES of) the process' own heap, so the stack
- * and heap can never overlap.
+ * and heap can never overlap. Also fails without allocating anything if the
+ * stack has already reached proc->max_stack_pages.
  *
  * @param proc pointer to the process object
- * @return int 0 for success, -1 if it would collide with the heap or on error
+ * @return int 0 for success, -1 if it would collide with the heap, would
+ * exceed proc->max_stack_pages, or on error
  */
 int process_grow_stack(process_t * proc);
+
+/**
+ * @brief Change the maximum number of pages a process' stack may grow to.
+ *
+ * Fails without changing anything if `max_stack_pages` is smaller than the
+ * number of pages currently allocated to the stack
+ * (proc->stack_page_count) - shrinking below what's already mapped is not
+ * supported.
+ *
+ * @todo This currently checks against *allocated* stack pages
+ * (stack_page_count), not how much of the stack is actually *in use*. Once
+ * that's tracked, this should instead check against actual stack usage, and
+ * shrinking should free any allocated pages that fall outside the new,
+ * smaller limit.
+ *
+ * @param proc pointer to the process object
+ * @param max_stack_pages new maximum number of stack pages
+ * @return int 0 for success, -1 if null process or max_stack_pages is
+ * smaller than the currently allocated stack page count
+ */
+int process_set_max_stack_pages(process_t * proc, uint32_t max_stack_pages);
 
 /**
  * @brief Allocate pages in the heap and copy data from `buff` into the pages.

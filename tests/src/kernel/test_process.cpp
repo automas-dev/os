@@ -5,6 +5,7 @@
 
 extern "C" {
 #include "addr.h"
+#include "config.h"
 #include "cpu/gdt.h"
 #include "cpu/mmu.h"
 #include "libc/datastruct/array.h"
@@ -63,7 +64,8 @@ protected:
             heap_data[i] = i % 0xff;
         }
 
-        proc.next_heap_page = 2;
+        proc.next_heap_page  = 2;
+        proc.max_stack_pages = KERNEL_MAX_STACK_PAGES;
 
         mmu_dir_set_fake.custom_fake       = custom_mmu_dir_set;
         mmu_table_set_fake.custom_fake     = custom_mmu_table_set;
@@ -160,6 +162,7 @@ TEST_F(Process, process_create) {
     EXPECT_EQ(12, proc.pid);
     EXPECT_EQ(1024, proc.next_heap_page);
     EXPECT_EQ(1, proc.stack_page_count);
+    EXPECT_EQ((uint32_t)KERNEL_MAX_STACK_PAGES, proc.max_stack_pages);
     EXPECT_EQ(0xffffffff, proc.esp);
     EXPECT_EQ(0xffffffff, proc.esp0);
 
@@ -518,8 +521,11 @@ TEST_F(Process, process_grow_stack_CollidesWithHeap) {
     // Simulate a stack that has already grown down to meet the process'
     // current heap top (next_heap_page defaults to 2 in SetUp). The next
     // grown page would land exactly on next_heap_page, so it must be
-    // rejected instead of overlapping the heap.
+    // rejected instead of overlapping the heap. max_stack_pages is set high
+    // enough here that only the heap collision check can be responsible for
+    // the rejection.
     proc.stack_page_count           = (uint32_t)ADDR2PAGE(VADDR_USER_STACK) - proc.next_heap_page;
+    proc.max_stack_pages            = proc.stack_page_count + 1;
     paging_temp_map_fake.return_val = &dir;
 
     uint32_t stack_page_count_before = proc.stack_page_count;
@@ -529,6 +535,44 @@ TEST_F(Process, process_grow_stack_CollidesWithHeap) {
     EXPECT_EQ(0, paging_add_pages_fake.call_count);
     EXPECT_EQ(stack_page_count_before, proc.stack_page_count);
     ASSERT_TEMP_MAP_BALANCED();
+}
+
+TEST_F(Process, process_grow_stack_AtMaxStackPages) {
+    // Stack has already grown to the process' configured limit, so the next
+    // grow must be rejected without touching paging at all.
+    proc.max_stack_pages            = 4;
+    proc.stack_page_count           = proc.max_stack_pages;
+    paging_temp_map_fake.return_val = &dir;
+
+    EXPECT_NE(0, process_grow_stack(&proc));
+    EXPECT_EQ(0, paging_temp_map_fake.call_count);
+    EXPECT_EQ(0, paging_add_pages_fake.call_count);
+    EXPECT_EQ(4u, proc.stack_page_count);
+}
+
+// Process Set Max Stack Pages
+
+TEST_F(Process, process_set_max_stack_pages_InvalidParameters) {
+    EXPECT_NE(0, process_set_max_stack_pages(0, 100));
+}
+
+TEST_F(Process, process_set_max_stack_pages_TooSmall) {
+    proc.stack_page_count = 5;
+    proc.max_stack_pages  = KERNEL_MAX_STACK_PAGES;
+
+    // Cannot shrink the limit below the number of pages already allocated
+    EXPECT_NE(0, process_set_max_stack_pages(&proc, 4));
+    EXPECT_EQ((uint32_t)KERNEL_MAX_STACK_PAGES, proc.max_stack_pages);
+}
+
+TEST_F(Process, process_set_max_stack_pages) {
+    proc.stack_page_count = 5;
+
+    EXPECT_EQ(0, process_set_max_stack_pages(&proc, 5));
+    EXPECT_EQ(5u, proc.max_stack_pages);
+
+    EXPECT_EQ(0, process_set_max_stack_pages(&proc, 100));
+    EXPECT_EQ(100u, proc.max_stack_pages);
 }
 
 // Process Load Heap
