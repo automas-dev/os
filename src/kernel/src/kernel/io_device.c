@@ -73,7 +73,7 @@ int io_device_close(io_device_t * dev) {
     }
 
     int close_res = dev->close_fn(dev->device_data);
-    if (!close_res) {
+    if (close_res) {
         KLOG_DEBUG("Device close function returned an error %d", close_res);
     }
 

@@ -400,7 +400,7 @@ TEST_F(Process, process_add_pages_InvalidParameters) {
     EXPECT_EQ(0, process_add_pages(0, 1));
     EXPECT_EQ(0, process_add_pages(&proc, 0));
 
-    proc.next_heap_page = MMU_DIR_SIZE * MMU_TABLE_SIZE - 1;
+    proc.next_heap_page = MMU_DIR_SIZE * MMU_TABLE_SIZE;
 
     // Count will pass end of last table
     EXPECT_EQ(0, process_add_pages(&proc, 1));
@@ -429,9 +429,23 @@ TEST_F(Process, process_add_pages) {
     EXPECT_NE(nullptr, process_add_pages(&proc, 1));
     EXPECT_EQ(1, paging_add_pages_fake.call_count);
     EXPECT_EQ(next_heap, paging_add_pages_fake.arg1_val);
-    EXPECT_EQ(next_heap + 1, paging_add_pages_fake.arg2_val);
+    EXPECT_EQ(next_heap, paging_add_pages_fake.arg2_val);
     EXPECT_EQ((uint32_t)MMU_TABLE_RW_USER, paging_add_pages_fake.arg3_val);
     EXPECT_EQ(next_heap + 1, proc.next_heap_page);
+    ASSERT_TEMP_MAP_BALANCED();
+}
+
+TEST_F(Process, process_add_pages_AllowsLastPageBeforeStackGuard) {
+    paging_temp_map_fake.return_val = &dir;
+    proc.next_heap_page             = (uint32_t)ADDR2PAGE(VADDR_USER_STACK) - HEAP_STACK_GUARD_PAGES - 1;
+    proc.stack_page_count           = 1;
+    uint32_t next_heap              = proc.next_heap_page;
+
+    EXPECT_EQ(UINT2PTR(PAGE2ADDR(next_heap)), process_add_pages(&proc, 1));
+    EXPECT_EQ(1, paging_add_pages_fake.call_count);
+    EXPECT_EQ(next_heap, paging_add_pages_fake.arg1_val);
+    EXPECT_EQ(next_heap, paging_add_pages_fake.arg2_val);
+    EXPECT_EQ((uint32_t)ADDR2PAGE(VADDR_USER_STACK) - HEAP_STACK_GUARD_PAGES, proc.next_heap_page);
     ASSERT_TEMP_MAP_BALANCED();
 }
 

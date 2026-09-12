@@ -386,7 +386,7 @@ void * process_add_pages(process_t * proc, size_t count) {
         return 0;
     }
 
-    if (proc->next_heap_page + count >= MMU_DIR_SIZE * MMU_TABLE_SIZE) {
+    if (proc->next_heap_page + count > MMU_DIR_SIZE * MMU_TABLE_SIZE) {
         KLOG_WARNING("Cannot allocate %u pages after %u, will exceed max size of %d", count, proc->next_heap_page, MMU_DIR_SIZE * MMU_TABLE_SIZE);
         return 0;
     }
@@ -403,7 +403,7 @@ void * process_add_pages(process_t * proc, size_t count) {
         return 0;
     }
 
-    if (paging_add_pages(dir, proc->next_heap_page, proc->next_heap_page + count, MMU_TABLE_RW_USER)) {
+    if (paging_add_pages(dir, proc->next_heap_page, proc->next_heap_page + count - 1, MMU_TABLE_RW_USER)) {
         KLOG_DEBUG("Failed to add %u pages to pid %u", count, proc->pid);
         paging_temp_free(proc->cr3);
         return 0;
