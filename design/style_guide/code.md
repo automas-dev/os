@@ -3,6 +3,7 @@
 <!-- Table of Contents only links to level 2 headers -->
 \[ [Header Guards](#header-guards) \]
 \[ [Function Names](#function-names) \]
+\[ [Static Functions](#static-functions) \]
 \[ [Global Variables](#global-variables) \]
 \[ [Memory Ownership](#memory-ownership) \]
 
@@ -37,6 +38,12 @@ All C++ code or C code outside src/ should use `#pragma once`
 
 Function names should include the module (ie. path) as a prefix using snake
 case.
+
+## Static Functions
+
+Static functions should be declared (forward declared) at the top of a C file,
+below includes and file-level variables, and defined below all non-static
+(externally visible) functions in the file.
 
 ## Global Variables
 
