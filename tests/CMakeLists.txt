@@ -12,6 +12,9 @@ set(CMAKE_C_STANDARD 17)
 
 # Set the global FFF_GCC_FUNCTION_ATTRIBUTES for config.h
 set(FFF_GCC_FUNCTION_ATTRIBUTES "__attribute__((weak))")
+# Mirrors the default in the root CMakeLists.txt so process.c (which reads
+# this to seed process_t.max_stack_pages) compiles the same way under test.
+set(KERNEL_MAX_STACK_SIZE_KB 8192)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/config.h.in ${CMAKE_BINARY_DIR}/include/config.h)
 include_directories(PRIVATE ${CMAKE_BINARY_DIR}/include)
 

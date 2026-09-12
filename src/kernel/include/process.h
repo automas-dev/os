@@ -68,6 +68,8 @@ typedef struct _process {
     uint32_t next_heap_page;
     /// Number of pages allocated to the stack
     uint32_t stack_page_count;
+    /// Maximum number of pages the stack may grow to
+    uint32_t max_stack_pages;
 
     /// PID of parent process (0 is no parent)
     uint32_t parent_pid;
@@ -167,9 +169,28 @@ void * process_add_pages(process_t * proc, size_t count);
  * and heap can never overlap.
  *
  * @param proc pointer to the process object
- * @return int 0 for success, -1 if it would collide with the heap or on error
+ * @return 0 for success, -1 if it would collide with the heap, would
+ * exceed proc->max_stack_pages, or on error
  */
 int process_grow_stack(process_t * proc);
+
+/**
+ * @brief Change the maximum size (in KB) a process' stack may grow to,
+ * rounding up to a whole page if `max_stack_size_kb` is not already page
+ * aligned.
+ *
+ * @todo This currently checks against *allocated* stack pages
+ * (stack_page_count), not how much of the stack is actually *in use*. Once
+ * that's tracked, this should instead check against actual stack usage, and
+ * shrinking should free any allocated pages that fall outside the new,
+ * smaller limit.
+ *
+ * @param proc pointer to the process object
+ * @param max_stack_size_kb new maximum stack size in KB
+ * @return 0 for success, -1 if null process or the rounded page count is
+ * smaller than the currently allocated stack page count
+ */
+int process_set_max_stack_size_kb(process_t * proc, uint32_t max_stack_size_kb);
 
 /**
  * @brief Allocate pages in the heap and copy data from `buff` into the pages.

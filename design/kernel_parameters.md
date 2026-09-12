@@ -16,4 +16,5 @@ generated from `cmake/config.h.in`).
 | CPU_ARCH                               | CPU Architecture                                                                      |
 | FILE_PREFIX_LENGTH                     | Length of absolute path to `src/`, used in logger macro to isolate relative file path |
 | KERNEL_MEMORY_INTEGRITY_CHECKS_ENABLED | Perform extra checks during malloc operations                                         |
+| KERNEL_MAX_STACK_SIZE_KB               | Default maximum size in KB a process' stack may grow to                              |
 | PROJECT_DESCRIPTION                    | String that combines name, version and arguments to the kernel                        |

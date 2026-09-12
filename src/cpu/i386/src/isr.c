@@ -2,8 +2,13 @@
 
 #include "cpu/isr.h"
 
+#include <stdbool.h>
+
+#include "addr.h"
 #include "cpu/idt.h"
+#include "cpu/mmu.h"
 #include "cpu/ports.h"
+#include "defs.h"
 #include "kernel.h"
 #include "kernel/logs.h"
 #include "libc/proc.h"
@@ -12,6 +17,8 @@
 // static void print_trace(registers_t *);
 
 static isr_t __interrupt_handlers[256];
+
+static int handle_stack_growth_fault(registers_t * r);
 
 /* Can't do this with a loop because we need the address
  * of the function names */
@@ -125,6 +132,12 @@ char * exception_messages[] = {
 };
 
 void isr_handler(registers_t r) {
+    if (r.int_no == 14 && !handle_stack_growth_fault(&r)) {
+        // Stack grown enough to retry the faulting instruction (possibly
+        // not all the way to the fault yet - see handle_stack_growth_fault).
+        return;
+    }
+
     print_trace(&r);
     printf("ISR %u (err 0x%X)\n", r.int_no, r.err_code);
     printf("%s\n", exception_messages[r.int_no]);
@@ -264,6 +277,78 @@ void print_trace(registers_t * r) {
     print_cr0(r->cr0);
     putc('\n');
 }
+
+// A faulting PUSH/PUSHA is restartable: on fault, the CPU rolls back to the
+// pre-instruction ESP (the useresp saved on the ring3->ring0 transition), not
+// to wherever the in-flight instruction had reached. So the lowest address an
+// otherwise-legitimate stack write can fault on is up to this many bytes
+// below useresp - PUSHA being the worst case (8 dwords). Without this slack,
+// a fault landing just below a page boundary (CR2 one page lower than
+// useresp) would be wrongly rejected as illegitimate.
+#define MAX_STACK_FAULT_SLACK_BYTES 32
+
+// Caps how many pages a single page fault will grow the stack by. Larger
+// requests (eg. a huge single access after `sub esp, <huge>`) are only
+// grown up to this many pages per fault; if that isn't enough to reach the
+// faulting page, the faulting instruction is retried, re-faults at the same
+// address, and growth continues from there on the next call - bounding how
+// much work (and RAM) one fault can commit while interrupts are disabled,
+// instead of one fault being able to claim the whole configured stack size
+// limit at once. Either way, total stack growth remains bounded by the
+// process' own proc->max_stack_pages, enforced in process_grow_stack.
+#define MAX_STACK_GROWTH_PAGES_PER_FAULT 16
+
+/**
+ * @brief Try to handle a page fault by growing the faulting process' stack
+ * down to (or partway to, see MAX_STACK_GROWTH_PAGES_PER_FAULT) the faulting
+ * page.
+ *
+ * Only handles a user-mode fault on a non-present page that is at or below
+ * the current stack end and at or above (allowing for
+ * MAX_STACK_FAULT_SLACK_BYTES) the saved user ESP - anything else
+ * (protection fault, supervisor fault, or a fault outside that range) is
+ * left for the caller to report and panic on.
+ *
+ * @param r page fault registers (int_no == 14)
+ * @return 0 if the fault was handled (stack grown far enough to retry, even
+ * if not all the way to the fault - see MAX_STACK_GROWTH_PAGES_PER_FAULT),
+ * non-zero otherwise
+ */
+static int handle_stack_growth_fault(registers_t * r) {
+    bool user_mode    = (r->err_code & MMU_DIR_FLAG_USER_SUPERVISOR) != 0;
+    bool page_present = (r->err_code & MMU_DIR_FLAG_PRESENT) != 0;
+
+    if (!user_mode || page_present) {
+        return -1;
+    }
+
+    process_t * proc = get_current_process();
+    if (!proc) {
+        return -1;
+    }
+
+    size_t fault_page      = ADDR2PAGE(r->cr2);
+    size_t next_stack_page = ADDR2PAGE(VADDR_USER_STACK) - proc->stack_page_count;
+
+    if (fault_page > next_stack_page) {
+        return -1;
+    }
+
+    size_t lowest_valid_page = ADDR2PAGE(r->useresp - MAX_STACK_FAULT_SLACK_BYTES);
+    if (fault_page < lowest_valid_page) {
+        return -1;
+    }
+
+    for (int i = 0; i < MAX_STACK_GROWTH_PAGES_PER_FAULT && next_stack_page >= fault_page; i++) {
+        if (process_grow_stack(proc)) {
+            return -1;
+        }
+        next_stack_page = ADDR2PAGE(VADDR_USER_STACK) - proc->stack_page_count;
+    }
+
+    return 0;
+}
+
 /*
 Bit	Label	Description
 0	PE	Protected Mode Enable

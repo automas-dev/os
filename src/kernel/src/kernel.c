@@ -167,7 +167,7 @@ int kernel_exec(const char * filename, size_t argc, char ** argv) {
         return -1;
     }
 
-    KLOG_DEBUG("Process for exec %d finished for filename %s", pid);
+    KLOG_DEBUG("Process for exec %d finished for filename %s", pid, filename);
 
     io_device_close(file);
     KLOG_TRACE("File device closed");

@@ -5,6 +5,7 @@
 
 extern "C" {
 #include "addr.h"
+#include "config.h"
 #include "cpu/gdt.h"
 #include "cpu/mmu.h"
 #include "libc/datastruct/array.h"
@@ -45,6 +46,13 @@ int custom_mmu_table_set(mmu_table_t * table, size_t i, uint32_t addr, uint32_t 
 std::array<char, PAGE_SIZE * 3>                 temp_page;
 std::array<char, PAGE_SIZE * 2 + PAGE_SIZE / 2> heap_data;
 
+// Mirrors process.c's static stack_size_kb_to_pages helper, so tests can
+// compute the expected page count for a given KB size without depending on
+// kernel-internal (non-exported) code.
+static uint32_t kb_to_pages(uint32_t size_kb) {
+    return (size_kb * 1024 + PAGE_SIZE - 1) / PAGE_SIZE;
+}
+
 class Process : public ::testing::Test {
 protected:
     void SetUp() override {
@@ -63,7 +71,8 @@ protected:
             heap_data[i] = i % 0xff;
         }
 
-        proc.next_heap_page = 2;
+        proc.next_heap_page  = 2;
+        proc.max_stack_pages = kb_to_pages(KERNEL_MAX_STACK_SIZE_KB);
 
         mmu_dir_set_fake.custom_fake       = custom_mmu_dir_set;
         mmu_table_set_fake.custom_fake     = custom_mmu_table_set;
@@ -160,6 +169,7 @@ TEST_F(Process, process_create) {
     EXPECT_EQ(12, proc.pid);
     EXPECT_EQ(1024, proc.next_heap_page);
     EXPECT_EQ(1, proc.stack_page_count);
+    EXPECT_EQ(kb_to_pages(KERNEL_MAX_STACK_SIZE_KB), proc.max_stack_pages);
     EXPECT_EQ(0xffffffff, proc.esp);
     EXPECT_EQ(0xffffffff, proc.esp0);
 
@@ -518,8 +528,11 @@ TEST_F(Process, process_grow_stack_CollidesWithHeap) {
     // Simulate a stack that has already grown down to meet the process'
     // current heap top (next_heap_page defaults to 2 in SetUp). The next
     // grown page would land exactly on next_heap_page, so it must be
-    // rejected instead of overlapping the heap.
+    // rejected instead of overlapping the heap. max_stack_pages is set high
+    // enough here that only the heap collision check can be responsible for
+    // the rejection.
     proc.stack_page_count           = (uint32_t)ADDR2PAGE(VADDR_USER_STACK) - proc.next_heap_page;
+    proc.max_stack_pages            = proc.stack_page_count + 1;
     paging_temp_map_fake.return_val = &dir;
 
     uint32_t stack_page_count_before = proc.stack_page_count;
@@ -529,6 +542,55 @@ TEST_F(Process, process_grow_stack_CollidesWithHeap) {
     EXPECT_EQ(0, paging_add_pages_fake.call_count);
     EXPECT_EQ(stack_page_count_before, proc.stack_page_count);
     ASSERT_TEMP_MAP_BALANCED();
+}
+
+TEST_F(Process, process_grow_stack_AtMaxStackPages) {
+    // Stack has already grown to the process' configured limit, so the next
+    // grow must be rejected without touching paging at all.
+    proc.max_stack_pages            = 4;
+    proc.stack_page_count           = proc.max_stack_pages;
+    paging_temp_map_fake.return_val = &dir;
+
+    EXPECT_NE(0, process_grow_stack(&proc));
+    EXPECT_EQ(0, paging_temp_map_fake.call_count);
+    EXPECT_EQ(0, paging_add_pages_fake.call_count);
+    EXPECT_EQ(4u, proc.stack_page_count);
+}
+
+// Process Set Max Stack Size (KB)
+
+TEST_F(Process, process_set_max_stack_size_kb_InvalidParameters) {
+    EXPECT_NE(0, process_set_max_stack_size_kb(0, 100));
+}
+
+TEST_F(Process, process_set_max_stack_size_kb_TooSmall) {
+    proc.stack_page_count = 5;
+    proc.max_stack_pages  = kb_to_pages(KERNEL_MAX_STACK_SIZE_KB);
+
+    // 16 KB is exactly 4 pages, less than the 5 pages already allocated
+    EXPECT_NE(0, process_set_max_stack_size_kb(&proc, 16));
+    EXPECT_EQ(kb_to_pages(KERNEL_MAX_STACK_SIZE_KB), proc.max_stack_pages);
+}
+
+TEST_F(Process, process_set_max_stack_size_kb) {
+    proc.stack_page_count = 5;
+
+    // 20 KB is exactly 5 pages
+    EXPECT_EQ(0, process_set_max_stack_size_kb(&proc, 20));
+    EXPECT_EQ(5u, proc.max_stack_pages);
+
+    // 400 KB is exactly 100 pages
+    EXPECT_EQ(0, process_set_max_stack_size_kb(&proc, 400));
+    EXPECT_EQ(100u, proc.max_stack_pages);
+}
+
+TEST_F(Process, process_set_max_stack_size_kb_RoundsUpToPageBoundary) {
+    proc.stack_page_count = 0;
+
+    // 5 KB is not page aligned (PAGE_SIZE is 4 KB), so it must round up to 2
+    // whole pages (8 KB) rather than truncate to 1.
+    EXPECT_EQ(0, process_set_max_stack_size_kb(&proc, 5));
+    EXPECT_EQ(2u, proc.max_stack_pages);
 }
 
 // Process Load Heap
