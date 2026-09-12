@@ -10,7 +10,7 @@ set(CMAKE_TOOLCHAIN_FILE cmake/toolchain.cmake)
 # Extra checks in malloc
 set(KERNEL_MEMORY_INTEGRITY_CHECKS_ENABLED 1)
 
-# Default maximum size (in KB) a process' stack
+# Default maximum size (in KB) a process' stack is allowed to grow to.
 set(KERNEL_MAX_STACK_SIZE_KB 8192)
 
 execute_process(
