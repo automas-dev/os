@@ -46,6 +46,15 @@ char serial_read_char(uint16_t port);
 size_t serial_read(uint16_t port, char * buff, size_t count);
 
 /**
+ * @brief Write a single character, blocking until it can be transmitted.
+ *
+ * @param port serial port base address
+ * @param c character to write
+ * @return number of characters written (0 for failure)
+ */
+size_t serial_write_char(uint16_t port, char c);
+
+/**
  * @brief Write a null terminated string.
  *
  * @param port serial port base address
