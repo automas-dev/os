@@ -153,7 +153,7 @@ char * exception_messages[] = {
  * is left for the caller to report and panic on.
  *
  * @param r page fault registers (int_no == 14)
- * @return int 0 if the fault was handled by growing the stack, non-zero otherwise
+ * @return 0 if the fault was handled by growing the stack, non-zero otherwise
  */
 static int handle_stack_growth_fault(registers_t * r) {
     bool user_mode    = (r->err_code & MMU_DIR_FLAG_USER_SUPERVISOR) != 0;

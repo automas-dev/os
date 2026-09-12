@@ -172,7 +172,7 @@ void * process_add_pages(process_t * proc, size_t count);
  * stack has already reached proc->max_stack_pages.
  *
  * @param proc pointer to the process object
- * @return int 0 for success, -1 if it would collide with the heap, would
+ * @return 0 for success, -1 if it would collide with the heap, would
  * exceed proc->max_stack_pages, or on error
  */
 int process_grow_stack(process_t * proc);
@@ -193,7 +193,7 @@ int process_grow_stack(process_t * proc);
  *
  * @param proc pointer to the process object
  * @param max_stack_pages new maximum number of stack pages
- * @return int 0 for success, -1 if null process or max_stack_pages is
+ * @return 0 for success, -1 if null process or max_stack_pages is
  * smaller than the currently allocated stack page count
  */
 int process_set_max_stack_pages(process_t * proc, uint32_t max_stack_pages);
