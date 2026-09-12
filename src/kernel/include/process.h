@@ -175,7 +175,9 @@ void * process_add_pages(process_t * proc, size_t count);
 int process_grow_stack(process_t * proc);
 
 /**
- * @brief Change the maximum size (in KB) a process' stack may grow to rounding up be page size aligned.
+ * @brief Change the maximum size (in KB) a process' stack may grow to,
+ * rounding up to a whole page if `max_stack_size_kb` is not already page
+ * aligned.
  *
  * @todo This currently checks against *allocated* stack pages
  * (stack_page_count), not how much of the stack is actually *in use*. Once

@@ -25,18 +25,6 @@ static uint32_t stack_size_kb_to_pages(uint32_t size_kb);
 static uint32_t next_pid();
 static uint32_t next_handle_id();
 
-/**
- * @brief Convert a stack size in KB to a whole number of pages, rounding up
- * if `size_kb` is not already page aligned.
- *
- * @param size_kb stack size in KB
- * @return number of pages
- */
-static uint32_t stack_size_kb_to_pages(uint32_t size_kb) {
-    uint32_t size_bytes = size_kb * 1024;
-    return (size_bytes + PAGE_SIZE - 1) / PAGE_SIZE;
-}
-
 int process_create(process_t * proc) {
     if (!proc) {
         KLOG_WARNING("Process struct is null pointer");
@@ -922,4 +910,28 @@ static uint32_t next_handle_id() {
 void set_next_handle_id(uint32_t next) {
     next_handle_id(); // Force handle_id_set to true so it doesn't override this value
     __handle_id = next;
+}
+
+/**
+ * @brief Convert a stack size in KB to a whole number of pages, rounding up
+ * if `size_kb` is not already page aligned.
+ *
+ * Works entirely in KB (never converting to bytes) so that a large
+ * `size_kb` cannot overflow uint32_t during the conversion - multiplying by
+ * 1024 (or adding PAGE_SIZE - 1 to the result) can wrap for inputs
+ * approaching UINT32_MAX, which would silently turn a large configured
+ * limit into a much smaller (or zero) page count.
+ *
+ * @param size_kb stack size in KB
+ * @return number of pages
+ */
+static uint32_t stack_size_kb_to_pages(uint32_t size_kb) {
+    const uint32_t page_size_kb = PAGE_SIZE / 1024;
+
+    uint32_t pages = size_kb / page_size_kb;
+    if (size_kb % page_size_kb != 0) {
+        pages++;
+    }
+
+    return pages;
 }
